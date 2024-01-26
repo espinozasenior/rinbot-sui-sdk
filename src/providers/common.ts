@@ -1,0 +1,6 @@
+import { SUI_DECIMALS } from "@mysten/sui.js/utils";
+
+export const SUI_DENOMINATOR = 10 ** SUI_DECIMALS;
+export const SHORT_SUI_COIN_TYPE = "0x2::sui::SUI";
+export const LONG_SUI_COIN_TYPE = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
+export const SWAP_GAS_BUDGET = 50_000_000;
