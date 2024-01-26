@@ -1,0 +1,62 @@
+{
+  "name": "@avernikoz/sui-trading-bot",
+  "version": "2.0.11",
+  "description": "Sui Trading Bot SDK (typescript)",
+  "files": [
+    "dist"
+  ],
+  "node": "v20",
+  "engines": {
+    "npm": "please-use-yarn",
+    "node": "20"
+  },
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com:avernikoz/sui-trading-bot.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "author": "avernikoz <avernikoz@gmail.com>",
+  "license": "private",
+  "private": false,
+  "engineStrict": true,
+  "scripts": {
+    "audit": "yarn audit --groups dependencies",
+    "format": "prettier --write src/**/*.ts",
+    "lint": "tsc --noEmit && eslint src/**/*.ts",
+    "build": "yarn rimraf dist && yarn run lint && tsup",
+    "build:watch": "tsc --watch",
+    "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
+  },
+  "resolutions": {
+    "@cetusprotocol/cetus-sui-clmm-sdk/@mysten/sui.js": "0.42.0",
+    "@flowx-pkg/ts-sdk/@mysten/sui.js": "0.41.2"
+  },
+  "dependencies": {
+    "@cetusprotocol/cetus-sui-clmm-sdk": "^3.17.3",
+    "@flowx-pkg/ts-sdk": "^0.0.8",
+    "@mysten/sui.js": "^0.42.0",
+    "aftermath-ts-sdk": "^1.1.25",
+    "bignumber.js": "^9.1.2",
+    "turbos-clmm-sdk": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.1",
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.5.0",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "dotenv": "^16.3.1",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.2.0"
+  }
+}
