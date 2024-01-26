@@ -16,7 +16,7 @@ const BUCK_TYPE = "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b1
   const coinTypeTo = SUI_TYPE;
   const inputAmount = "0.1";
   const slippagePercentage = 10;
-  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions });
+  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions, lazyLoading: false });
 
   const pool: Pool = await aftermath.getPool(coinTypeFrom, coinTypeTo);
   console.log("pool:", pool);

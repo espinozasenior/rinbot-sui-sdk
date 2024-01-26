@@ -8,7 +8,11 @@ const USDC_TYPE = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217
 
 // yarn ts-node examples/turbos/turbos.ts
 (async () => {
-  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({ suiProviderUrl, cacheOptions });
+  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
+    suiProviderUrl,
+    cacheOptions,
+    lazyLoading: false,
+  });
 
   const coinTypeFrom: string = LONG_SUI_COIN_TYPE;
   const coinTypeTo: string = USDC_TYPE;

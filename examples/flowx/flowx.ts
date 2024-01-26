@@ -18,7 +18,7 @@ export const flowx = async ({
   slippagePercentage: number;
   signerAddress: string;
 }) => {
-  const flowxInstance = await FlowxSingleton.getInstance({ cacheOptions });
+  const flowxInstance = await FlowxSingleton.getInstance({ cacheOptions, lazyLoading: false });
   const calculatedData = await flowxInstance.getRouteData({
     coinTypeFrom: tokenFrom,
     coinTypeTo: tokenTo,
