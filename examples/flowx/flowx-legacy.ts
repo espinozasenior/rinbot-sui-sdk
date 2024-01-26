@@ -8,7 +8,7 @@ const FUD_COIN_TYPE = "0x76cb819b01abed502bee8a702b4c2d547532c12f25001c9dea795a5
 const SUI_COIN_TYPE = "0x2::sui::SUI";
 // const SUI_COIN_TYPE = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 
-// yarn ts-node examples/sui/flowx/flowx.ts
+// yarn ts-node examples/flowx/flowx.ts
 export const flowx = async ({
   tokenFrom,
   tokenTo,

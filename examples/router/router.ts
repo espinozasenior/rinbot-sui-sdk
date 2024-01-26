@@ -13,7 +13,7 @@ const CETUS_COIN_TYPE = "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1
 const USDC_COIN_TYPE = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN";
 const BUCK_COIN_TYPE = "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK";
 
-// yarn ts-node examples/sui/router/router.ts
+// yarn ts-node examples/router/router.ts
 export const router = async ({
   tokenFrom,
   tokenTo,

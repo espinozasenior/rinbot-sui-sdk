@@ -7,7 +7,7 @@ import { FlowxSingleton } from "../../src/providers/flowx/flowx";
 import { TurbosSingleton } from "../../src/providers/turbos/turbos";
 import { cacheOptions, suiProviderUrl } from "../common";
 
-// yarn ts-node examples/sui/coin/coin.ts
+// yarn ts-node examples/coin/coin.ts
 (async () => {
   console.time("All init");
 

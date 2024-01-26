@@ -6,7 +6,7 @@ import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../../src/providers/com
 
 const USDC_TYPE = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN";
 
-// yarn ts-node examples/sui/turbos/turbos.ts
+// yarn ts-node examples/turbos/turbos.ts
 (async () => {
   const turbos: TurbosSingleton = await TurbosSingleton.getInstance({ suiProviderUrl, cacheOptions });
 

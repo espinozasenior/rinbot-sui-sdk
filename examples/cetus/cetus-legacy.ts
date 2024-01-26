@@ -6,7 +6,7 @@ import { cacheOptions, keypair, suiProviderUrl } from "../common";
 const CETUS_COIN_TYPE = "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS";
 const SUI_COIN_TYPE = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 
-// yarn ts-node examples/sui/cetus/cetus.ts
+// yarn ts-node examples/cetus/cetus.ts
 export const cetus = async ({
   tokenFrom,
   tokenTo,

@@ -8,7 +8,7 @@ import { WalletManagerSingleton } from "../../src/managers/WalletManager";
 import { cacheOptions, suiProviderUrl, provider, user } from "../common";
 import { FlowxSingleton } from "../../src/providers/flowx/flowx";
 
-// yarn ts-node examples/sui/wallet/wallet.ts
+// yarn ts-node examples/wallet/wallet.ts
 (async () => {
   const turbos: TurbosSingleton = await TurbosSingleton.getInstance({ suiProviderUrl, cacheOptions });
   const cetus: CetusSingleton = await CetusSingleton.getInstance({
