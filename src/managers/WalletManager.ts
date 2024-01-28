@@ -87,7 +87,9 @@ export class WalletManagerSingleton {
     return tx;
   }
 
-  public async getAvailableWithdrawSuiAmount(publicKey: string): Promise<string> {
+  public async getAvailableWithdrawSuiAmount(
+    publicKey: string,
+  ): Promise<{ availableAmount: string; totalGasFee: string }> {
     const tx = new TransactionBlock();
 
     const [coin] = tx.splitCoins(tx.gas, [tx.pure(100)]);
@@ -99,14 +101,17 @@ export class WalletManagerSingleton {
     });
     const { computationCost, storageCost, storageRebate }: GasCostSummary = simulationResult.effects.gasUsed;
     const totalGasFee: string = new BigNumber(computationCost).plus(storageCost).minus(storageRebate).toString();
-
     const suiBalance: string = await this.getSuiBalance(publicKey);
-
-    return new BigNumber(suiBalance)
+    const availableAmount = new BigNumber(suiBalance)
       .multipliedBy(SUI_DENOMINATOR)
       .minus(totalGasFee)
       .dividedBy(SUI_DENOMINATOR)
       .toString();
+
+    return {
+      availableAmount,
+      totalGasFee,
+    };
   }
 
   public async getSuiBalance(publicKey: string): Promise<string> {
