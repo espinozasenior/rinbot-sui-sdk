@@ -1,13 +1,19 @@
 /* eslint-disable require-jsdoc */
-import { CoinBalance, CoinStruct, PaginatedCoins, SuiClient } from "@mysten/sui.js/client";
-import { SUI_DECIMALS } from "@mysten/sui.js/utils";
+import {
+  CoinBalance,
+  CoinStruct,
+  DevInspectResults,
+  GasCostSummary,
+  PaginatedCoins,
+  SuiClient,
+} from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import BigNumber from "bignumber.js";
-
-import { SWAP_GAS_BUDGET } from "../providers/common";
-import { CoinAssetData, CommonCoinData } from "./types";
-import { CoinManagerSingleton } from "./CoinManager";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { SUI_DECIMALS } from "@mysten/sui.js/utils";
+import BigNumber from "bignumber.js";
+import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
+import { CoinManagerSingleton } from "./CoinManager";
+import { CoinAssetData, CommonCoinData } from "./types";
 
 export class WalletManagerSingleton {
   private provider: SuiClient;
@@ -60,10 +66,9 @@ export class WalletManagerSingleton {
   }
 
   /**
-   * Retrieves a withdrawal transaction for SUI tokens. (Not yet implemented)
+   * Retrieves a withdrawal transaction for SUI tokens.
    *
    * @return {Promise<TransactionBlock>} A Promise that resolves to a TransactionBlock.
-   * @throws {Error} If the implementation is not complete.
    */
   public static async getWithdrawSuiTransaction({
     address,
@@ -72,10 +77,36 @@ export class WalletManagerSingleton {
     address: string;
     amount: string;
   }): Promise<TransactionBlock> {
-    throw new Error("This method is not implemented yet.");
     const tx = new TransactionBlock();
 
+    const amountBigNumber = new BigNumber(amount);
+    const amountInMists: string = amountBigNumber.multipliedBy(SUI_DENOMINATOR).toString();
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(amountInMists)]);
+    tx.transferObjects([coin], tx.pure(address));
+
     return tx;
+  }
+
+  public async getAvailableWithdrawSuiAmount(publicKey: string): Promise<string> {
+    const tx = new TransactionBlock();
+
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(100)]);
+    tx.transferObjects([coin], tx.pure(publicKey));
+
+    const simulationResult: DevInspectResults = await this.provider.devInspectTransactionBlock({
+      transactionBlock: tx,
+      sender: publicKey,
+    });
+    const { computationCost, storageCost, storageRebate }: GasCostSummary = simulationResult.effects.gasUsed;
+    const totalGasFee: string = new BigNumber(computationCost).plus(storageCost).minus(storageRebate).toString();
+
+    const suiBalance: string = await this.getSuiBalance(publicKey);
+
+    return new BigNumber(suiBalance)
+      .multipliedBy(SUI_DENOMINATOR)
+      .minus(totalGasFee)
+      .dividedBy(SUI_DENOMINATOR)
+      .toString();
   }
 
   public async getSuiBalance(publicKey: string): Promise<string> {
