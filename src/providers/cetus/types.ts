@@ -77,4 +77,8 @@ export type CoinNodeWithSymbol = CoinNode & { symbol: string };
 export type CoinMap = Map<string, CoinNodeWithSymbol>;
 export type PathMap = Map<string, PathLink>;
 
-export type CetusOptions = ProviderOptions & { sdkOptions: Omit<SdkOptions, "fullRpcUrl">; suiProviderUrl: string };
+export type CetusOptions = ProviderOptions & {
+  sdkOptions: Omit<SdkOptions, "fullRpcUrl">;
+  suiProviderUrl: string;
+  proxy?: string;
+};

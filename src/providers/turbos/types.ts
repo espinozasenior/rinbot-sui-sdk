@@ -91,4 +91,4 @@ export interface CoinsAPIResponse {
   data?: CoinData[];
 }
 
-export type TurbosOptions = ProviderOptions & { suiProviderUrl: string };
+export type TurbosOptions = ProviderOptions & { suiProviderUrl: string; proxy?: string };
