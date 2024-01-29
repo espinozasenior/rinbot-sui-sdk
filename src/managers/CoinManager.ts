@@ -29,7 +29,7 @@ export class CoinManagerSingleton {
   }
 
   public handleCacheUpdate(updateData: UpdatedCoinsCache): void {
-    console.log("\n[COIN MANAGER] Update data received:", updateData.provider);
+    console.log("[COIN MANAGER] Update data received:", updateData.provider);
     const { provider, data: coins } = updateData;
 
     const coinsByProviderMap: Map<string, CommonCoinData> = new Map();
@@ -85,5 +85,9 @@ export class CoinManagerSingleton {
 
   public getCoinsByProviderMap() {
     return this.coinsByProviderNameCache;
+  }
+
+  public getAllCoins() {
+    return this.allCoinsCache;
   }
 }

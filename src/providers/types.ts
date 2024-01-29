@@ -22,3 +22,10 @@ export type ProviderOptions = {
   cacheOptions: CacheOptions;
   lazyLoading?: boolean;
 };
+
+export type ExitHandlerOptions = {
+  cleanup?: boolean;
+  intervalId?: NodeJS.Timeout | undefined;
+  exit?: boolean;
+  providerName?: string;
+};

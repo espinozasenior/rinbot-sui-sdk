@@ -4,6 +4,7 @@ import { getCoinsFlowX, getPairs, swapExactInput } from "@flowx-pkg/ts-sdk";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { UpdatedCoinsCache } from "../../managers/types";
+import { exitHandlerWrapper } from "../common";
 import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
@@ -26,6 +27,7 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
   public coinsMapCache: CoinMap = new Map();
   public coinsMetadataCache: ExtractedCoinMetadataType[] = [];
   private cacheOptions: CacheOptions;
+  private intervalId: NodeJS.Timeout | undefined;
 
   private constructor(options: Omit<FlowxOptions, "lazyLoading">) {
     super();
@@ -66,7 +68,7 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
 
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
-    setInterval(async () => {
+    this.intervalId = setInterval(async () => {
       try {
         if (isUpdatingCurrently) {
           return;
@@ -77,6 +79,8 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
         isUpdatingCurrently = false;
       }
     }, this.cacheOptions.updateIntervalInMs);
+
+    exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
   public async updateCoinsCache(): Promise<void> {
