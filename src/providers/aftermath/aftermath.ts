@@ -11,6 +11,7 @@ import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { AftermathOptions, SmartOutputAmountData } from "./types";
 import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
+import { removeDecimalPart } from "../utils/removeDecimalPart";
 
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
   private static _instance: AftermathSingleton;
@@ -190,7 +191,12 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
 
     const inputCoinDecimals: number = coinTypeFromInfo.decimals;
     const inputAmountWithDecimalsBigNumber = new BigNumber(inputAmount).multipliedBy(10 ** inputCoinDecimals);
-    const inputAmountWithDecimals = BigInt(inputAmountWithDecimalsBigNumber.toString());
+    // We do removing the decimal part in case client send number with more decimal part
+    // than this particular token has decimal places allowed (`inputCoinDecimals`)
+    // That's prevent situation when casting
+    // BigNumber to BigInt fails with error ("Cannot convert 183763562.1 to a BigInt")
+    const inputAmountWithoutExceededDecimalPart = removeDecimalPart(inputAmountWithDecimalsBigNumber);
+    const inputAmountWithDecimals = BigInt(inputAmountWithoutExceededDecimalPart.toString());
 
     const routerInstance = this.aftermathSdk.Router();
     const route: RouterCompleteTradeRoute = await routerInstance.getCompleteTradeRouteGivenAmountIn({

@@ -11,11 +11,17 @@ export type CacheOptions = {
   updateIntervalInMs: number;
 };
 
+export type GetRouteDataInput<T extends Provider> = Parameters<T["getRouteData"]>[0];
+
+export type GetRouteDataOutput<T extends Provider> = ReturnType<T["getRouteData"]>;
+
+export type GetSwapTransactionInput<T extends Provider> = Parameters<T["getSwapTransaction"]>[0];
+
 export interface IPoolProvider<T extends Provider> {
   getCoins(): UpdatedCoinsCache;
   getPaths(): Map<string, CommonPoolData>;
-  getRouteData(arg: Parameters<T["getRouteData"]>[0]): ReturnType<T["getRouteData"]>;
-  getSwapTransaction(arg: Parameters<T["getSwapTransaction"]>[0]): Promise<TransactionBlock>;
+  getRouteData(arg: GetRouteDataInput<T>): GetRouteDataOutput<T>;
+  getSwapTransaction(arg: GetSwapTransactionInput<T>): Promise<TransactionBlock>;
 }
 
 export type ProviderOptions = {

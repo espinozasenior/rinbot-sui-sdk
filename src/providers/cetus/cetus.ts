@@ -11,6 +11,7 @@ import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { CENTRALIZED_POOLS_INFO_ENDPOINT } from "./config";
 import { CetusOptions, CoinMap, CoinNodeWithSymbol, LPList } from "./types";
 import { getPoolsDataFromApiData, isApiResponseValid } from "./utils";
+import { removeDecimalPart } from "../utils/removeDecimalPart";
 
 export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusSingleton> {
   private static _instance: CetusSingleton;
@@ -25,11 +26,13 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   private cacheOptions: CacheOptions;
   private useOnChainFallback = false;
   private intervalId: NodeJS.Timeout | undefined;
+  private proxy: string | undefined;
 
-  private constructor(options: Required<Omit<CetusOptions, "lazyLoading">>) {
+  private constructor(options: Omit<CetusOptions, "lazyLoading">) {
     super();
     this.cetusSdk = new CetusClmmSDK({ fullRpcUrl: options.suiProviderUrl, ...options.sdkOptions });
     this.cacheOptions = options.cacheOptions;
+    this.proxy = options.proxy;
   }
 
   public static async getInstance(options?: CetusOptions): Promise<CetusSingleton> {
@@ -38,9 +41,9 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
         throw new Error("[Cetus] Options are required in arguments to create instance.");
       }
 
-      const { sdkOptions, cacheOptions, lazyLoading = true, suiProviderUrl } = options;
+      const { sdkOptions, cacheOptions, lazyLoading = true, suiProviderUrl, proxy } = options;
 
-      const instance = new CetusSingleton({ sdkOptions, cacheOptions, suiProviderUrl });
+      const instance = new CetusSingleton({ sdkOptions, cacheOptions, suiProviderUrl, proxy });
       lazyLoading ? instance.init() : await instance.init();
       CetusSingleton._instance = instance;
     }
@@ -110,7 +113,11 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   }
 
   public async retrieveAllPoolsFromApi() {
-    const poolsResponse = await (await fetch(CENTRALIZED_POOLS_INFO_ENDPOINT)).json();
+    const url: string = this.proxy
+      ? `${this.proxy}/${CENTRALIZED_POOLS_INFO_ENDPOINT}`
+      : CENTRALIZED_POOLS_INFO_ENDPOINT;
+
+    const poolsResponse = await (await fetch(url)).json();
     const isValidPoolsResponse = isApiResponseValid(poolsResponse);
 
     if (!isValidPoolsResponse) {
@@ -180,7 +187,12 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     const absoluteSlippage = convertSlippage(slippagePercentage);
 
     const amountInWithDecimalsBigNumber = new BigNumber(amountIn).multipliedBy(10 ** tokenFrom.decimals);
-    const amountInt = amountInWithDecimalsBigNumber.toNumber();
+    // We do removing the decimal part in case client send number with more decimal part
+    // than this particular token has decimal places allowed (`inputCoinDecimals`)
+    // That's prevent situation when casting
+    // BigNumber to BigInt fails with error ("Cannot convert 183763562.1 to a BigInt")
+    const inputAmountWithoutExceededDecimalPart = removeDecimalPart(amountInWithDecimalsBigNumber);
+    const amountInt = inputAmountWithoutExceededDecimalPart.toNumber();
 
     const rawRouterResult = await this.cetusSdk.RouterV2.getBestRouter(
       tokenFrom.address,

@@ -12,6 +12,7 @@ import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { CoinData, PoolData, SwapRequiredData, TurbosOptions } from "./types";
 import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
+import { removeDecimalPart } from "../utils/removeDecimalPart";
 
 // TODO: Need a fallback in case when API doesn't work
 // sdk.pool.getPools() doesn't work
@@ -52,12 +53,14 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   public coinsCache: Map<string, CoinData> = new Map();
   private cacheOptions: CacheOptions;
   private intervalId: NodeJS.Timeout | undefined;
+  private proxy: string | undefined;
 
   private constructor(options: Omit<TurbosOptions, "lazyLoading">) {
     super();
     const provider = new SuiClient({ url: options.suiProviderUrl });
     this.turbosSdk = new TurbosSdk(Network.mainnet, provider);
     this.cacheOptions = options.cacheOptions;
+    this.proxy = options.proxy;
   }
 
   public static async getInstance(options?: TurbosOptions): Promise<TurbosSingleton> {
@@ -65,9 +68,9 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
       if (options === undefined) {
         throw new Error("[TurbosManager] Options are required in arguments to create instance.");
       }
-      const { suiProviderUrl, cacheOptions, lazyLoading = true } = options;
+      const { suiProviderUrl, cacheOptions, lazyLoading = true, proxy } = options;
 
-      const instance = new TurbosSingleton({ suiProviderUrl, cacheOptions });
+      const instance = new TurbosSingleton({ suiProviderUrl, cacheOptions, proxy });
       lazyLoading ? instance.init() : await instance.init();
       TurbosSingleton._instance = instance;
     }
@@ -130,7 +133,11 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @return {Promise<PoolData[]>} A Promise that resolves to an array of PoolData.
    */
   public async fetchPoolsFromApi(): Promise<PoolData[]> {
-    const response: Response = await fetch(`${TurbosSingleton.TURBOS_API_URL}/pools`);
+    const url: string = this.proxy
+      ? `${this.proxy}/${TurbosSingleton.TURBOS_API_URL}/pools`
+      : `${TurbosSingleton.TURBOS_API_URL}/pools`;
+
+    const response: Response = await fetch(url);
     const responseJson: { code: number; message: string; data: PoolData[] } = await response.json();
     const isValidPoolsResponse = isPoolsApiResponseValid(responseJson);
 
@@ -255,7 +262,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
 
     const inputCoinDecimals: number = inputCoin.decimals;
     const inputAmountWithDecimalsBigNumber = new BigNumber(inputAmount).multipliedBy(10 ** inputCoinDecimals);
-    const inputAmountWithDecimals = inputAmountWithDecimalsBigNumber.toString();
+    // We do removing the decimal part in case client send number with more decimal part
+    // than this particular token has decimal places allowed (`inputCoinDecimals`)
+    // That's prevent situation when casting
+    // BigNumber to BigInt fails with error ("Cannot convert 183763562.1 to a BigInt")
+    const inputAmountWithoutExceededDecimalPart = removeDecimalPart(inputAmountWithDecimalsBigNumber);
+    const inputAmountWithDecimals = inputAmountWithoutExceededDecimalPart.toString();
 
     // TODO (possible improvement):
     // executing time could be reduced by patching this method to pass into it config (getConfig() inside)
