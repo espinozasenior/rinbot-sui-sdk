@@ -1,6 +1,6 @@
 {
   "name": "@avernikoz/rinbot-sui-sdk",
-  "version": "2.0.15",
+  "version": "2.0.16",
   "description": "Sui Trading Bot SDK (typescript)",
   "files": [
     "dist"
