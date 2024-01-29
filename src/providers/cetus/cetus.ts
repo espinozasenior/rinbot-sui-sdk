@@ -4,6 +4,7 @@ import CetusClmmSDK, { AggregatorResult, CoinNode, PathLink, TransactionUtil } f
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { UpdatedCoinsCache } from "../../managers/types";
+import { exitHandlerWrapper } from "../common";
 import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
@@ -23,6 +24,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   public coinsCache: CoinMap = new Map();
   private cacheOptions: CacheOptions;
   private useOnChainFallback = false;
+  private intervalId: NodeJS.Timeout | undefined;
 
   private constructor(options: Required<Omit<CetusOptions, "lazyLoading">>) {
     super();
@@ -65,7 +67,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
 
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
-    setInterval(async () => {
+    this.intervalId = setInterval(async () => {
       try {
         if (isUpdatingCurrently) {
           return;
@@ -76,6 +78,8 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
         isUpdatingCurrently = false;
       }
     }, this.cacheOptions.updateIntervalInMs);
+
+    exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
   public async updatePoolsCache(): Promise<void> {

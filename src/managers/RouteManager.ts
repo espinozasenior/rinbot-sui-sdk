@@ -106,7 +106,7 @@ export class RouteManager {
     const maxOutputProvider = routeData.provider;
 
     const transaction = await maxOutputProvider.getSwapTransaction({
-      route: route /* as SpecificRouteType */,
+      route: route,
       publicKey: signerAddress,
       slippagePercentage,
     });

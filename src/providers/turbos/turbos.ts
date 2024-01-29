@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { Network, TurbosSdk } from "turbos-clmm-sdk";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { UpdatedCoinsCache } from "../../managers/types";
-import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
+import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE, exitHandlerWrapper } from "../common";
 import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
@@ -51,6 +51,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   public pathsCache: Map<string, CommonPoolData> = new Map();
   public coinsCache: Map<string, CoinData> = new Map();
   private cacheOptions: CacheOptions;
+  private intervalId: NodeJS.Timeout | undefined;
 
   private constructor(options: Omit<TurbosOptions, "lazyLoading">) {
     super();
@@ -93,7 +94,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
 
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
-    setInterval(async () => {
+    this.intervalId = setInterval(async () => {
       try {
         if (isUpdatingCurrently) {
           return;
@@ -104,6 +105,8 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
         isUpdatingCurrently = false;
       }
     }, this.cacheOptions.updateIntervalInMs);
+
+    exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
   public async updatePoolsCache(): Promise<void> {

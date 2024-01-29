@@ -5,6 +5,7 @@ import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "a
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
+import { exitHandlerWrapper } from "../common";
 import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
@@ -20,6 +21,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
   public pathsCache: Map<string, CommonPoolData> = new Map();
   public coinsCache: Map<string, CoinMetadaWithInfo> = new Map();
   private cacheOptions: CacheOptions;
+  private intervalId: NodeJS.Timeout | undefined;
 
   private constructor(options: Omit<AftermathOptions, "lazyLoading">) {
     super();
@@ -61,7 +63,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
 
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
-    setInterval(async () => {
+    this.intervalId = setInterval(async () => {
       try {
         if (isUpdatingCurrently) {
           return;
@@ -72,6 +74,8 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
         isUpdatingCurrently = false;
       }
     }, this.cacheOptions.updateIntervalInMs);
+
+    exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
   public async updatePoolsCache(): Promise<void> {
