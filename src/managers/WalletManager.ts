@@ -9,7 +9,7 @@ import {
 } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SUI_DECIMALS } from "@mysten/sui.js/utils";
+import { SUI_DECIMALS, normalizeSuiAddress } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
@@ -155,6 +155,7 @@ export class WalletManagerSingleton {
         cursor: nextCursor,
       });
     }
+
     const coinObjects: CoinStruct[] = assets.data;
     allObjects.push(...coinObjects);
 
@@ -167,8 +168,13 @@ export class WalletManagerSingleton {
           return allAssets;
         }
 
+        const rawCoinType = coinData.coinType;
+        const coinTypeAddress = rawCoinType.split("::")[0];
+        const normalizedAddress = normalizeSuiAddress(coinTypeAddress);
+        const normalizedCoinType = rawCoinType.replace(coinTypeAddress, normalizedAddress);
+
         const coinInAssets: CoinAssetData | undefined = allAssets.find(
-          (asset: CoinAssetData) => asset.type === coinData.coinType,
+          (asset: CoinAssetData) => asset.type === normalizedCoinType,
         );
 
         if (coinInAssets) {
@@ -177,13 +183,13 @@ export class WalletManagerSingleton {
           const newBalance: bigint = currentBalance + additionalBalance;
           coinInAssets.balance = newBalance.toString();
         } else {
-          const coin: CommonCoinData = this.coinManager.getCoinByType(coinData.coinType);
+          const coin: CommonCoinData = this.coinManager.getCoinByType(normalizedCoinType);
           const coinSymbol: string | undefined = coin?.symbol?.trim();
 
           allAssets.push({
             symbol: coinSymbol,
             balance: coinData.balance,
-            type: coinData.coinType,
+            type: normalizedCoinType,
             decimals: coin.decimals,
           });
         }
