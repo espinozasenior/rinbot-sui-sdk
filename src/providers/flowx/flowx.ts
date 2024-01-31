@@ -18,8 +18,6 @@ import {
   FlowxOptions,
 } from "./types";
 import { getCoinsMap, getPathsMap, isCoinListValid, isPairListValid } from "./utils";
-import BigNumber from "bignumber.js";
-import { removeDecimalPart } from "../utils/removeDecimalPart";
 
 export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxSingleton> {
   private static _instance: FlowxSingleton;
@@ -161,20 +159,7 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
     tokenFrom: CoinNode;
     tokenTo: CoinNode;
   }) {
-    const amountInWithDecimalsBigNumber = new BigNumber(amountIn).multipliedBy(10 ** tokenFrom.decimals);
-    // We do removing the decimal part in case client send number with more decimal part
-    // than this particular token has decimal places allowed (`inputCoinDecimals`)
-    // That's prevent situation when casting
-    // BigNumber to BigInt fails with error ("Cannot convert 183763562.1 to a BigInt")
-    const inputAmountWithoutExceededDecimalPart = removeDecimalPart(amountInWithDecimalsBigNumber);
-    const inputAmountWithDecimals = inputAmountWithoutExceededDecimalPart.toString();
-
-    const swapData = await calculateAmountOutInternal(
-      inputAmountWithDecimals,
-      tokenFrom,
-      tokenTo,
-      this.coinsMetadataCache,
-    );
+    const swapData = await calculateAmountOutInternal(amountIn, tokenFrom, tokenTo, this.coinsMetadataCache);
 
     return { outputAmount: BigInt(swapData.amountOut.decimalAmount), route: { ...swapData, tokenFrom, tokenTo } };
   }
