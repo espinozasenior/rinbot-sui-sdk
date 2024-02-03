@@ -51,6 +51,7 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
   }
 
   private async init() {
+    console.debug(`[${this.providerName}] Singleton initiating.`);
     await this.updateCaches();
     this.updateCachesIntervally();
     this.bufferEvent("cachesUpdate", this.getCoins());

@@ -47,6 +47,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
   }
 
   private async init() {
+    console.debug(`[${this.providerName}] Singleton initiating.`);
     await this.updateCaches();
     this.updateCachesIntervally();
     this.bufferEvent("cachesUpdate", this.getCoins());

@@ -79,6 +79,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   }
 
   private async init() {
+    console.debug(`[${this.providerName}] Singleton initiating.`);
     await this.updateCaches();
     this.updateCachesIntervally();
     this.bufferEvent("cachesUpdate", this.getCoins());
