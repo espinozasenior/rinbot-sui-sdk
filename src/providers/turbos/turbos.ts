@@ -5,20 +5,31 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
 import { Network, TurbosSdk } from "turbos-clmm-sdk";
 import { EventEmitter } from "../../emitters/EventEmitter";
-import { UpdatedCoinsCache } from "../../managers/types";
+import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
+import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
+import { Storage } from "../../storages/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE, exitHandlerWrapper } from "../common";
-import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
+import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
-import { CoinData, PoolData, SwapRequiredData, TurbosOptions } from "./types";
-import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
+import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
+import { getPoolsCache } from "../../storages/utils/getPoolsCache";
+import { storeCaches } from "../../storages/utils/storeCaches";
+import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions } from "./types";
+import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
 
 // TODO: Need a fallback in case when API doesn't work
 // sdk.pool.getPools() doesn't work
 
 /**
  * Represents a singleton instance of TurbosManager managing TurbosSdk functionality.
+ *
+ * Note: If using `lazyLoading: true` and in-memory cache in a serverless/cloud functions environment,
+ * be aware that each invocation of your cloud function will start cache population from scratch.
+ * This may lead to unexpected behavior when using different SDK methods. To avoid this,
+ * when running your app in a serverless environment with `lazyLoading: true` option,
+ * consider passing a persistent storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  *
  * @class TurbosSingleton
  */
@@ -48,12 +59,13 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   public turbosSdk: TurbosSdk;
   public isSmartRoutingAvailable = false;
   public providerName = "Turbos";
-  public poolsCache: PoolData[] = [];
-  public pathsCache: Map<string, CommonPoolData> = new Map();
-  public coinsCache: Map<string, CoinData> = new Map();
+  public poolsCache: ShortPoolData[] = [];
+  public pathsCache: PathsCache = new Map();
+  public coinsCache: CoinsCache = new Map();
   private cacheOptions: CacheOptions;
   private intervalId: NodeJS.Timeout | undefined;
   private proxy: string | undefined;
+  private storage: Storage;
 
   private constructor(options: Omit<TurbosOptions, "lazyLoading">) {
     super();
@@ -61,6 +73,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     this.turbosSdk = new TurbosSdk(Network.mainnet, provider);
     this.cacheOptions = options.cacheOptions;
     this.proxy = options.proxy;
+    this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
   public static async getInstance(options?: TurbosOptions): Promise<TurbosSingleton> {
@@ -80,20 +93,56 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
 
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
+
+    await this.fillCacheFromStorage();
     await this.updateCaches();
     this.updateCachesIntervally();
+
     this.bufferEvent("cachesUpdate", this.getCoins());
-    console.debug(`[${this.providerName}] Singleton initialized.`);
   }
 
-  public async updateCaches(): Promise<void> {
+  private async fillCacheFromStorage(): Promise<void> {
     try {
-      await this.updatePoolsCache();
-      this.updatePathsCache();
-      await this.updateCoinsCache();
-      this.emit("cachesUpdate", this.getCoins());
+      const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
+        storage: this.storage,
+        provider: this.providerName,
+      });
+      const poolsCache = await getPoolsCache({ storage: this.storage, provider: this.providerName });
+
+      this.coinsCache = coinsCache;
+      this.pathsCache = pathsCache;
+      this.poolsCache = poolsCache;
     } catch (error) {
-      console.error("[Turbos] Caches update failed:", error);
+      console.error(`[${this.providerName}] fillCacheFromStorage failed:`, error);
+    }
+  }
+
+  private isStorageCacheEmpty() {
+    const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0 || this.poolsCache.length === 0;
+
+    return isCacheEmpty;
+  }
+
+  private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
+    const isCacheEmpty = this.isStorageCacheEmpty();
+
+    if (isCacheEmpty || force) {
+      try {
+        await this.updatePoolsCache();
+        this.updatePathsCache();
+        await this.updateCoinsCache();
+        this.emit("cachesUpdate", this.getCoins());
+
+        await storeCaches({
+          provider: this.providerName,
+          storage: this.storage,
+          coinsCache: this.getCoins(),
+          pathsCache: this.getPaths(),
+          poolsCache: this.getPools(),
+        });
+      } catch (error) {
+        console.error("[Turbos] Caches update failed:", error);
+      }
     }
   }
 
@@ -105,7 +154,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
           return;
         }
         isUpdatingCurrently = true;
-        await this.updateCaches();
+        await this.updateCaches({ force: true });
       } finally {
         isUpdatingCurrently = false;
       }
@@ -115,7 +164,14 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   }
 
   public async updatePoolsCache(): Promise<void> {
-    this.poolsCache = await this.fetchPoolsFromApi();
+    const pools: PoolData[] = await this.fetchPoolsFromApi();
+
+    // TODO: Remove that method to separate one
+    this.poolsCache = pools.map((pool: PoolData) => ({
+      poolId: pool.pool_id,
+      coinTypeA: pool.coin_type_a,
+      coinTypeB: pool.coin_type_b,
+    }));
   }
 
   public updatePathsCache(): void {
@@ -169,7 +225,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     return responseJson.data;
   }
 
-  public getPools(): PoolData[] {
+  public getPools(): ShortPoolData[] {
     return this.poolsCache;
   }
 
@@ -191,13 +247,8 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @return {CommonCoinData[]} An array of CommonCoinData.
    */
   public getCoins(): UpdatedCoinsCache {
-    const data = Array.from(this.coinsCache.values()).map((coin: CoinData) => ({
-      symbol: coin.symbol.trim(),
-      type: coin.type,
-      decimals: coin.decimals,
-    }));
-
-    return { provider: this.providerName, data };
+    const allCoins: CommonCoinData[] = Array.from(this.coinsCache.values());
+    return { provider: this.providerName, data: allCoins };
   }
 
   public async getRouteData({
@@ -245,18 +296,18 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     inputAmount: string;
     publicKey: string;
   }): Promise<SwapRequiredData> {
-    const pool: PoolData | undefined = getPoolByCoins(tokenFrom, tokenTo, this.poolsCache);
+    const pool: ShortPoolData | undefined = getPoolByCoins(tokenFrom, tokenTo, this.poolsCache);
 
     if (!pool) {
       throw new Error(`[TurbosManager] Pool with coin types "${tokenFrom}" and "${tokenTo}" is not found.`);
     }
 
-    const poolId: string = pool.pool_id;
+    const poolId: string = pool.poolId;
     const tokenFromIsSui: boolean = tokenFrom === SHORT_SUI_COIN_TYPE || tokenFrom === LONG_SUI_COIN_TYPE;
     const tokenFromIsTokenA: boolean = tokenFromIsSui
-      ? pool.coin_type_a === SHORT_SUI_COIN_TYPE || pool.coin_type_a === LONG_SUI_COIN_TYPE
-      : pool.coin_type_a === tokenFrom;
-    const inputCoin: CoinData | undefined = getCoinInfoFromCache(tokenFrom, this.coinsCache);
+      ? pool.coinTypeA === SHORT_SUI_COIN_TYPE || pool.coinTypeA === LONG_SUI_COIN_TYPE
+      : pool.coinTypeA === tokenFrom;
+    const inputCoin: CommonCoinData | undefined = getCoinInfoFromCache(tokenFrom, this.coinsCache);
 
     if (!inputCoin) {
       throw new Error(`[TurbosManager] Cannot find coin with type "${tokenFrom}".`);
@@ -316,9 +367,9 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     const parsedSlippage: string = convertSlippage(slippagePercentage).toString();
 
     const transaction: TransactionBlock = await this.turbosSdk.trade.swap({
-      routes: [{ pool: pool.pool_id, a2b: tokenFromIsTokenA, nextTickIndex }],
-      coinTypeA: tokenFromIsTokenA ? pool.coin_type_a : pool.coin_type_b,
-      coinTypeB: tokenFromIsTokenA ? pool.coin_type_b : pool.coin_type_a,
+      routes: [{ pool: pool.poolId, a2b: tokenFromIsTokenA, nextTickIndex }],
+      coinTypeA: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
+      coinTypeB: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
       address: publicKey,
       amountA: inputAmountWithDecimals,
       amountB: outputAmount.toString(),

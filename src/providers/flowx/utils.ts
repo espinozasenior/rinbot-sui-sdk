@@ -17,7 +17,7 @@ export function getCoinsMap({ coinList }: { coinList: ExtractedCoinMetadataListT
       console.debug("flowx [getPoolsMap] no decimals or type for coin: ", el);
     }
 
-    acc.set(el.type, { address: el.type, type: el.type, decimals: el.decimals, symbol: el.name });
+    acc.set(el.type, { type: el.type, decimals: el.decimals, symbol: el.name });
 
     return acc;
   }, new Map());

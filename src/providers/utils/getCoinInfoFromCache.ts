@@ -1,14 +1,9 @@
 /* eslint-disable require-jsdoc */
-import { CoinMetadaWithInfo } from "aftermath-ts-sdk";
-import { CoinNodeWithSymbol } from "../cetus/types";
-import { CoinNode } from "../flowx/types";
-import { CoinData } from "../../providers/turbos/types";
+import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
-
-export function getCoinInfoFromCache<T extends CoinMetadaWithInfo | CoinNodeWithSymbol | CoinNode | CoinData>(
-  coinType: string,
-  coinsCache: Map<string, T>,
-): T | undefined {
+import { CoinsCache } from "../types";
+../turbos/types
+export function getCoinInfoFromCache(coinType: string, coinsCache: CoinsCache): CommonCoinData | undefined {
   const coinIsSui: boolean = coinType === SHORT_SUI_COIN_TYPE || coinType === LONG_SUI_COIN_TYPE;
   const coinTypeInfo = coinIsSui
     ? coinsCache.get(LONG_SUI_COIN_TYPE) || coinsCache.get(SHORT_SUI_COIN_TYPE)

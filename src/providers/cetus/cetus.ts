@@ -1,38 +1,53 @@
 /* eslint-disable require-jsdoc */
 
-import CetusClmmSDK, { AggregatorResult, CoinNode, PathLink, TransactionUtil } from "@cetusprotocol/cetus-sui-clmm-sdk";
+import CetusClmmSDK, { AggregatorResult, PathLink, TransactionUtil } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
-import { UpdatedCoinsCache } from "../../managers/types";
+import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
+import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
+import { Storage } from "../../storages/types";
 import { exitHandlerWrapper } from "../common";
-import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
+import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
+import { removeDecimalPart } from "../utils/removeDecimalPart";
+import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
+import { storeCaches } from "../../storages/utils/storeCaches";
 import { CENTRALIZED_POOLS_INFO_ENDPOINT } from "./config";
 import { CetusOptions, CoinMap, CoinNodeWithSymbol, LPList } from "./types";
-import { getPoolsDataFromApiData, isApiResponseValid } from "./utils";
-import { removeDecimalPart } from "../utils/removeDecimalPart";
+import { getCoinsAndPathsCachesFromMaps, getPoolsDataFromApiData, isApiResponseValid } from "./utils";
 
+/**
+ * Note: If using `lazyLoading: true` and in-memory cache in a serverless/cloud functions environment,
+ * be aware that each invocation of your cloud function will start cache population from scratch.
+ * This may lead to unexpected behavior when using different SDK methods. To avoid this,
+ * when running your app in a serverless environment with `lazyLoading: true` option,
+ * consider passing a persistent storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
+ */
 export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusSingleton> {
   private static _instance: CetusSingleton;
   public providerName = "Cetus";
   public isSmartRoutingAvailable = true;
   public cetusSdk: CetusClmmSDK;
   public poolsCache: LPList[] = [];
-  public pathsCache: Map<string, CommonPoolData> = new Map();
+  public pathsCache: PathsCache = new Map();
   // The `cetusPathsCache` is workaround property to make it compatible with the Cetus SDK interface
   public cetusPathsCache: Map<string, PathLink> = new Map();
-  public coinsCache: CoinMap = new Map();
+  public coinsCache: CoinsCache = new Map();
+  // The `cetusCoinsCache` is workaround property to make it compatible with the Cetus SDK interface
+  private cetusCoinsCache: CoinMap = new Map();
   private cacheOptions: CacheOptions;
   private useOnChainFallback = false;
   private intervalId: NodeJS.Timeout | undefined;
   private proxy: string | undefined;
+  private storage: Storage;
 
   private constructor(options: Omit<CetusOptions, "lazyLoading">) {
     super();
     this.cetusSdk = new CetusClmmSDK({ fullRpcUrl: options.suiProviderUrl, ...options.sdkOptions });
     this.cacheOptions = options.cacheOptions;
     this.proxy = options.proxy;
+    this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
   public static async getInstance(options?: CetusOptions): Promise<CetusSingleton> {
@@ -53,20 +68,53 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
 
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
+
+    await this.fillCacheFromStorage();
     await this.updateCaches();
     this.updateCachesIntervally();
+
     this.bufferEvent("cachesUpdate", this.getCoins());
-    console.debug(`[${this.providerName}] Singleton initialized.`);
   }
 
-  public async updateCaches(): Promise<void> {
+  private async fillCacheFromStorage(): Promise<void> {
     try {
-      await this.updatePoolsCache();
-      this.updatePathsAndCoinsCache();
-      this.useOnChainFallback && this.updateGraph();
-      this.emit("cachesUpdate", this.getCoins());
+      const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
+        storage: this.storage,
+        provider: this.providerName,
+      });
+
+      this.coinsCache = coinsCache;
+      this.pathsCache = pathsCache;
     } catch (error) {
-      console.error("[Cetus] Caches update failed:", error);
+      console.error(`[${this.providerName}] fillCacheFromStorage failed:`, error);
+    }
+  }
+
+  private isStorageCacheEmpty() {
+    const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0;
+
+    return isCacheEmpty;
+  }
+
+  private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
+    const isCacheEmpty = this.isStorageCacheEmpty();
+
+    if (isCacheEmpty || force) {
+      try {
+        await this.updatePoolsCache();
+        this.updatePathsAndCoinsCache();
+        this.useOnChainFallback && this.updateGraph();
+        this.emit("cachesUpdate", this.getCoins());
+
+        await storeCaches({
+          provider: this.providerName,
+          storage: this.storage,
+          coinsCache: this.getCoins(),
+          pathsCache: this.getPaths(),
+        });
+      } catch (error) {
+        console.error("[Cetus] Caches update failed:", error);
+      }
     }
   }
 
@@ -78,7 +126,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
           return;
         }
         isUpdatingCurrently = true;
-        await this.updateCaches();
+        await this.updateCaches({ force: true });
       } finally {
         isUpdatingCurrently = false;
       }
@@ -93,13 +141,16 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
 
   public updatePathsAndCoinsCache(): void {
     const { poolMap, coinMap } = getPoolsDataFromApiData({ poolsInfo: this.poolsCache });
-    this.pathsCache = poolMap;
     this.cetusPathsCache = poolMap;
-    this.coinsCache = coinMap;
+    this.cetusCoinsCache = coinMap;
+
+    const { coinsCache, pathsCache } = getCoinsAndPathsCachesFromMaps({ coins: coinMap, paths: poolMap });
+    this.pathsCache = pathsCache;
+    this.coinsCache = coinsCache;
   }
 
   public updateGraph(): void {
-    const coins: CoinNodeWithSymbol[] = Array.from(this.coinsCache.values());
+    const coins: CoinNodeWithSymbol[] = Array.from(this.cetusCoinsCache.values());
     const paths: PathLink[] = Array.from(this.cetusPathsCache.values());
 
     const coinsProvider = { coins };
@@ -131,13 +182,8 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   }
 
   public getCoins(): UpdatedCoinsCache {
-    const data = Array.from(this.coinsCache.values()).map((coin: CoinNodeWithSymbol) => ({
-      symbol: coin.symbol,
-      type: coin.address,
-      decimals: coin.decimals,
-    }));
-
-    return { provider: this.providerName, data };
+    const allCoins: CommonCoinData[] = Array.from(this.coinsCache.values());
+    return { provider: this.providerName, data: allCoins };
   }
 
   public getPaths(): Map<string, CommonPoolData> {
@@ -156,8 +202,8 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     slippagePercentage: number;
     publicKey: string;
   }) {
-    const coinFrom: CoinNodeWithSymbol | undefined = getCoinInfoFromCache(coinTypeFrom, this.coinsCache);
-    const coinTo: CoinNodeWithSymbol | undefined = getCoinInfoFromCache(coinTypeTo, this.coinsCache);
+    const coinFrom: CommonCoinData | undefined = getCoinInfoFromCache(coinTypeFrom, this.coinsCache);
+    const coinTo: CommonCoinData | undefined = getCoinInfoFromCache(coinTypeTo, this.coinsCache);
 
     if (coinFrom === undefined) {
       throw new Error(`[Cetus] Cannot find coin with address "${coinTypeFrom}".`);
@@ -182,8 +228,8 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     slippagePercentage,
   }: {
     amountIn: string;
-    tokenFrom: CoinNode;
-    tokenTo: CoinNode;
+    tokenFrom: CommonCoinData;
+    tokenTo: CommonCoinData;
     slippagePercentage: number;
   }) {
     const absoluteSlippage = convertSlippage(slippagePercentage);
@@ -197,8 +243,8 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     const amountInt = inputAmountWithoutExceededDecimalPart.toNumber();
 
     const rawRouterResult = await this.cetusSdk.RouterV2.getBestRouter(
-      tokenFrom.address,
-      tokenTo.address,
+      tokenFrom.type,
+      tokenTo.type,
       amountInt,
       true,
       absoluteSlippage,
