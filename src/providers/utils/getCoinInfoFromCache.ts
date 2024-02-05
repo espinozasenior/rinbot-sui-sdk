@@ -2,7 +2,7 @@
 import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
 import { CoinsCache } from "../types";
-../turbos/types
+
 export function getCoinInfoFromCache(coinType: string, coinsCache: CoinsCache): CommonCoinData | undefined {
   const coinIsSui: boolean = coinType === SHORT_SUI_COIN_TYPE || coinType === LONG_SUI_COIN_TYPE;
   const coinTypeInfo = coinIsSui
