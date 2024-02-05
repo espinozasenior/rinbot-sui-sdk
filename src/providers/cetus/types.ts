@@ -73,7 +73,7 @@ export interface APIResponse {
   data?: { lp_list: LPList[] };
 }
 
-export type CoinNodeWithSymbol = CoinNode & { symbol: string };
+export type CoinNodeWithSymbol = CoinNode & { symbol: string; type: string };
 export type CoinMap = Map<string, CoinNodeWithSymbol>;
 export type PathMap = Map<string, PathLink>;
 

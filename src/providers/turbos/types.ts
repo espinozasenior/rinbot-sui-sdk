@@ -46,6 +46,12 @@ export type PoolData = {
   updated_at: string;
 };
 
+export type ShortPoolData = {
+  poolId: string;
+  coinTypeA: string;
+  coinTypeB: string;
+};
+
 export type CoinData = {
   id: number;
   name: string;
@@ -74,7 +80,7 @@ export type CoinData = {
 export type SwapRequiredData = {
   outputAmount: bigint;
   nextTickIndex: number;
-  pool: PoolData;
+  pool: ShortPoolData;
   inputAmountWithDecimals: string;
   tokenFromIsTokenA: boolean;
 };

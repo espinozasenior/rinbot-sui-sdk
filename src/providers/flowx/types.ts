@@ -24,3 +24,4 @@ export type PathMap = Map<string, PathLink>;
 export type CoinMap = Map<string, CoinNode>;
 
 export type FlowxOptions = ProviderOptions;
+export type ShortCoinMetadata = Pick<ExtractedCoinMetadataType, "type" | "decimals">;

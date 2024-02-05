@@ -30,4 +30,10 @@ export * from "./providers/turbos/turbos";
 export * from "./providers/turbos/types";
 export * from "./providers/turbos/utils";
 
+// Storages
+export * from "./storages/RedisStorage";
+export * from "./storages/InMemoryStorage";
+export * from "./storages/types";
+
+// Misc
 export { SUI_DECIMALS, isValidSuiAddress } from "@mysten/sui.js/utils";

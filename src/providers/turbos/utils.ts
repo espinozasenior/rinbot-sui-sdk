@@ -1,6 +1,7 @@
-import { CommonPoolData } from "../types";
+import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
-import { PoolsAPIResponse, CoinsAPIResponse, CoinData, PoolData } from "./types";
+import { CoinsCache, CommonPoolData, PathsCache } from "../types";
+import { CoinData, CoinsAPIResponse, PoolData, PoolsAPIResponse, ShortPoolData } from "./types";
 
 /* eslint-disable require-jsdoc */
 export function isPoolsApiResponseValid(
@@ -106,10 +107,10 @@ export function isCoinDataValid(coinData: CoinData): boolean {
   );
 }
 
-export function getPathsMap(pools: PoolData[]) {
-  return pools.reduce((map: Map<string, CommonPoolData>, pool: PoolData) => {
-    const coinTypeA: string = pool.coin_type_a;
-    const coinTypeB: string = pool.coin_type_b;
+export function getPathsMap(pools: ShortPoolData[]): PathsCache {
+  return pools.reduce((map: PathsCache, pool: ShortPoolData) => {
+    const coinTypeA: string = pool.coinTypeA;
+    const coinTypeB: string = pool.coinTypeB;
 
     const commonPoolData: CommonPoolData = {
       base: coinTypeA,
@@ -122,29 +123,31 @@ export function getPathsMap(pools: PoolData[]) {
   }, new Map());
 }
 
-export const getCoinsMap = (coins: CoinData[]): Map<string, CoinData> => {
-  return coins.reduce((map: Map<string, CoinData>, coin: CoinData) => {
-    map.set(coin.type, coin);
+export const getCoinsMap = (coins: CoinData[]): CoinsCache => {
+  return coins.reduce((map: Map<string, CommonCoinData>, coin: CoinData) => {
+    map.set(coin.type, { symbol: coin.symbol, type: coin.type, decimals: coin.decimals });
     return map;
   }, new Map());
 };
 
-export const getPoolByCoins = (tokenFrom: string, tokenTo: string, pools: PoolData[]): PoolData | undefined => {
+export const getPoolByCoins = (
+  tokenFrom: string,
+  tokenTo: string,
+  pools: ShortPoolData[],
+): ShortPoolData | undefined => {
   const tokenFromIsSui: boolean = tokenFrom === SHORT_SUI_COIN_TYPE || tokenFrom === LONG_SUI_COIN_TYPE;
   const tokenToIsSui: boolean = tokenTo === SHORT_SUI_COIN_TYPE || tokenTo === LONG_SUI_COIN_TYPE;
 
-  return pools.find((pool: PoolData) => {
-    const coinAInPoolIsSui: boolean =
-      pool.coin_type_a === SHORT_SUI_COIN_TYPE || pool.coin_type_a === LONG_SUI_COIN_TYPE;
-    const coinBInPoolIsSui: boolean =
-      pool.coin_type_b === SHORT_SUI_COIN_TYPE || pool.coin_type_b === LONG_SUI_COIN_TYPE;
+  return pools.find((pool: ShortPoolData) => {
+    const coinAInPoolIsSui: boolean = pool.coinTypeA === SHORT_SUI_COIN_TYPE || pool.coinTypeA === LONG_SUI_COIN_TYPE;
+    const coinBInPoolIsSui: boolean = pool.coinTypeB === SHORT_SUI_COIN_TYPE || pool.coinTypeB === LONG_SUI_COIN_TYPE;
     const notSuiToken: string = tokenFromIsSui ? tokenTo : tokenFrom;
     const poolHasBothTokens: boolean =
-      (pool.coin_type_a === tokenFrom && pool.coin_type_b === tokenTo) ||
-      (pool.coin_type_a === tokenTo && pool.coin_type_b === tokenFrom);
+      (pool.coinTypeA === tokenFrom && pool.coinTypeB === tokenTo) ||
+      (pool.coinTypeA === tokenTo && pool.coinTypeB === tokenFrom);
 
     return tokenFromIsSui || tokenToIsSui
-      ? (coinAInPoolIsSui && pool.coin_type_b === notSuiToken) || (coinBInPoolIsSui && pool.coin_type_a === notSuiToken)
+      ? (coinAInPoolIsSui && pool.coinTypeB === notSuiToken) || (coinBInPoolIsSui && pool.coinTypeA === notSuiToken)
       : poolHasBothTokens;
   });
 };

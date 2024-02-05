@@ -5,29 +5,42 @@ import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "a
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
+import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
+import { Storage } from "../../storages/types";
 import { exitHandlerWrapper } from "../common";
-import { CacheOptions, CommonPoolData, IPoolProvider } from "../types";
+import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
+import { removeDecimalPart } from "../utils/removeDecimalPart";
+import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
+import { storeCaches } from "../../storages/utils/storeCaches";
 import { AftermathOptions, SmartOutputAmountData } from "./types";
 import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
-import { removeDecimalPart } from "../utils/removeDecimalPart";
 
+/**
+ * Note: If using `lazyLoading: true` and in-memory cache in a serverless/cloud functions environment,
+ * be aware that each invocation of your cloud function will start cache population from scratch.
+ * This may lead to unexpected behavior when using different SDK methods. To avoid this,
+ * when running your app in a serverless environment with `lazyLoading: true` option,
+ * consider passing a persistent storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
+ */
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
   private static _instance: AftermathSingleton;
   public isSmartRoutingAvailable = true;
   public providerName = "Aftermath";
   public aftermathSdk: Aftermath;
   public poolsCache: Pool[] = [];
-  public pathsCache: Map<string, CommonPoolData> = new Map();
-  public coinsCache: Map<string, CoinMetadaWithInfo> = new Map();
+  public pathsCache: PathsCache = new Map();
+  public coinsCache: CoinsCache = new Map();
   private cacheOptions: CacheOptions;
   private intervalId: NodeJS.Timeout | undefined;
+  private storage: Storage;
 
   private constructor(options: Omit<AftermathOptions, "lazyLoading">) {
     super();
     this.aftermathSdk = new Aftermath("MAINNET");
     this.cacheOptions = options.cacheOptions;
+    this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
   public static async getInstance(options?: AftermathOptions): Promise<AftermathSingleton> {
@@ -48,19 +61,51 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
 
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
+    await this.fillCacheFromStorage();
     await this.updateCaches();
     this.updateCachesIntervally();
+
     this.bufferEvent("cachesUpdate", this.getCoins());
-    console.debug(`[${this.providerName}] Singleton initialized.`);
   }
 
-  public async updateCaches(): Promise<void> {
+  private async fillCacheFromStorage(): Promise<void> {
     try {
-      await this.updatePoolsCache();
-      await this.updatePathsAndCoinsCache();
-      this.emit("cachesUpdate", this.getCoins());
+      const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
+        storage: this.storage,
+        provider: this.providerName,
+      });
+
+      this.coinsCache = coinsCache;
+      this.pathsCache = pathsCache;
     } catch (error) {
-      console.error("[Aftermath] Caches update failed:", error);
+      console.error(`[${this.providerName}] fillCacheFromStorage failed:`, error);
+    }
+  }
+
+  private isStorageCacheEmpty() {
+    const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0;
+
+    return isCacheEmpty;
+  }
+
+  private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
+    const isCacheEmpty = this.isStorageCacheEmpty();
+
+    if (isCacheEmpty || force) {
+      try {
+        await this.updatePoolsCache();
+        await this.updatePathsAndCoinsCache();
+        this.emit("cachesUpdate", this.getCoins());
+
+        await storeCaches({
+          provider: this.providerName,
+          storage: this.storage,
+          coinsCache: this.getCoins(),
+          pathsCache: this.getPaths(),
+        });
+      } catch (error) {
+        console.error("[Aftermath] Caches update failed:", error);
+      }
     }
   }
 
@@ -72,7 +117,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
           return;
         }
         isUpdatingCurrently = true;
-        await this.updateCaches();
+        await this.updateCaches({ force: true });
       } finally {
         isUpdatingCurrently = false;
       }
@@ -107,7 +152,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
           const isValidCoinMetadataResponse = isCoinMetadaWithInfoApiResponseValid(metadata);
 
           if (isValidCoinMetadataResponse) {
-            this.coinsCache.set(coinType, metadata);
+            this.coinsCache.set(coinType, { symbol: metadata.symbol, type: coinType, decimals: metadata.decimals });
           }
         } catch (error) {
           console.error(`[Aftermath] Error while fetching metadata about coin ${coinType}:`, error);
@@ -134,11 +179,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
   }
 
   public getCoins(): UpdatedCoinsCache {
-    const allCoins: CommonCoinData[] = [];
-    this.coinsCache.forEach((coinMetadata: CoinMetadaWithInfo, coinType: string) =>
-      allCoins.push({ symbol: coinMetadata.symbol, type: coinType, decimals: coinMetadata.decimals }),
-    );
-
+    const allCoins: CommonCoinData[] = Array.from(this.coinsCache.values());
     return { provider: this.providerName, data: allCoins };
   }
 
@@ -185,7 +226,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     coinTypeTo: string,
     inputAmount: string,
   ): Promise<SmartOutputAmountData> {
-    const coinTypeFromInfo: CoinMetadaWithInfo | undefined = getCoinInfoFromCache(coinTypeFrom, this.coinsCache);
+    const coinTypeFromInfo: CommonCoinData | undefined = getCoinInfoFromCache(coinTypeFrom, this.coinsCache);
 
     if (coinTypeFromInfo === undefined) {
       throw new Error(`[Aftermath] Cannot find info about coin "${coinTypeFrom}".`);

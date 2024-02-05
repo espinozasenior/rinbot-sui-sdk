@@ -1,4 +1,5 @@
 import { CoinNode, PathLink } from "@cetusprotocol/cetus-sui-clmm-sdk";
+import { CoinsCache, PathsCache } from "../types";
 import { APIResponse, CoinInfo, CoinMap, CoinNodeWithSymbol, LPList, PathMap } from "./types";
 
 /* eslint-disable require-jsdoc */
@@ -77,11 +78,13 @@ export function getPoolsDataFromApiData({ poolsInfo }: { poolsInfo: LPList[] }) 
     coinMap.set(coinA, {
       symbol: pool.coin_a.symbol,
       address: pool.coin_a.address,
+      type: pool.coin_a.address,
       decimals: pool.coin_a.decimals,
     });
     coinMap.set(coinB, {
       symbol: pool.coin_b.symbol,
       address: pool.coin_b.address,
+      type: pool.coin_b.address,
       decimals: pool.coin_b.decimals,
     });
 
@@ -102,4 +105,22 @@ export function getPoolsDataFromApiData({ poolsInfo }: { poolsInfo: LPList[] }) 
   const paths: PathLink[] = Array.from(poolMap.values());
 
   return { coins, paths, coinMap, poolMap };
+}
+
+export function getCoinsAndPathsCachesFromMaps({ paths, coins }: { paths: PathMap; coins: CoinMap }): {
+  coinsCache: CoinsCache;
+  pathsCache: PathsCache;
+} {
+  const coinsCache: CoinsCache = new Map();
+  const pathsCache: PathsCache = new Map();
+
+  paths.forEach((path: PathLink, pathKey: string) => {
+    pathsCache.set(pathKey, { base: path.base, quote: path.quote });
+  });
+
+  coins.forEach((coin: CoinNodeWithSymbol, coinType: string) => {
+    coinsCache.set(coinType, { symbol: coin.symbol, type: coin.type, decimals: coin.decimals });
+  });
+
+  return { coinsCache, pathsCache };
 }

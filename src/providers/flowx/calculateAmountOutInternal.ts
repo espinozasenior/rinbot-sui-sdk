@@ -1,16 +1,16 @@
 /* eslint-disable new-cap */
 
-import { BigNumber as BNumber } from "bignumber.js";
 import { getPools, getSmartRoute } from "@flowx-pkg/ts-sdk";
+import { BigNumber as BNumber } from "bignumber.js";
 
 import {
   CoinNode,
+  ExtractedAmountType,
+  ExtractedIPoolsInfoType,
   ExtractedPairSettingsType,
   ExtractedSmartRouteType,
-  ExtractedIPoolsInfoType,
-  ExtractedCoinMetadataType,
   ExtractedSwapCalculatedOutputDataType,
-  ExtractedAmountType,
+  ShortCoinMetadata,
 } from "./types";
 
 export const getReserveByCoinType = (coinX: string, pairSetting: ExtractedIPoolsInfoType) => {
@@ -112,7 +112,7 @@ export const calculateAmountOutInternal = async (
   value: string | number,
   coinIn: CoinNode,
   coinOut: CoinNode,
-  coins: ExtractedCoinMetadataType[],
+  coins: ShortCoinMetadata[],
 ): Promise<ExtractedSwapCalculatedOutputDataType> => {
   const { poolInfos } = await getPools();
   const decimalInAmount = BigNumberInstance(getDecimalAmount(value, coinIn.decimals)).toFixed(0);
