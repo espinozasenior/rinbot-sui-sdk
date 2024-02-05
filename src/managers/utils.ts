@@ -1,6 +1,6 @@
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
-import { CoinManagerSingleton } from "../managers/CoinManager";
-import { Provider, Providers, ProvidersToRouteDataMap, CommonCoinData } from "../managers/types";
+import { CoinManagerSingleton } from "./CoinManager";
+import { Provider, Providers, ProvidersToRouteDataMap, CommonCoinData } from "./types";
 import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
 import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
