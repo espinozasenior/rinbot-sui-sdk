@@ -65,11 +65,9 @@ export class RouteManager {
       tokenFrom,
       tokenTo,
       amount,
-      coinManager: this.coinManager,
       signerAddress,
       slippagePercentage,
     });
-    console.log("providersByOutputAmountsMap:", providersByOutputAmountsMap);
 
     const outputAmounts: bigint[] = Array.from(providersByOutputAmountsMap.keys());
     const eachOutputAmountIs0: boolean = outputAmounts.every((amount) => amount === BigInt(0));
@@ -83,9 +81,19 @@ export class RouteManager {
     const maxOutputAmount: bigint = outputAmounts.reduce((max, currentValue) => {
       return currentValue > max ? currentValue : max;
     });
-    console.log("maxOutputAmount:", maxOutputAmount);
     const providerWithMaxOutputAmount: string | undefined = providersByOutputAmountsMap.get(maxOutputAmount);
-    console.log("providerWithMaxOutputAmount:", providerWithMaxOutputAmount);
+
+    // log info >>>
+    let stringResult = "{ ";
+    providersByOutputAmountsMap.forEach((value, key) => (stringResult += `${key}n => ${value}, `));
+    stringResult += "}";
+    console.log(
+      "providersByOutputAmountsMap:",
+      stringResult + "; maxOutputAmount:",
+      maxOutputAmount + "n; providerWithMaxOutputAmount:",
+      providerWithMaxOutputAmount,
+    );
+    // <<< log info
 
     if (providerWithMaxOutputAmount === undefined) {
       throw new Error(`[Route] Cannot find provider with output amount "${maxOutputAmount}".`);
