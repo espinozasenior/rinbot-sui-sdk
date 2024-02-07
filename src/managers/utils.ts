@@ -1,6 +1,5 @@
+import { CommonCoinData, Provider, Providers, ProvidersToRouteDataMap } from "../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
-import { CoinManagerSingleton } from "../managers/CoinManager";
-import { Provider, Providers, ProvidersToRouteDataMap, CommonCoinData } from "../managers/types";
 import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
 import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
@@ -81,7 +80,6 @@ export const getRouterMaps = async ({
   amount,
   signerAddress,
   slippagePercentage,
-  coinManager,
 }: {
   filtredProviders: Providers;
   tokenFrom: string;
@@ -89,7 +87,6 @@ export const getRouterMaps = async ({
   amount: string;
   signerAddress: string;
   slippagePercentage: number;
-  coinManager: CoinManagerSingleton;
 }) => {
   const routesByProviderMap: ProvidersToRouteDataMap = new Map();
   const providersByOutputAmountsMap: Map<bigint, string> = new Map();
@@ -111,12 +108,6 @@ export const getRouterMaps = async ({
         routesByProviderMap.set(providerName, { provider, route: null });
         providersByOutputAmountsMap.set(BigInt(0), providerName);
       } else {
-        // log info >>>
-        const tokenToDecimals: number = coinManager.getCoinByType(tokenTo).decimals;
-        const formattedOutputAmount: number = Number(routeData.outputAmount) / 10 ** tokenToDecimals;
-        console.log("provider:", providerName + "; formattedOutputAmount:", formattedOutputAmount);
-        // <<< log info
-
         // In case route is found
         routesByProviderMap.set(providerName, { provider, route: routeData.route });
         providersByOutputAmountsMap.set(routeData.outputAmount, providerName);
