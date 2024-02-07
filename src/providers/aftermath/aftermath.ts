@@ -18,11 +18,11 @@ import { AftermathOptions, SmartOutputAmountData } from "./types";
 import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
 
 /**
- * Note: If using `lazyLoading: true` and in-memory cache in a serverless/cloud functions environment,
+ * Note: If using `lazyLoading: true` with any storage configuration in a serverless/cloud functions environment,
  * be aware that each invocation of your cloud function will start cache population from scratch.
- * This may lead to unexpected behavior when using different SDK methods. To avoid this,
- * when running your app in a serverless environment with `lazyLoading: true` option,
- * consider passing a persistent storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
+ * This may lead to unexpected behavior when using different SDK methods. To avoid this and minimize the time
+ * for cache population, consider using `lazyLoading: false` along with passing a persistent
+ * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  */
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
   private static _instance: AftermathSingleton;
@@ -73,6 +73,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
       const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
         storage: this.storage,
         provider: this.providerName,
+        updateCacheInterval: this.cacheOptions.updateIntervalInMs,
       });
 
       this.coinsCache = coinsCache;

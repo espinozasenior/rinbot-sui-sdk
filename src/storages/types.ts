@@ -29,6 +29,11 @@ export enum StorageProperty {
   CoinsMetadata = "coinsMetadata",
 }
 
-export type StorageValue = CommonCoinData[] | CommonPoolData[] | ShortCoinMetadata[] | ShortPoolData[] | null;
+export type StorageValue =
+  | { value: CommonCoinData[]; timestamp: string }
+  | { value: CommonPoolData[]; timestamp: string }
+  | { value: ShortCoinMetadata[]; timestamp: string }
+  | { value: ShortPoolData[]; timestamp: string }
+  | null;
 
 export type RedisStorageClient = ReturnType<typeof createClient>;
