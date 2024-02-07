@@ -13,6 +13,7 @@ export * from "./providers/utils/normalizeSuiAddress";
 export * from "./providers/utils/tryCatchWrapper";
 export * from "./providers/utils/getSuiProvider";
 export * from "./providers/utils/isValidTokenAmount";
+export * from "./providers/utils/transactionFromSerializedTransaction";
 
 // Aftermath
 export * from "./providers/aftermath/aftermath";

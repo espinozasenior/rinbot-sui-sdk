@@ -26,13 +26,29 @@ export async function storeCaches({
     const { data: coins }: { data: CommonCoinData[] } = coinsCache;
     const paths: CommonPoolData[] = Array.from(pathsCache.values());
 
-    await storage.setCache({ provider, property: StorageProperty.Coins, value: coins });
-    await storage.setCache({ provider, property: StorageProperty.Paths, value: paths });
+    await storage.setCache({
+      provider,
+      property: StorageProperty.Coins,
+      value: { value: coins, timestamp: Date.now().toString() },
+    });
+    await storage.setCache({
+      provider,
+      property: StorageProperty.Paths,
+      value: { value: paths, timestamp: Date.now().toString() },
+    });
 
     coinsMetadataCache !== undefined &&
-      (await storage.setCache({ provider, property: StorageProperty.CoinsMetadata, value: coinsMetadataCache }));
+      (await storage.setCache({
+        provider,
+        property: StorageProperty.CoinsMetadata,
+        value: { value: coinsMetadataCache, timestamp: Date.now().toString() },
+      }));
     poolsCache !== undefined &&
-      (await storage.setCache({ provider, property: StorageProperty.Pools, value: poolsCache }));
+      (await storage.setCache({
+        provider,
+        property: StorageProperty.Pools,
+        value: { value: poolsCache, timestamp: Date.now().toString() },
+      }));
   } catch (error) {
     console.error(`[storeCaches] error for params: provider ${provider} `, error);
 

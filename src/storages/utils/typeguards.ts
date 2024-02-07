@@ -8,10 +8,14 @@ import { StorageValue } from "../types";
 
 export function isStorageValue(data: unknown): data is StorageValue {
   return (
-    isCommonCoinDataArray(data) ||
-    isCommonPoolDataArray(data) ||
-    isShortCoinMetadataArray(data) ||
-    isShortPoolDataArray(data)
+    typeof data === "object" &&
+    data !== null &&
+    "timestamp" in data &&
+    "value" in data &&
+    (isCommonCoinDataArray(data.value) ||
+      isCommonPoolDataArray(data.value) ||
+      isShortCoinMetadataArray(data.value) ||
+      isShortPoolDataArray(data.value))
   );
 }
 

@@ -2,30 +2,39 @@ import { ExtractedCoinMetadataType } from "../../providers/flowx/types";
 import { StorageValue, StorageProperty, Storage } from "../types";
 import { isShortCoinMetadataArray } from "./typeguards";
 
-// eslint-disable-next-line require-jsdoc
+/**
+ * Returns coins metadata cache from storage. If cache is not up to date, empty array is returned.
+ */
 export async function getCoinsMetadataCache({
   storage,
   provider,
+  updateCacheInterval,
 }: {
   storage: Storage;
   provider: string;
+  updateCacheInterval: number;
 }): Promise<ExtractedCoinMetadataType[]> {
-  let coinsMetadataCache: ExtractedCoinMetadataType[];
+  let coinsMetadataCache: ExtractedCoinMetadataType[] = [];
 
   const coinsMetadata: StorageValue = await storage.getCache({
     provider: provider,
     property: StorageProperty.CoinsMetadata,
   });
 
-  if (isShortCoinMetadataArray(coinsMetadata)) {
-    coinsMetadataCache = coinsMetadata;
+  if (isShortCoinMetadataArray(coinsMetadata?.value)) {
+    const timestamp = parseInt(coinsMetadata.timestamp);
+    const cacheIsUpToDate = timestamp + updateCacheInterval > Date.now();
+
+    if (cacheIsUpToDate) {
+      coinsMetadataCache = coinsMetadata.value;
+    }
   } else if (coinsMetadata === null) {
     console.warn(
-      "[getCoinsMetadataCache] Received empty coinsMetadataCache from strorage, coinsMetadataCache === null ",
+      `[getCoinsMetadataCache] ${provider} Received empty coinsMetadataCache from strorage,
+      coinsMetadataCache === null `,
     );
-    return [];
   } else {
-    const stringifiedCoinMetadata: string = JSON.stringify(coinsMetadata[0]);
+    const stringifiedCoinMetadata: string = JSON.stringify(coinsMetadata.value[0]);
     throw new Error(
       `[${provider}] getCoinsMetadataCache: coins metadata from storage is not ` +
         `(ExtractedCoinMetadataType[] or null). Example of coin metadata: ${stringifiedCoinMetadata}`,
