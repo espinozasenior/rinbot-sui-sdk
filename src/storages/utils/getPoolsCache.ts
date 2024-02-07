@@ -27,6 +27,8 @@ export const getPoolsCache = async ({
 
     if (cacheIsUpToDate) {
       poolsCache = pools.value;
+    } else {
+      console.warn(`[getPoolsCache] ${provider} pools cache is not up to date.`);
     }
   } else if (pools === null) {
     console.warn(`[getPoolsCache] ${provider} Received empty pools from strorage, pools === null `);

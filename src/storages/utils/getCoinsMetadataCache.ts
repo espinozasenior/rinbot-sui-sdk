@@ -27,6 +27,8 @@ export async function getCoinsMetadataCache({
 
     if (cacheIsUpToDate) {
       coinsMetadataCache = coinsMetadata.value;
+    } else {
+      console.warn(`[getCoinsMetadataCache] ${provider} coins metadata cache is not up to date.`);
     }
   } else if (coinsMetadata === null) {
     console.warn(

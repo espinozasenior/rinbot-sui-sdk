@@ -35,6 +35,8 @@ export const getCoinsAndPathsCaches = async ({
         cache.set(coin.type, coin);
         return cache;
       }, new Map());
+    } else {
+      console.warn(`[getCoinsAndPathsCaches] ${provider} coins cache is not up to date.`);
     }
   } else if (coins === null) {
     console.warn(`[getCoinsAndPathsCaches] ${provider} Received empty coins from strorage, coins === null `);
@@ -61,6 +63,8 @@ export const getCoinsAndPathsCaches = async ({
         cache.set(key, path);
         return cache;
       }, new Map());
+    } else {
+      console.warn(`[getCoinsAndPathsCaches] ${provider} paths cache is not up to date.`);
     }
   } else if (paths === null) {
     console.warn(`[getCoinsAndPathsCaches] ${provider} Received empty paths from strorage, paths === null `);

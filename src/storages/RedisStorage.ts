@@ -13,7 +13,7 @@ import { isStorageValue } from "./utils/typeguards";
 export class RedisStorageSingleton implements IStorage {
   private static _instance: RedisStorageSingleton;
   private client: RedisStorageClient;
-  private static version = 1;
+  private static version = 2;
 
   /**
    * Constructs a RedisStorageSingleton instance.
