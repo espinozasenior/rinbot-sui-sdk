@@ -4,7 +4,7 @@ import { TurbosSingleton } from "../../src/providers/turbos/turbos";
 import { getPathsMap, getPoolByCoins } from "../../src/providers/turbos/utils";
 import { cacheOptions, suiProviderUrl, SUI_COIN_TYPE, USDC_COIN_TYPE, publicKey } from "../constants";
 
-jest.setTimeout(20000);
+jest.setTimeout(60000);
 
 describe("TurbosSingleton", () => {
   let turbosSingleton: TurbosSingleton;

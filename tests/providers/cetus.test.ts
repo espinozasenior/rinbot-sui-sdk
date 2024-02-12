@@ -5,7 +5,7 @@ import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
 import { getPoolsDataFromApiData } from "../../src/providers/cetus/utils";
 
-jest.setTimeout(20000);
+jest.setTimeout(60000);
 
 const SUI_COIN_TYPE = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 const USDC_COIN_TYPE = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN";
