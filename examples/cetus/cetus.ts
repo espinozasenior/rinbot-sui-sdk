@@ -23,7 +23,6 @@ export const cetus = async ({
     sdkOptions: clmmMainnet,
     cacheOptions,
     suiProviderUrl,
-    lazyLoading: false,
   });
 
   const calculatedData = await cetusInstance.getRouteData({

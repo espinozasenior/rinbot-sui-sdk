@@ -10,15 +10,21 @@ import { FlowxSingleton } from "../../src/providers/flowx/flowx";
 
 // yarn ts-node examples/wallet/wallet.ts
 (async () => {
-  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({ suiProviderUrl, cacheOptions });
+  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
+    suiProviderUrl,
+    cacheOptions,
+    lazyLoading: false,
+  });
   const cetus: CetusSingleton = await CetusSingleton.getInstance({
     sdkOptions: clmmMainnet,
     cacheOptions,
     suiProviderUrl,
+    lazyLoading: false,
   });
-  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions });
-  const flowx: FlowxSingleton = await FlowxSingleton.getInstance({ cacheOptions });
-  const providers: Providers = [turbos, cetus, aftermath, flowx];
+  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions, lazyLoading: false });
+  // const flowx: FlowxSingleton = await FlowxSingleton.getInstance({ cacheOptions, lazyLoading: false });
+  // const providers: Providers = [turbos, cetus, aftermath, flowx];
+  const providers: Providers = [turbos, cetus, aftermath];
   const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers);
   const walletManager: WalletManagerSingleton = WalletManagerSingleton.getInstance(provider, coinManager);
 

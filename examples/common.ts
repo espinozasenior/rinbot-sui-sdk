@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { SuiClient, SuiTransactionBlockResponse } from "@mysten/sui.js/client";
+import { ExecuteTransactionBlockParams, SuiClient, SuiTransactionBlockResponse } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { hexStringToUint8Array, normalizeMnemonic } from "./utils";
@@ -25,12 +25,14 @@ export const user = keypair.getPublicKey().toSuiAddress();
 export const signAndExecuteTransaction = async (
   transactionBlock: TransactionBlock,
   signer: Ed25519Keypair,
+  input: Omit<ExecuteTransactionBlockParams, "transactionBlock" | "signature"> = { options: { showEffects: true } },
 ): Promise<SuiTransactionBlockResponse> => {
   transactionBlock.setGasBudget(SWAP_GAS_BUDGET);
 
   const transactionResponse: SuiTransactionBlockResponse = await provider.signAndExecuteTransactionBlock({
     transactionBlock,
     signer,
+    ...input,
   });
 
   return transactionResponse;
