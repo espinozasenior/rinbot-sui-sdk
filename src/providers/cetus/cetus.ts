@@ -1,5 +1,3 @@
-/* eslint-disable require-jsdoc */
-
 import CetusClmmSDK, { AggregatorResult, PathLink, TransactionUtil } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
@@ -18,6 +16,11 @@ import { CetusOptions, CoinMap, CoinNodeWithSymbol, LPList } from "./types";
 import { getCoinsAndPathsCachesFromMaps, getPoolsDataFromApiData, isApiResponseValid } from "./utils";
 
 /**
+ * @class CetusSingleton
+ * @extends EventEmitter
+ * @implements {IPoolProvider<CetusSingleton>}
+ * @description Singleton class for Cetus.
+ *
  * Note: If using `lazyLoading: true` with any storage configuration in a serverless/cloud functions environment,
  * be aware that each invocation of your cloud function will start cache population from scratch.
  * This may lead to unexpected behavior when using different SDK methods. To avoid this and minimize the time
@@ -42,23 +45,38 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   private proxy: string | undefined;
   private storage: Storage;
 
+  /**
+   * @constructor
+   * @param {Omit<CetusOptions, "lazyLoading">} options - The options for CetusSingleton.
+   */
   private constructor(options: Omit<CetusOptions, "lazyLoading">) {
     super();
-    this.cetusSdk = new CetusClmmSDK({ fullRpcUrl: options.suiProviderUrl, ...options.sdkOptions });
+    this.cetusSdk = new CetusClmmSDK({
+      fullRpcUrl: options.suiProviderUrl,
+      simulationAccount: { address: options.simulationAccount || "" },
+      ...options.sdkOptions,
+    });
     this.cacheOptions = options.cacheOptions;
     this.proxy = options.proxy;
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
+  /**
+   * @public
+   * @method getInstance
+   * @description Gets the singleton instance of CetusSingleton.
+   * @param {CetusOptions} [options] - Options for CetusSingleton.
+   * @return {Promise<CetusSingleton>} The singleton instance of CetusSingleton.
+   */
   public static async getInstance(options?: CetusOptions): Promise<CetusSingleton> {
     if (!CetusSingleton._instance) {
       if (options === undefined) {
         throw new Error("[Cetus] Options are required in arguments to create instance.");
       }
 
-      const { sdkOptions, cacheOptions, lazyLoading = true, suiProviderUrl, proxy } = options;
+      const { sdkOptions, cacheOptions, lazyLoading = true, suiProviderUrl, proxy, simulationAccount } = options;
 
-      const instance = new CetusSingleton({ sdkOptions, cacheOptions, suiProviderUrl, proxy });
+      const instance = new CetusSingleton({ sdkOptions, cacheOptions, suiProviderUrl, proxy, simulationAccount });
       lazyLoading ? instance.init() : await instance.init();
       CetusSingleton._instance = instance;
     }
@@ -66,6 +84,12 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     return CetusSingleton._instance;
   }
 
+  /**
+   * @private
+   * @method init
+   * @description Initializes the CetusSingleton instance.
+   * @return {Promise<void>} A Promise that resolves when initialization is complete.
+   */
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
 
@@ -76,6 +100,12 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
 
+  /**
+   * Fills the cache from storage asynchronously.
+   *
+   * @private
+   * @return {Promise<void>} A promise that resolves when the cache is filled from storage.
+   */
   private async fillCacheFromStorage(): Promise<void> {
     try {
       const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
@@ -91,12 +121,24 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     }
   }
 
+  /**
+   * Checks if the storage cache is empty.
+   *
+   * @private
+   * @return {boolean} True if the storage cache is empty, false otherwise.
+   */
   private isStorageCacheEmpty() {
     const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0;
 
     return isCacheEmpty;
   }
 
+  /**
+   * @private
+   * @method updateCaches
+   * @description Updates the caches for pools, paths, and coins.
+   * @return {Promise<void>} A Promise that resolves when caches are updated.
+   */
   private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
     const isCacheEmpty = this.isStorageCacheEmpty();
 
@@ -119,6 +161,12 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     }
   }
 
+  /**
+   * @private
+   * @method updateCachesIntervally
+   * @description Updates the caches at regular intervals.
+   * @return {void}
+   */
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
     this.intervalId = setInterval(async () => {
@@ -136,11 +184,23 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
-  public async updatePoolsCache(): Promise<void> {
+  /**
+   * @private
+   * @method updatePoolsCache
+   * @description Updates the pools cache.
+   * @return {Promise<void>} A Promise that resolves when the pools cache is updated.
+   */
+  private async updatePoolsCache(): Promise<void> {
     this.poolsCache = await this.retrieveAllPoolsFromApi();
   }
 
-  public updatePathsAndCoinsCache(): void {
+  /**
+   * @private
+   * @method updatePathsAndCoinsCache
+   * @description Updates the paths and coins cache.
+   * @return {void}
+   */
+  private updatePathsAndCoinsCache(): void {
     const { poolMap, coinMap } = getPoolsDataFromApiData({ poolsInfo: this.poolsCache });
     this.cetusPathsCache = poolMap;
     this.cetusCoinsCache = coinMap;
@@ -150,6 +210,12 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     this.coinsCache = coinsCache;
   }
 
+  /**
+   * @private
+   * @method updateGraph
+   * @description Updates the graph based on coins and paths.
+   * @return {void}
+   */
   public updateGraph(): void {
     const coins: CoinNodeWithSymbol[] = Array.from(this.cetusCoinsCache.values());
     const paths: PathLink[] = Array.from(this.cetusPathsCache.values());
@@ -159,14 +225,26 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     this.cetusSdk.Router.loadGraph(coinsProvider, pathsProvider);
   }
 
-  public async retrievelAllPools() {
+  /**
+   * @private
+   * @method retrievelAllPools
+   * @description Retrieves all pools.
+   * @return {Promise<any>} A Promise that resolves to the retrieved pools.
+   */
+  private async retrievelAllPools() {
     const pools = await this.cetusSdk.Pool.getPoolsWithPage([]);
     console.log(`[retrievelAllPools] pool length: ${pools.length}`);
 
     return pools;
   }
 
-  public async retrieveAllPoolsFromApi() {
+  /**
+   * @private
+   * @method retrieveAllPoolsFromApi
+   * @description Retrieves all pools from the API.
+   * @return {Promise<any>} A Promise that resolves to the retrieved pools.
+   */
+  private async retrieveAllPoolsFromApi() {
     const url: string = this.proxy
       ? `${this.proxy}/${CENTRALIZED_POOLS_INFO_ENDPOINT}`
       : CENTRALIZED_POOLS_INFO_ENDPOINT;
@@ -182,15 +260,39 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     return poolsResponse.data.lp_list;
   }
 
+  /**
+   * @public
+   * @method getCoins
+   * @description Gets the updated coins cache.
+   * @return {UpdatedCoinsCache} Updated coins cache.
+   */
   public getCoins(): UpdatedCoinsCache {
     const allCoins: CommonCoinData[] = Array.from(this.coinsCache.values());
     return { provider: this.providerName, data: allCoins };
   }
 
+  /**
+   * @public
+   * @method getPaths
+   * @description Gets the paths cache.
+   * @return {Map<string, CommonPoolData>} Paths cache.
+   */
   public getPaths(): Map<string, CommonPoolData> {
     return this.pathsCache;
   }
 
+  /**
+   * @public
+   * @method getRouteData
+   * @description Gets route data.
+   * @param {Object} params - Parameters for route data.
+   * @param {string} params.coinTypeFrom - Coin type from.
+   * @param {string} params.coinTypeTo - Coin type to.
+   * @param {string} params.inputAmount - Input amount.
+   * @param {number} params.slippagePercentage - Slippage percentage.
+   * @param {string} params.publicKey - Public key.
+   * @return {Promise<{ outputAmount: bigint, route: RouterCompleteTradeRoute }>} Route data.
+   */
   public async getRouteData({
     coinTypeFrom,
     coinTypeTo,
@@ -222,7 +324,18 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     return { outputAmount, route };
   }
 
-  public async getSmartOutputAmountData({
+  /**
+   * @private
+   * @method getSmartOutputAmountData
+   * @description Retrieves smart output amount data for the given coin types and input amount.
+   * @param {Object} params - Parameters for smart output amount data.
+   * @param {string} params.amountIn - The input amount.
+   * @param {CoinNode} params.tokenFrom - The token from object.
+   * @param {CoinNode} params.tokenTo - The token to object.
+   * @param {number} params.slippagePercentage - The slippage percentage.
+   * @return {Promise<SmartOutputAmountData>} A Promise that resolves to smart output amount data.
+   */
+  private async getSmartOutputAmountData({
     amountIn,
     tokenFrom,
     tokenTo,
@@ -261,6 +374,16 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     return { outputAmount: BigInt(routerResult.outputAmount), route: routerResult };
   }
 
+  /**
+   * @public
+   * @method getSwapTransaction
+   * @description Retrieves the swap transaction for the given route and public key.
+   * @param {Object} params - Parameters for the swap transaction.
+   * @param {AggregatorResult} params.route - The route object.
+   * @param {string} params.publicKey - The public key.
+   * @param {number} params.slippagePercentage - The slippage percentage.
+   * @return {Promise<any>} A Promise that resolves to the swap transaction payload.
+   */
   public async getSwapTransaction({
     route,
     publicKey,

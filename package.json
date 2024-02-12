@@ -1,6 +1,6 @@
 {
   "name": "@avernikoz/rinbot-sui-sdk",
-  "version": "2.1.5",
+  "version": "2.1.7",
   "description": "Sui Trading Bot SDK (typescript)",
   "files": [
     "dist"
@@ -23,6 +23,7 @@
   "private": false,
   "engineStrict": true,
   "scripts": {
+    "test": "jest --forceExit",
     "audit": "yarn audit --groups dependencies",
     "format": "prettier --write src/**/*.ts",
     "lint": "tsc --noEmit && eslint src/**/*.ts",
@@ -55,8 +56,10 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-prettier": "^5.0.0",
+    "jest": "^29.7.0",
     "prettier": "^3.0.0",
     "redis": "^4.6.12",
+    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.1",
     "tsup": "^8.0.1",
     "typescript": "^5.2.0"

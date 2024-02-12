@@ -1,5 +1,4 @@
 /* eslint-disable new-cap */
-/* eslint-disable require-jsdoc */
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "aftermath-ts-sdk";
 import BigNumber from "bignumber.js";
@@ -18,6 +17,11 @@ import { AftermathOptions, SmartOutputAmountData } from "./types";
 import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
 
 /**
+ * @class AftermathSingleton
+ * @extends EventEmitter
+ * @implements {IPoolProvider<AftermathSingleton>}
+ * @description Singleton class for Aftermath.
+ *
  * Note: If using `lazyLoading: true` with any storage configuration in a serverless/cloud functions environment,
  * be aware that each invocation of your cloud function will start cache population from scratch.
  * This may lead to unexpected behavior when using different SDK methods. To avoid this and minimize the time
@@ -36,6 +40,10 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
   private intervalId: NodeJS.Timeout | undefined;
   private storage: Storage;
 
+  /**
+   * @constructor
+   * @param {Omit<AftermathOptions, "lazyLoading">} options - Options for AftermathSingleton.
+   */
   private constructor(options: Omit<AftermathOptions, "lazyLoading">) {
     super();
     this.aftermathSdk = new Aftermath("MAINNET");
@@ -43,6 +51,14 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
+  /**
+   * @static
+   * @method getInstance
+   * @async
+   * @param {AftermathOptions} [options] - Options for AftermathSingleton instance.
+   * @return {Promise<AftermathSingleton>}
+   * @throws Error if options are not provided.
+   */
   public static async getInstance(options?: AftermathOptions): Promise<AftermathSingleton> {
     if (!AftermathSingleton._instance) {
       if (options === undefined) {
@@ -59,6 +75,12 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     return AftermathSingleton._instance;
   }
 
+  /**
+   * @private
+   * @method init
+   * @description Initializes the AftermathSingleton instance.
+   * @return {Promise<void>}
+   */
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
     await this.fillCacheFromStorage();
@@ -68,6 +90,12 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
 
+  /**
+   * Fills the cache from storage asynchronously.
+   *
+   * @private
+   * @return {Promise<void>} A promise that resolves when the cache is filled from storage.
+   */
   private async fillCacheFromStorage(): Promise<void> {
     try {
       const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
@@ -83,12 +111,24 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     }
   }
 
+  /**
+   * Checks if the storage cache is empty.
+   *
+   * @private
+   * @return {boolean} True if the storage cache is empty, false otherwise.
+   */
   private isStorageCacheEmpty() {
     const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0;
 
     return isCacheEmpty;
   }
 
+  /**
+   * @private
+   * @method updateCaches
+   * @description Updates caches.
+   * @return {Promise<void>}
+   */
   private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
     const isCacheEmpty = this.isStorageCacheEmpty();
 
@@ -110,6 +150,12 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     }
   }
 
+  /**
+   * @private
+   * @method updateCachesIntervally
+   * @description Updates caches periodically.
+   * @return {void}
+   */
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
     this.intervalId = setInterval(async () => {
@@ -127,7 +173,13 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
-  public async updatePoolsCache(): Promise<void> {
+  /**
+   * @private
+   * @method updatePoolsCache
+   * @description Updates pools cache.
+   * @return {Promise<void>}
+   */
+  private async updatePoolsCache(): Promise<void> {
     const poolsInstance = this.aftermathSdk.Pools();
     const pools: Pool[] = await poolsInstance.getAllPools();
     const isValidPoolsResponse = isApiResponseValid(pools);
@@ -140,7 +192,13 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     this.poolsCache = pools;
   }
 
-  public async updatePathsAndCoinsCache(): Promise<void> {
+  /**
+   * @private
+   * @method updatePathsAndCoinsCache
+   * @description Updates paths and coins cache.
+   * @return {Promise<void>}
+   */
+  private async updatePathsAndCoinsCache(): Promise<void> {
     const { pathMap, coinTypesSet } = getPathMapAndCoinTypesSet(this.poolsCache);
     this.pathsCache = pathMap;
 
@@ -162,6 +220,14 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     );
   }
 
+  /**
+   * @public
+   * @method getPool
+   * @description Gets the pool with the specified coin types.
+   * @param {string} coinTypeA - Coin type A.
+   * @param {string} coinTypeB - Coin type B.
+   * @return {Pool} The pool object.
+   */
   public getPool(coinTypeA: string, coinTypeB: string): Pool {
     const pool: Pool | undefined = this.poolsCache.find(
       (pool: Pool) =>
@@ -175,19 +241,47 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     return pool;
   }
 
+  /**
+   * @public
+   * @method getPools
+   * @description Gets all pools.
+   * @return {Pool[]} Array of pools.
+   */
   public getPools(): Pool[] {
     return this.poolsCache;
   }
 
+  /**
+   * @public
+   * @method getCoins
+   * @description Gets the updated coins cache.
+   * @return {UpdatedCoinsCache} Updated coins cache.
+   */
   public getCoins(): UpdatedCoinsCache {
     const allCoins: CommonCoinData[] = Array.from(this.coinsCache.values());
     return { provider: this.providerName, data: allCoins };
   }
 
+  /**
+   * @public
+   * @method getPaths
+   * @description Gets the paths cache.
+   * @return {Map<string, CommonPoolData>} Paths cache.
+   */
   public getPaths(): Map<string, CommonPoolData> {
     return this.pathsCache;
   }
 
+  /**
+   * @public
+   * @method getRouteData
+   * @description Gets route data.
+   * @param {Object} params - Parameters for route data.
+   * @param {string} params.coinTypeFrom - Coin type from.
+   * @param {string} params.coinTypeTo - Coin type to.
+   * @param {string} params.inputAmount - Input amount.
+   * @return {Promise<{ outputAmount: bigint, route: RouterCompleteTradeRoute }>} Route data.
+   */
   public async getRouteData({
     coinTypeFrom,
     coinTypeTo,
@@ -204,6 +298,16 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     return { outputAmount, route };
   }
 
+  /**
+   * @public
+   * @method getDirectOutputAmount
+   * @description Calculates the direct output amount for a given input amount and coin types.
+   * @param {Pool} pool - The pool object.
+   * @param {string} inputAmount - The input amount.
+   * @param {string} coinTypeFrom - The coin type from.
+   * @param {string} coinTypeTo - The coin type to.
+   * @return {bigint} The direct output amount.
+   */
   public getDirectOutputAmount(pool: Pool, inputAmount: string, coinTypeFrom: string, coinTypeTo: string): bigint {
     const coinFromDecimals: number | undefined = pool.pool.coins[coinTypeFrom].decimals;
 
@@ -222,7 +326,16 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     return outputAmount;
   }
 
-  public async getSmartOutputAmountData(
+  /**
+   * @private
+   * @method getSmartOutputAmountData
+   * @description Retrieves smart output amount data for the given coin types and input amount.
+   * @param {string} coinTypeFrom - The coin type from.
+   * @param {string} coinTypeTo - The coin type to.
+   * @param {string} inputAmount - The input amount.
+   * @return {Promise<SmartOutputAmountData>} A Promise that resolves to smart output amount data.
+   */
+  private async getSmartOutputAmountData(
     coinTypeFrom: string,
     coinTypeTo: string,
     inputAmount: string,
@@ -254,6 +367,15 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     return { outputAmount: smartOutputAmount, route };
   }
 
+  /**
+   * @public
+   * @method getSwapTransaction
+   * @description Retrieves the swap transaction for the given route and public key.
+   * @param {RouterCompleteTradeRoute} route - The complete trade route.
+   * @param {string} publicKey - The public key.
+   * @param {number} [slippagePercentage=10] - The slippage percentage.
+   * @return {Promise<TransactionBlock>} A Promise that resolves to the swap transaction.
+   */
   public async getSwapTransaction({
     route,
     publicKey,

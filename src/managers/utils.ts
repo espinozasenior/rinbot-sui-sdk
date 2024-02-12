@@ -1,8 +1,11 @@
-import { CommonCoinData, Provider, Providers, ProvidersToRouteDataMap } from "../managers/types";
+import { CoinStruct } from "@mysten/sui.js/client";
+import { normalizeSuiAddress } from "@mysten/sui.js/utils";
+import { CoinAssetData, CommonCoinData, Provider, Providers, ProvidersToRouteDataMap } from "../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
 import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
 import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
+import { CoinManagerSingleton } from "./CoinManager";
 
 export const getFiltredProviders = ({
   poolProviders,
@@ -117,4 +120,63 @@ export const getRouterMaps = async ({
   );
 
   return { routesByProviderMap, providersByOutputAmountsMap };
+};
+
+export const tokenFromIsTokenTo = (tokenFrom: string, tokenTo: string): boolean => {
+  const tokenFromIsSui: boolean = tokenFrom === SHORT_SUI_COIN_TYPE || tokenFrom === LONG_SUI_COIN_TYPE;
+  const tokenToIsSui: boolean = tokenTo === SHORT_SUI_COIN_TYPE || tokenTo === LONG_SUI_COIN_TYPE;
+  const tokensAreSui: boolean = tokenFromIsSui && tokenToIsSui;
+
+  return tokensAreSui || tokenFrom === tokenTo;
+};
+
+export const getCoinsAssetsFromCoinObjects = async (
+  coinObjects: CoinStruct[],
+  coinManager: CoinManagerSingleton,
+): Promise<CoinAssetData[]> => {
+  return await coinObjects.reduce(async (allAssetsP: Promise<CoinAssetData[]>, coinData: CoinStruct) => {
+    const allAssets: CoinAssetData[] = await allAssetsP;
+
+    if (BigInt(coinData.balance) <= 0) {
+      return allAssets;
+    }
+
+    const rawCoinType = coinData.coinType;
+    const coinTypeAddress = rawCoinType.split("::")[0];
+    const normalizedAddress = normalizeSuiAddress(coinTypeAddress);
+    const normalizedCoinType = rawCoinType.replace(coinTypeAddress, normalizedAddress);
+
+    const coinInAssets: CoinAssetData | undefined = allAssets.find(
+      (asset: CoinAssetData) => asset.type === normalizedCoinType,
+    );
+
+    if (coinInAssets) {
+      const currentBalance = BigInt(coinInAssets.balance);
+      const additionalBalance = BigInt(coinData.balance);
+      const newBalance: bigint = currentBalance + additionalBalance;
+      coinInAssets.balance = newBalance.toString();
+    } else {
+      const coin: CommonCoinData | null = coinManager.getCoinByType2(coinData.coinType);
+      const symbol = coin?.symbol?.trim();
+      const decimals = coin?.decimals ?? null;
+
+      if (!symbol) {
+        console.warn(`[getCoinsAssetsFromCoinObjects] no symbol found for coin ${coinData.coinType}`);
+      }
+
+      if (!decimals) {
+        console.warn(`[getCoinsAssetsFromCoinObjects] no decimals found for coin ${coinData.coinType}`);
+      }
+
+      allAssets.push({
+        symbol,
+        balance: coinData.balance,
+        type: normalizedCoinType,
+        decimals,
+        noDecimals: !coin,
+      });
+    }
+
+    return allAssets;
+  }, Promise.resolve([]));
 };

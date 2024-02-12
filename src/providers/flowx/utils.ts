@@ -1,18 +1,10 @@
 /* eslint-disable require-jsdoc */
 
-import { CommonPoolData } from "../types";
-import {
-  CoinMap,
-  CoinNode,
-  ExtractedCoinMetadataListType,
-  ExtractedCoinMetadataType,
-  ExtractedIPoolsListType,
-  ExtractedPairSettingsType,
-  PathMap,
-} from "./types";
+import { CoinsCache, CommonPoolData } from "../types";
+import { ExtractedCoinMetadataListType, ExtractedCoinMetadataType, ExtractedPairSettingsType } from "./types";
 
 export function getCoinsMap({ coinList }: { coinList: ExtractedCoinMetadataListType }) {
-  const coinMap: CoinMap = coinList.reduce((acc, el) => {
+  const coinMap: CoinsCache = coinList.reduce((acc, el) => {
     if (el.type === undefined || el.decimals === undefined) {
       console.debug("flowx [getPoolsMap] no decimals or type for coin: ", el);
     }
@@ -29,35 +21,20 @@ export function getCoinsMap({ coinList }: { coinList: ExtractedCoinMetadataListT
   return { coins, coinMap };
 }
 
-export function getPoolsMap({ poolList }: { poolList: ExtractedIPoolsListType }) {
-  const poolMap: PathMap = poolList.reduce((acc, el) => {
-    const pair = `${el.coinXType}-${el.coinYType}`;
-    const pathExists = acc.get(pair);
-    if (pathExists) {
-      console.debug("flowx [getPoolsMap] duplicate pool: ", pair);
-    } else {
-      acc.set(pair, {
-        base: el.coinXType,
-        quote: el.coinYType,
-      });
-    }
+export function getPathsMap(pairs: ExtractedPairSettingsType[]): Map<string, CommonPoolData> {
+  return pairs.reduce((map: Map<string, CommonPoolData>, pair: ExtractedPairSettingsType) => {
+    const base: string = pair.coinXType;
+    const quote: string = pair.coinYType;
 
-    return acc;
+    const commonPoolData: CommonPoolData = {
+      base,
+      quote,
+    };
+    const poolKey = `${base}-${quote}`;
+
+    map.set(poolKey, commonPoolData);
+    return map;
   }, new Map());
-
-  const paths = {
-    coins: Array.from(poolMap.values()),
-  };
-
-  return { paths, poolMap };
-}
-
-export function coinExists(coin: string, coinMap: CoinMap): boolean {
-  return coinMap.has(coin);
-}
-
-export function getCoinNode(coin: string, coinMap: CoinMap): CoinNode | undefined {
-  return coinMap.get(coin);
 }
 
 export function isCoinListValid(coinList: ExtractedCoinMetadataListType): boolean {
@@ -78,20 +55,4 @@ export function isPairSettingValid(pairSetting: ExtractedPairSettingsType): bool
 
 export function isPairListValid(pairList: ExtractedPairSettingsType[]): boolean {
   return Array.isArray(pairList) && pairList.every(isPairSettingValid);
-}
-
-export function getPathsMap(pairs: ExtractedPairSettingsType[]): Map<string, CommonPoolData> {
-  return pairs.reduce((map: Map<string, CommonPoolData>, pair: ExtractedPairSettingsType) => {
-    const base: string = pair.coinXType;
-    const quote: string = pair.coinYType;
-
-    const commonPoolData: CommonPoolData = {
-      base,
-      quote,
-    };
-    const poolKey = `${base}-${quote}`;
-
-    map.set(poolKey, commonPoolData);
-    return map;
-  }, new Map());
 }

@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -32,6 +33,10 @@ jobs:
       - name: Run Build
         run: |
           yarn build
+
+      - name: Run Tests
+        run: |
+          yarn test
 
       - name: Run Security Audit
         run: |

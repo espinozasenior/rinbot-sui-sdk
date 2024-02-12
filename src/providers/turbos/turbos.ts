@@ -1,5 +1,3 @@
-/* eslint-disable require-jsdoc */
-
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
@@ -23,39 +21,20 @@ import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPo
 // sdk.pool.getPools() doesn't work
 
 /**
- * Represents a singleton instance of TurbosManager managing TurbosSdk functionality.
+ * @class TurbosSingleton
+ * @extends EventEmitter
+ * @implements {IPoolProvider<TurbosSingleton>}
+ * @description Represents a singleton instance of TurbosManager managing TurbosSdk functionality.
  *
  * Note: If using `lazyLoading: true` with any storage configuration in a serverless/cloud functions environment,
  * be aware that each invocation of your cloud function will start cache population from scratch.
  * This may lead to unexpected behavior when using different SDK methods. To avoid this and minimize the time
  * for cache population, consider using `lazyLoading: false` along with passing a persistent
  * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
- *
- * @class TurbosSingleton
  */
 export class TurbosSingleton extends EventEmitter implements IPoolProvider<TurbosSingleton> {
-  /**
-   * The singleton instance of TurbosSingleton.
-   *
-   * @private
-   * @static
-   * @type {TurbosSingleton}
-   */
   private static _instance: TurbosSingleton;
-  /**
-   * The Turbos API URL.
-   *
-   * @private
-   * @static
-   * @type {string}
-   */
   private static TURBOS_API_URL = "https://api.turbos.finance";
-  /**
-   * The instance of TurbosSdk.
-   *
-   * @public
-   * @type {TurbosSdk}
-   */
   public turbosSdk: TurbosSdk;
   public isSmartRoutingAvailable = false;
   public providerName = "Turbos";
@@ -67,6 +46,10 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   private proxy: string | undefined;
   private storage: Storage;
 
+  /**
+   * @constructor
+   * @param {Omit<TurbosOptions, "lazyLoading">} options - The options for TurbosSingleton.
+   */
   private constructor(options: Omit<TurbosOptions, "lazyLoading">) {
     super();
     const provider = new SuiClient({ url: options.suiProviderUrl });
@@ -76,6 +59,13 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
+  /**
+   * @public
+   * @method getInstance
+   * @description Gets the singleton instance of TurbosSingleton.
+   * @param {TurbosOptions} [options] - Options for TurbosSingleton.
+   * @return {Promise<TurbosSingleton>} The singleton instance of TurbosSingleton.
+   */
   public static async getInstance(options?: TurbosOptions): Promise<TurbosSingleton> {
     if (!TurbosSingleton._instance) {
       if (options === undefined) {
@@ -91,6 +81,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     return TurbosSingleton._instance;
   }
 
+  /**
+   * @private
+   * @method init
+   * @description Initializes the TurbosSingleton instance.
+   * @return {Promise<void>} A Promise that resolves when initialization is complete.
+   */
   private async init() {
     console.debug(`[${this.providerName}] Singleton initiating.`);
 
@@ -101,6 +97,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
 
+  /**
+   * Fills the cache from storage asynchronously.
+   *
+   * @private
+   * @return {Promise<void>} A promise that resolves when the cache is filled from storage.
+   */
   private async fillCacheFromStorage(): Promise<void> {
     try {
       const { coinsCache, pathsCache } = await getCoinsAndPathsCaches({
@@ -122,12 +124,24 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     }
   }
 
+  /**
+   * Checks if the storage cache is empty.
+   *
+   * @private
+   * @return {boolean} True if the storage cache is empty, false otherwise.
+   */
   private isStorageCacheEmpty() {
     const isCacheEmpty = this.coinsCache.size === 0 || this.pathsCache.size === 0 || this.poolsCache.length === 0;
 
     return isCacheEmpty;
   }
 
+  /**
+   * @private
+   * @method updateCaches
+   * @description Updates the caches for pools, paths, and coins.
+   * @return {Promise<void>} A Promise that resolves when caches are updated.
+   */
   private async updateCaches({ force }: { force: boolean } = { force: false }): Promise<void> {
     const isCacheEmpty = this.isStorageCacheEmpty();
 
@@ -151,6 +165,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     }
   }
 
+  /**
+   * @private
+   * @method updateCachesIntervally
+   * @description Updates the caches at regular intervals.
+   * @return {void}
+   */
   private updateCachesIntervally(): void {
     let isUpdatingCurrently = false;
     this.intervalId = setInterval(async () => {
@@ -168,6 +188,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     exitHandlerWrapper({ intervalId: this.intervalId, providerName: this.providerName });
   }
 
+  /**
+   * @private
+   * @method updatePoolsCache
+   * @description Updates the pools cache.
+   * @return {Promise<void>} A Promise that resolves when the pools cache is updated.
+   */
   public async updatePoolsCache(): Promise<void> {
     const pools: PoolData[] = await this.fetchPoolsFromApi();
 
@@ -179,11 +205,23 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     }));
   }
 
-  public updatePathsCache(): void {
+  /**
+   * @private
+   * @method updatePathsCache
+   * @description Updates the paths cache.
+   * @return {void}
+   */
+  private updatePathsCache(): void {
     this.pathsCache = getPathsMap(this.poolsCache);
   }
 
-  public async updateCoinsCache(): Promise<void> {
+  /**
+   * @private
+   * @method updateCoinsCache
+   * @description Updates the coins cache.
+   * @return {Promise<void>} A Promise that resolves when the coins cache is updated.
+   */
+  private async updateCoinsCache(): Promise<void> {
     const coins: CoinData[] = await this.fetchCoinsFromApi();
     this.coinsCache = getCoinsMap(coins);
   }
@@ -195,7 +233,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @async
    * @return {Promise<PoolData[]>} A Promise that resolves to an array of PoolData.
    */
-  public async fetchPoolsFromApi(): Promise<PoolData[]> {
+  private async fetchPoolsFromApi(): Promise<PoolData[]> {
     const url: string = this.proxy
       ? `${this.proxy}/${TurbosSingleton.TURBOS_API_URL}/pools`
       : `${TurbosSingleton.TURBOS_API_URL}/pools`;
@@ -218,7 +256,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @async
    * @return {Promise<CoinData[]>} A Promise that resolves to an array of CoinData.
    */
-  public async fetchCoinsFromApi(): Promise<CoinData[]> {
+  private async fetchCoinsFromApi(): Promise<CoinData[]> {
     const response: Response = await fetch(`${TurbosSingleton.TURBOS_API_URL}/coins`);
     const responseJson: { code: number; message: string; data: CoinData[] } = await response.json();
     const isValidResponse = isCoinsApiResponseValid(responseJson);
@@ -230,6 +268,12 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     return responseJson.data;
   }
 
+  /**
+   * @public
+   * @method getPools
+   * @description Gets the pools cache.
+   * @return {ShortPoolData[]} Pools cache.
+   */
   public getPools(): ShortPoolData[] {
     return this.poolsCache;
   }
@@ -256,6 +300,18 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     return { provider: this.providerName, data: allCoins };
   }
 
+  /**
+   * @public
+   * @method getRouteData
+   * @description Gets route data for a given pair of coins.
+   * @param {Object} options - Options for getting route data.
+   * @param {string} options.coinTypeFrom - The coin type to swap from.
+   * @param {string} options.coinTypeTo - The coin type to swap to.
+   * @param {string} options.inputAmount - The input amount for the swap.
+   * @param {number} options.slippagePercentage - The slippage percentage.
+   * @param {string} options.publicKey - The public key for the swap.
+   * @return {Promise<{ outputAmount: bigint, route: ExtendedSwapCalculatedOutputDataType }>} Route data.
+   */
   public async getRouteData({
     coinTypeFrom,
     coinTypeTo,
@@ -290,7 +346,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @return {Promise<SwapRequiredData>} A Promise that resolves to the SwapRequiredData for the swap.
    * @throws {Error} Throws an error if there is no pool with the specified coin types.
    */
-  public async getSwapRequiredData({
+  private async getSwapRequiredData({
     tokenFrom,
     tokenTo,
     inputAmount,
@@ -374,7 +430,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     const transaction: TransactionBlock = await this.turbosSdk.trade.swap({
       routes: [{ pool: pool.poolId, a2b: tokenFromIsTokenA, nextTickIndex }],
       coinTypeA: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
-      coinTypeB: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
+      coinTypeB: tokenFromIsTokenA ? pool.coinTypeB : pool.coinTypeA,
       address: publicKey,
       amountA: inputAmountWithDecimals,
       amountB: outputAmount.toString(),

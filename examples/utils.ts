@@ -64,3 +64,35 @@ export async function saveDataToJsonFile(data: object | object[], filename: stri
     console.error("Error saving data to file:", error);
   }
 }
+
+/**
+ * Generic function to convert Map to plain object.
+ *
+ * @template T - The type of the values in the map.
+ * @param {Map<string, T>} map - The map to be converted.
+ * @return {Record<string, T>} - The resulting plain object.
+ */
+export function mapToObject<T>(map: Map<string, T>): Record<string, T> {
+  const obj: Record<string, T> = {};
+  map.forEach((value, key) => {
+    obj[key] = value;
+  });
+  return obj;
+}
+
+type MyMapType<T> = Map<string, Map<string, T>>;
+
+/**
+ * Generic function to convert MyMapType to Record.
+ *
+ * @template T - The type of the values in the inner map.
+ * @param {MyMapType<T>} data - The MyMapType to be converted.
+ * @return {Record<string, Record<string, T>>} - The resulting Record.
+ */
+export function convertMyMapTypeToRecord<T>(data: MyMapType<T>): Record<string, Record<string, T>> {
+  const result: Record<string, Record<string, T>> = {};
+  data.forEach((innerMap, key) => {
+    result[key] = mapToObject(innerMap);
+  });
+  return result;
+}

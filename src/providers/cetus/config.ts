@@ -1,5 +1,3 @@
-import { SdkOptions } from "@cetusprotocol/cetus-sui-clmm-sdk";
-
 const SDKConfig = {
   clmmConfig: {
     pools_id: "0xf699e7f2276f5c9a75944b37a0c5b5d9ddfd2471bf6242483b03ab2887d198d0",
@@ -20,8 +18,7 @@ const SDKConfig = {
 };
 
 // mainnet
-export const clmmMainnet: Omit<SdkOptions, "fullRpcUrl"> = {
-  simulationAccount: { address: "" },
+export const clmmMainnet = {
   cetus_config: {
     package_id: "0x95b8d278b876cae22206131fb9724f701c9444515813042f54f0a426c9a3bc2f",
     published_at: "0x95b8d278b876cae22206131fb9724f701c9444515813042f54f0a426c9a3bc2f",
