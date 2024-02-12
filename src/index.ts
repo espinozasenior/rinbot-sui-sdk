@@ -9,7 +9,7 @@ export * from "./providers/common";
 export * from "./providers/utils/convertSlippage";
 export * from "./providers/utils/convertToInteger";
 export * from "./providers/utils/isValidTokenAddress";
-export * from "./providers/utils/normalizeSuiAddress";
+export * from "./providers/utils/normalizeSuiCoinType";
 export * from "./providers/utils/tryCatchWrapper";
 export * from "./providers/utils/getSuiProvider";
 export * from "./providers/utils/isValidTokenAmount";
