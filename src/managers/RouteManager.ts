@@ -1,16 +1,28 @@
-/* eslint-disable require-jsdoc */
-
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { CoinManagerSingleton } from "./CoinManager";
-import { Providers } from "./types";
-import { getFiltredProviders, getRouterMaps } from "./utils";
+import { IRouteManager, Providers } from "./types";
+import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 import { SWAP_GAS_BUDGET } from "../providers/common";
 
-export class RouteManager {
+/**
+ * @class RouteManager
+ * @implements {IRouteManager}
+ * @description Manages routes for token swapping.
+ */
+export class RouteManager implements IRouteManager {
   private static _instance: RouteManager;
   private poolProviders: Providers;
   private coinManager: CoinManagerSingleton;
 
+  /**
+   * @public
+   * @method getInstance
+   * @description Gets the singleton instance of RouteManager.
+   * @param {Providers} [providers] - The pool providers.
+   * @param {CoinManagerSingleton} [coinManager] - The coin manager instance.
+   * @return {RouteManager} The singleton instance of RouteManager.
+   * @throws {Error} Throws an error if providers or coinManager are not provided.
+   */
   public static getInstance(providers?: Providers, coinManager?: CoinManagerSingleton): RouteManager {
     if (!RouteManager._instance) {
       if (providers === undefined) {
@@ -28,11 +40,29 @@ export class RouteManager {
     return RouteManager._instance;
   }
 
+  /**
+   * @constructor
+   * @param {Providers} providers - The pool providers.
+   * @param {CoinManagerSingleton} coinManager - The coin manager instance.
+   */
   private constructor(providers: Providers, coinManager: CoinManagerSingleton) {
     this.poolProviders = providers;
     this.coinManager = coinManager;
   }
 
+  /**
+   * @public
+   * @method getBestRouteTransaction
+   * @description Gets the best route transaction for token swapping.
+   * @param {Object} options - The options for getting the best route transaction.
+   * @param {string} options.tokenFrom - The token to swap from.
+   * @param {string} options.tokenTo - The token to swap to.
+   * @param {string} options.amount - The amount to swap.
+   * @param {number} options.slippagePercentage - The slippage percentage.
+   * @param {string} options.signerAddress - The address of the signer.
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @throws {Error} Throws an error if there is no path for the specified tokens.
+   */
   public async getBestRouteTransaction({
     tokenFrom,
     tokenTo,
@@ -46,6 +76,15 @@ export class RouteManager {
     slippagePercentage: number;
     signerAddress: string;
   }): Promise<TransactionBlock> {
+    if (tokenFromIsTokenTo(tokenFrom, tokenTo)) {
+      throw new Error("[RouteManager] getBestRouteTransaction: tokenFrom is equal to tokenTo.");
+    }
+
+    const amountAsNumber = Number(amount);
+    if (isNaN(amountAsNumber)) {
+      throw new Error(`[RouteManager] getBestRouteTransaction: amount ${amount} is invalid.`);
+    }
+
     // Validate coins existance in provider
     const coinsByProviderMap = this.coinManager.getCoinsByProviderMap();
 
