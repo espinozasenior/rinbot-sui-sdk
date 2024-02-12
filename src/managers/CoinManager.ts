@@ -1,12 +1,23 @@
-/* eslint-disable require-jsdoc */
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
-import { CommonCoinData, Providers, UpdatedCoinsCache } from "./types";
+import { CommonCoinData, ICoinManager, Providers, UpdatedCoinsCache } from "./types";
 
-export class CoinManagerSingleton {
+/**
+ * @class CoinManagerSingleton
+ * @implements {ICoinManager}
+ * @description Singleton class for managing coins.
+ */
+export class CoinManagerSingleton implements ICoinManager {
   private static _instance: CoinManagerSingleton;
   private allCoinsCache: Map<string, CommonCoinData> = new Map();
   private coinsByProviderNameCache: Map<string, Map<string, CommonCoinData>> = new Map();
 
+  /**
+   * @public
+   * @method getInstance
+   * @description Gets the singleton instance of CoinManagerSingleton.
+   * @param {Providers} [providers] - The list of providers.
+   * @return {CoinManagerSingleton} The singleton instance of CoinManagerSingleton.
+   */
   public static getInstance(providers?: Providers): CoinManagerSingleton {
     if (!CoinManagerSingleton._instance) {
       if (providers === undefined) {
@@ -21,6 +32,13 @@ export class CoinManagerSingleton {
     return CoinManagerSingleton._instance;
   }
 
+  /**
+   * @private
+   * @method init
+   * @description Initializes the CoinManagerSingleton instance.
+   * @param {Providers} providers - The list of providers.
+   * @return {void}
+   */
   private init(providers: Providers) {
     providers.forEach((provider) => {
       provider.on("cachesUpdate", this.handleCacheUpdate.bind(this));
@@ -28,7 +46,14 @@ export class CoinManagerSingleton {
     });
   }
 
-  public handleCacheUpdate(updateData: UpdatedCoinsCache): void {
+  /**
+   * @private
+   * @method handleCacheUpdate
+   * @description Handles cache updates.
+   * @param {UpdatedCoinsCache} updateData - The update data.
+   * @return {void}
+   */
+  private handleCacheUpdate(updateData: UpdatedCoinsCache): void {
     console.log("[COIN MANAGER] Update data received:", updateData.provider);
     const { provider, data: coins } = updateData;
 
@@ -73,6 +98,15 @@ export class CoinManagerSingleton {
     this.coinsByProviderNameCache.set(provider, coinsByProviderMap);
   }
 
+  /**
+   * @public
+   * @method getCoinByType
+   * @deprecated
+   * @description Gets coin data by coin type.
+   * @param {string} coinType - The coin type.
+   * @return {CommonCoinData} The coin data.
+   * @throws {Error} Throws an error if the coin is not found.
+   */
   public getCoinByType(coinType: string): CommonCoinData {
     const coinData = this.allCoinsCache.get(coinType);
 
@@ -83,10 +117,39 @@ export class CoinManagerSingleton {
     return coinData;
   }
 
+  /**
+   * @public
+   * @method getCoinByType2
+   * @description Retrieves coin data by its type from the cache.
+   * @param {string} coinType - The type of the coin to retrieve.
+   * @return {CommonCoinData | null} The coin data if found, otherwise null.
+   */
+  public getCoinByType2(coinType: string): CommonCoinData | null {
+    const coinData = this.allCoinsCache.get(coinType);
+
+    if (coinData === undefined) {
+      return null;
+    }
+
+    return coinData;
+  }
+
+  /**
+   * @public
+   * @method getCoinsByProviderMap
+   * @description Gets coins by provider map.
+   * @return {Map<string, Map<string, CommonCoinData>>} Coins by provider map.
+   */
   public getCoinsByProviderMap() {
     return this.coinsByProviderNameCache;
   }
 
+  /**
+   * @public
+   * @method getAllCoins
+   * @description Gets all coins.
+   * @return {Map<string, CommonCoinData>} All coins.
+   */
   public getAllCoins() {
     return this.allCoinsCache;
   }
