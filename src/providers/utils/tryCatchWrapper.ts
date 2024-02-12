@@ -1,5 +1,5 @@
-type AnyFunction = (...args: RouteParams[]) => any;
-type RouteParams = {
+export type AnyFunction = (...args: RouteParams[]) => any;
+export type RouteParams = {
   coinTypeFrom: string;
   coinTypeTo: string;
   inputAmount: string;
