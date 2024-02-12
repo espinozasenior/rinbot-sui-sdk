@@ -23,6 +23,7 @@
   "private": false,
   "engineStrict": true,
   "scripts": {
+    "test": "jest --forceExit",
     "audit": "yarn audit --groups dependencies",
     "format": "prettier --write src/**/*.ts",
     "lint": "tsc --noEmit && eslint src/**/*.ts",
