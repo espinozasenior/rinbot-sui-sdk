@@ -156,16 +156,16 @@ export const getCoinsAssetsFromCoinObjects = async (
       const newBalance: bigint = currentBalance + additionalBalance;
       coinInAssets.balance = newBalance.toString();
     } else {
-      const coin: CommonCoinData | null = coinManager.getCoinByType2(coinData.coinType);
+      const coin: CommonCoinData | null = coinManager.getCoinByType2(normalizedCoinType);
       const symbol = coin?.symbol?.trim();
       const decimals = coin?.decimals ?? null;
 
       if (!symbol) {
-        console.warn(`[getCoinsAssetsFromCoinObjects] no symbol found for coin ${coinData.coinType}`);
+        console.warn(`[getCoinsAssetsFromCoinObjects] no symbol found for coin ${normalizedCoinType}`);
       }
 
       if (!decimals) {
-        console.warn(`[getCoinsAssetsFromCoinObjects] no decimals found for coin ${coinData.coinType}`);
+        console.warn(`[getCoinsAssetsFromCoinObjects] no decimals found for coin ${normalizedCoinType}`);
       }
 
       allAssets.push({
