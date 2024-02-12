@@ -430,7 +430,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     const transaction: TransactionBlock = await this.turbosSdk.trade.swap({
       routes: [{ pool: pool.poolId, a2b: tokenFromIsTokenA, nextTickIndex }],
       coinTypeA: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
-      coinTypeB: tokenFromIsTokenA ? pool.coinTypeA : pool.coinTypeB,
+      coinTypeB: tokenFromIsTokenA ? pool.coinTypeB : pool.coinTypeA,
       address: publicKey,
       amountA: inputAmountWithDecimals,
       amountB: outputAmount.toString(),
