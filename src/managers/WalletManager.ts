@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 import {
   CoinBalance,
   CoinStruct,
@@ -9,22 +8,42 @@ import {
 } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { SUI_DECIMALS, normalizeSuiAddress } from "@mysten/sui.js/utils";
+import { SUI_DECIMALS } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
-import { CoinAssetData, CommonCoinData } from "./types";
+import { CoinAssetData, IWalletManager } from "./types";
+import { getCoinsAssetsFromCoinObjects } from "./utils";
 
-export class WalletManagerSingleton {
+/**
+ * @class WalletManagerSingleton
+ * @implements {IWalletManager}
+ * @description Manages wallets and transactions related to wallets.
+ */
+export class WalletManagerSingleton implements IWalletManager {
   private provider: SuiClient;
   private coinManager: CoinManagerSingleton;
   private static _instance: WalletManagerSingleton;
 
+  /**
+   * @constructor
+   * @param {SuiClient} provider - The SuiClient provider.
+   * @param {CoinManagerSingleton} coinManager - The coin manager instance.
+   */
   private constructor(provider: SuiClient, coinManager: CoinManagerSingleton) {
     this.provider = provider;
     this.coinManager = coinManager;
   }
 
+  /**
+   * @public
+   * @method getInstance
+   * @description Gets the singleton instance of WalletManager.
+   * @param {SuiClient} [provider] - The SuiClient provider.
+   * @param {CoinManagerSingleton} [coinManager] - The coin manager instance.
+   * @return {WalletManagerSingleton} The singleton instance of WalletManager.
+   * @throws {Error} Throws an error if provider or coinManager are not provided.
+   */
   public static getInstance(provider?: SuiClient, coinManager?: CoinManagerSingleton): WalletManagerSingleton {
     if (!WalletManagerSingleton._instance) {
       if (provider === undefined) {
@@ -87,6 +106,14 @@ export class WalletManagerSingleton {
     return tx;
   }
 
+  /**
+   * @public
+   * @method getAvailableWithdrawSuiAmount
+   * @description Retrieves the available amount for withdrawing SUI tokens.
+   * @param {string} publicKey - The public key of the wallet.
+   * @return {Promise<{ availableAmount: string, totalGasFee: string }>} A promise that resolves to
+   * the available amount and total gas fee.
+   */
   public async getAvailableWithdrawSuiAmount(
     publicKey: string,
   ): Promise<{ availableAmount: string; totalGasFee: string }> {
@@ -114,6 +141,13 @@ export class WalletManagerSingleton {
     };
   }
 
+  /**
+   * @public
+   * @method getSuiBalance
+   * @description Retrieves the balance of SUI tokens for a wallet.
+   * @param {string} publicKey - The public key of the wallet.
+   * @return {Promise<string>} A promise that resolves to the balance of SUI tokens.
+   */
   public async getSuiBalance(publicKey: string): Promise<string> {
     const balance: CoinBalance = await this.provider.getBalance({ owner: publicKey });
     const totalBalance = new BigNumber(balance.totalBalance);
@@ -121,6 +155,13 @@ export class WalletManagerSingleton {
     return totalBalance.dividedBy(10 ** SUI_DECIMALS).toString();
   }
 
+  /**
+   * @public
+   * @method getAvailableSuiBalance
+   * @description Retrieves the available balance of SUI tokens for a wallet.
+   * @param {string} publicKey - The public key of the wallet.
+   * @return {Promise<string>} A promise that resolves to the available balance of SUI tokens.
+   */
   public async getAvailableSuiBalance(publicKey: string): Promise<string> {
     const currentSuiBalance: string = await this.getSuiBalance(publicKey);
     const suiBalanceWithDecimals = new BigNumber(currentSuiBalance).multipliedBy(10 ** SUI_DECIMALS);
@@ -133,6 +174,13 @@ export class WalletManagerSingleton {
     return availableSuiBalance.dividedBy(10 ** SUI_DECIMALS).toString();
   }
 
+  /**
+   * @public
+   * @method getAllCoinAssets
+   * @description Retrieves all coin assets associated with a wallet.
+   * @param {string} publicKey - The public key of the wallet.
+   * @return {Promise<CoinAssetData[]>} A promise that resolves to an array of coin asset data.
+   */
   public async getAllCoinAssets(publicKey: string): Promise<CoinAssetData[]> {
     const pageCapacity = 50;
     const allObjects: CoinStruct[] = [];
@@ -160,49 +208,17 @@ export class WalletManagerSingleton {
     allObjects.push(...coinObjects);
 
     // reducing part
-    const coinAssets: CoinAssetData[] = await allObjects.reduce(
-      async (allAssetsP: Promise<CoinAssetData[]>, coinData: CoinStruct) => {
-        const allAssets: CoinAssetData[] = await allAssetsP;
+    const coinAssets: CoinAssetData[] = await getCoinsAssetsFromCoinObjects(allObjects, this.coinManager);
 
-        if (BigInt(coinData.balance) <= 0) {
-          return allAssets;
-        }
-
-        const rawCoinType = coinData.coinType;
-        const coinTypeAddress = rawCoinType.split("::")[0];
-        const normalizedAddress = normalizeSuiAddress(coinTypeAddress);
-        const normalizedCoinType = rawCoinType.replace(coinTypeAddress, normalizedAddress);
-
-        const coinInAssets: CoinAssetData | undefined = allAssets.find(
-          (asset: CoinAssetData) => asset.type === normalizedCoinType,
-        );
-
-        if (coinInAssets) {
-          const currentBalance = BigInt(coinInAssets.balance);
-          const additionalBalance = BigInt(coinData.balance);
-          const newBalance: bigint = currentBalance + additionalBalance;
-          coinInAssets.balance = newBalance.toString();
-        } else {
-          const coin: CommonCoinData = this.coinManager.getCoinByType(normalizedCoinType);
-          const coinSymbol: string | undefined = coin?.symbol?.trim();
-
-          allAssets.push({
-            symbol: coinSymbol,
-            balance: coinData.balance,
-            type: normalizedCoinType,
-            decimals: coin.decimals,
-          });
-        }
-
-        return allAssets;
-      },
-      Promise.resolve([]),
-    );
-
-    // converting balances with decimals
+    // Converting balances with decimals
     for (const asset of coinAssets) {
-      const coin: CommonCoinData = this.coinManager.getCoinByType(asset.type);
-      const decimals: number = coin.decimals;
+      const decimals: number | null = asset.decimals;
+
+      // We don't need to convert balance if it hasn't decimals
+      if (decimals === null) {
+        continue;
+      }
+
       const bigNumberBalance = new BigNumber(asset.balance);
       asset.balance = bigNumberBalance.dividedBy(10 ** decimals).toString();
     }
