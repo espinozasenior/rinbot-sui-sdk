@@ -18,6 +18,7 @@ export * from "./providers/utils/transactionFromSerializedTransaction";
 // Aftermath
 export * from "./providers/aftermath/aftermath";
 export * from "./providers/aftermath/types";
+export * from "./providers/aftermath/create-pool-utils";
 
 // Cetus
 export * from "./providers/cetus/cetus";

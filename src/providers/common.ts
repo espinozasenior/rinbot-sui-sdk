@@ -10,6 +10,14 @@ export const exitHandler = (options: ExitHandlerOptions) => {
   if (options.cleanup) {
     console.log(`[EXIT HANDLER] ${options.providerName} cache cleanup.`);
     clearInterval(options.intervalId);
+
+    // TODO: Add event listeners removal for window
+    // When the application restarts multiple times, event listeners remain active after each restart,
+    // accumulating for the same events, leading to overflow and eventual application crash. To prevent this,
+    // all event listeners for the process are cleared before each application exit.
+    if (typeof process !== "undefined" && typeof process === "object") {
+      process.removeAllListeners();
+    }
   }
   if (options.exit) process.exit();
 };
