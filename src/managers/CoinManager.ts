@@ -202,7 +202,18 @@ export class CoinManagerSingleton implements ICoinManager {
    * or null if no metadata is available.
    */
   public async fetchCoinMetadata(coinType: string): Promise<CoinMetadata | null> {
-    return await this.provider.getCoinMetadata({ coinType });
+    try {
+      const coinMetadata = await this.provider.getCoinMetadata({ coinType });
+
+      return coinMetadata;
+    } catch (e) {
+      console.warn(
+        `[CoinManager.fetchCoinMetadata] error occured while fetching metadata for ${coinType} from RPC: `,
+        e,
+      );
+
+      return null;
+    }
   }
 
   /**
