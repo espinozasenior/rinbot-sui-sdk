@@ -20,7 +20,7 @@ describe("CoinManager & Event Emitter & lazy loading", () => {
     const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions });
     const flowx: FlowxSingleton = await FlowxSingleton.getInstance({ cacheOptions });
     const providers: Providers = [turbos, cetus, aftermath, flowx];
-    const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers);
+    const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
 
     providers.forEach((provider: Provider) => {
       const events = provider.getEvents();
