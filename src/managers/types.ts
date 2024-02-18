@@ -35,7 +35,7 @@ export type UpdateCoinsCacheHandler = (arg: UpdatedCoinsCache) => void;
 
 export interface ICoinManager {
   getCoinByType(coinType: string): CommonCoinData;
-  getCoinByType2(coinType: string): CommonCoinData | null;
+  getCoinByType2(coinType: string): Promise<CommonCoinData | null>;
   getCoinsByProviderMap(): Map<string, Map<string, CommonCoinData>>;
   getAllCoins(): Map<string, CommonCoinData>;
 }
@@ -62,3 +62,21 @@ export interface IRouteManager {
     signerAddress: string;
   }): Promise<TransactionBlock>;
 }
+
+export type CreateCoinTransactionParams = {
+  name: string;
+  symbol: string;
+  decimals: string;
+  fixedSupply: boolean;
+  mintAmount: string;
+  url: string;
+  description: string;
+  signerAddress: string;
+  transaction?: TransactionBlock;
+};
+
+export type CreateCoinExternalApiResType = {
+  modules: string[] | number[][];
+  dependencies: string[];
+  digest: number[];
+};
