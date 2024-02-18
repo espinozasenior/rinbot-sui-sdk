@@ -40,7 +40,7 @@ describe("WalletManager", () => {
     const flowx: FlowxSingleton = await FlowxSingleton.getInstance({ cacheOptions, lazyLoading: false });
     // providers = [turbos, cetus, aftermath, flowx];
     providers = [turbos, cetus, aftermath];
-    coinManager = CoinManagerSingleton.getInstance(providers);
+    coinManager = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
     routeManager = RouteManager.getInstance(providers, coinManager);
   });
 

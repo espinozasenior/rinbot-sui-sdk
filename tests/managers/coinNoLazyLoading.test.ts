@@ -34,7 +34,7 @@ describe("CoinManager & Event Emitter & no lazy loading", () => {
       expect(Object.keys(events).length).toStrictEqual(0);
     });
 
-    const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers);
+    const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
 
     const allCoinsCache = coinManager.getAllCoins();
     const coinsByProviderNameCache = coinManager.getCoinsByProviderMap();
