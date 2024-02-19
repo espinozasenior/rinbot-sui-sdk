@@ -1,6 +1,13 @@
 import { CoinStruct } from "@mysten/sui.js/client";
 import { normalizeSuiAddress } from "@mysten/sui.js/utils";
-import { CoinAssetData, CommonCoinData, Provider, Providers, ProvidersToRouteDataMap } from "../managers/types";
+import {
+  CoinAssetData,
+  CommonCoinData,
+  CreateCoinExternalApiResType,
+  Provider,
+  Providers,
+  ProvidersToRouteDataMap,
+} from "../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
 import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
@@ -156,7 +163,7 @@ export const getCoinsAssetsFromCoinObjects = async (
       const newBalance: bigint = currentBalance + additionalBalance;
       coinInAssets.balance = newBalance.toString();
     } else {
-      const coin: CommonCoinData | null = coinManager.getCoinByType2(normalizedCoinType);
+      const coin: CommonCoinData | null = await coinManager.getCoinByType2(normalizedCoinType);
       const symbol = coin?.symbol?.trim();
       const decimals = coin?.decimals ?? null;
 
@@ -180,3 +187,26 @@ export const getCoinsAssetsFromCoinObjects = async (
     return allAssets;
   }, Promise.resolve([]));
 };
+
+/**
+ * Validates whether the provided response object adheres to the expected structure for creating a coin.
+ *
+ * @param {unknown} res - The object to validate.
+ * @return {CreateCoinExternalApiResType} True if the object has a valid structure for creating a coin, false otherwise.
+ */
+export function isValidResForCreateCoin(res: unknown): res is CreateCoinExternalApiResType {
+  return (
+    typeof res === "object" &&
+    res !== null &&
+    "modules" in res &&
+    "dependencies" in res &&
+    "digest" in res &&
+    Array.isArray(res.modules) &&
+    (res.modules.every((m: unknown) => typeof m === "string") ||
+      res.modules.every((m: unknown) => Array.isArray(m) && m.every((n: unknown) => typeof n === "number"))) &&
+    Array.isArray(res.dependencies) &&
+    res.dependencies.every((d: unknown) => typeof d === "string") &&
+    Array.isArray(res.digest) &&
+    res.digest.every((n: unknown) => typeof n === "number")
+  );
+}
