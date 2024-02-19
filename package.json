@@ -33,7 +33,8 @@
   },
   "resolutions": {
     "@cetusprotocol/cetus-sui-clmm-sdk/@mysten/sui.js": "0.42.0",
-    "@flowx-pkg/ts-sdk/@mysten/sui.js": "0.41.2"
+    "@flowx-pkg/ts-sdk/@mysten/sui.js": "0.41.2",
+    "ip": "2.0.1"
   },
   "dependencies": {
     "@cetusprotocol/cetus-sui-clmm-sdk": "^3.17.8",
