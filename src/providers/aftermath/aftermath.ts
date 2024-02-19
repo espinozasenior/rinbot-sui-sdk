@@ -1,4 +1,5 @@
 /* eslint-disable new-cap */
+import { SuiTransactionBlockResponse } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "aftermath-ts-sdk";
 import BigNumber from "bignumber.js";
@@ -6,14 +7,15 @@ import { EventEmitter } from "../../emitters/EventEmitter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
 import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";
+import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
+import { storeCaches } from "../../storages/utils/storeCaches";
 import { exitHandlerWrapper } from "../common";
 import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
-import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
-import { storeCaches } from "../../storages/utils/storeCaches";
-import { AftermathOptions, SmartOutputAmountData } from "./types";
+import { getCreatePoolCapIdAndLpCoinType, getPoolObjectIdFromTransactionResult } from "./create-pool-utils";
+import { AftermathOptions, CreateLpCoinInput, CreatePoolInput, GetWeightsInput, SmartOutputAmountData } from "./types";
 import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
 
 /**
@@ -30,6 +32,7 @@ import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiR
  */
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
   private static _instance: AftermathSingleton;
+  private static AFTERMATH_POOL_URL = "https://aftermath.finance/pools";
   public isSmartRoutingAvailable = true;
   public providerName = "Aftermath";
   public aftermathSdk: Aftermath;
@@ -397,5 +400,200 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     const txBlock = new TransactionBlock(TransactionBlock.from(modernTxBlock.serialize()));
 
     return txBlock;
+  }
+
+  /**
+   * Retrieves a transaction block for creating an LP coin.
+   *
+   * @public
+   * @static
+   * @param {CreateLpCoinInput} input - The input parameters for creating the LP coin transaction.
+   * @param {string} input.publicKey - The public key associated with the wallet.
+   * @param {number} input.lpCoinDecimals - The number of decimal places for the LP coin.
+   * @return {Promise<TransactionBlock>} A promise that resolves to a transaction block representing the
+   * creation of the LP coin.
+   */
+  public static async getCreateLpCoinTransaction({
+    publicKey,
+    lpCoinDecimals,
+  }: CreateLpCoinInput): Promise<TransactionBlock> {
+    const sdk = new Aftermath("MAINNET");
+    const pools = sdk.Pools();
+    const createLpCoinTransaction = await pools.getPublishLpCoinTransaction({
+      walletAddress: publicKey,
+      lpCoinDecimals: lpCoinDecimals,
+    });
+
+    return new TransactionBlock(TransactionBlock.from(createLpCoinTransaction.serialize()));
+  }
+
+  /**
+   * Retrieves a transaction block for creating a liquidity pool.
+   *
+   * LIMITATION: If client created pool and now wants to create one more with the same coins and the same amounts,
+   * creation will be FAILED. At least one amount must be different from the amount from the existing pool.
+   *
+   * @public
+   * @static
+   * @param {CreatePoolInput} input - The input parameters for creating the pool transaction.
+   * @param {string} input.publicKey - The public key associated with the wallet.
+   * @param {any} input.createLpCoinTransactionResult - The result of the create LP coin transaction.
+   * @param {CoinMetadata} input.lpCoinMetadata - The metadata of the LP coin.
+   * @param {Record<string, CoinMetadata>} input.coinsInfo - Information about the coins involved in the pool.
+   * @param {string} input.poolName - The name of the pool.
+   * @return {Promise<TransactionBlock>} A promise that resolves to a transaction block representing the creation
+   * of the liquidity pool.
+   */
+  public static async getCreatePoolTransaction({
+    publicKey,
+    createLpCoinTransactionResult,
+    lpCoinMetadata,
+    coinsInfo,
+    poolName,
+  }: CreatePoolInput): Promise<TransactionBlock> {
+    const sdk = new Aftermath("MAINNET");
+    const { lpCoinType, createPoolCapId } = getCreatePoolCapIdAndLpCoinType(createLpCoinTransactionResult);
+    const pools = sdk.Pools();
+    const createPoolTransaction = await pools.getCreatePoolTransaction({
+      coinsInfo: Object.values(coinsInfo),
+      createPoolCapId,
+      lpCoinType,
+      lpCoinMetadata,
+      walletAddress: publicKey,
+      // TODO: Implement stable pools creation
+      poolFlatness: 0,
+      poolName,
+      respectDecimals: false,
+      isSponsoredTx: false,
+    });
+
+    return new TransactionBlock(TransactionBlock.from(createPoolTransaction.serialize()));
+  }
+
+  /**
+   * Generates the URL for accessing a liquidity pool based on the result of a create pool transaction.
+   *
+   * @public
+   * @static
+   * @param {SuiTransactionBlockResponse} createPoolTransactionResult - The result of the create pool transaction.
+   * @return {string} The URL for accessing the liquidity pool.
+   */
+  public static getPoolUrl(createPoolTransactionResult: SuiTransactionBlockResponse) {
+    const poolObjectId = getPoolObjectIdFromTransactionResult(createPoolTransactionResult);
+
+    return `${this.AFTERMATH_POOL_URL}/${poolObjectId}`;
+  }
+
+  /**
+   * Retrieves weights for two coins based on their amounts and current prices.
+   *
+   * @public
+   * @static
+   * @param {GetWeightsInput} coinsInfo - Information about the coins and their amounts.
+   * @return {Promise<{ weightA: number, weightB: number }>} A promise that resolves to an object
+   * containing weights for the two coins.
+   */
+  public static async getWeights(coinsInfo: GetWeightsInput): Promise<{ weightA: number; weightB: number }> {
+    const sdk = new Aftermath("MAINNET");
+
+    const { type: coinTypeA, amount: amountA } = coinsInfo.coinA;
+    const { type: coinTypeB, amount: amountB } = coinsInfo.coinB;
+
+    const prices = sdk.Prices();
+    const priceA: number = await prices.getCoinPrice({ coin: coinTypeA });
+    const priceB: number = await prices.getCoinPrice({ coin: coinTypeB });
+
+    // If either of the prices is undefined, further calculations could be unpredictable,
+    // hence returning equal weights of 0.5 for both coins.
+    if (priceA === -1 || priceB === -1) {
+      return { weightA: 0.5, weightB: 0.5 };
+    }
+
+    const usdAmountA = new BigNumber(amountA).multipliedBy(priceA);
+    const usdAmountB = new BigNumber(amountB).multipliedBy(priceB);
+    const usdSum: BigNumber = usdAmountA.plus(usdAmountB);
+
+    let weightA = new BigNumber(usdAmountA.dividedBy(usdSum).toFixed(4));
+    let weightB = new BigNumber(usdAmountB.dividedBy(usdSum).toFixed(4));
+
+    // If the sum of weights is not equal to 1, then the remainder needed to reach 1 is added
+    // to the smaller weight to ensure their combined value equals 1.
+    if (weightA.plus(weightB) !== new BigNumber(1)) {
+      const remainder = new BigNumber(new BigNumber(1).minus(weightA).minus(weightB).toFixed(4));
+
+      if (weightA > weightB) {
+        weightB = weightB.plus(remainder);
+      } else {
+        weightA = weightA.plus(remainder);
+      }
+    }
+
+    return { weightA: weightA.toNumber(), weightB: weightB.toNumber() };
+  }
+
+  /**
+   * Retrieves the maximum and minimum amount of the second coin based on the amount of the first coin.
+   *
+   * NOTE: This method will be used only when both coins have a price retrievable from the API. If at least
+   * one coin lacks a price, it is pointless to limit the amounts of the coins.
+   *
+   * @public
+   * @static
+   * @param {Object} options - The options object.
+   * @param {string} options.coinTypeA - The type of the first coin.
+   * @param {string} options.amountA - The amount of the first coin.
+   * @param {string} options.coinTypeB - The type of the second coin.
+   * @param {number} options.decimalsB - The number of decimal places for the second coin.
+   * @return {Promise<{ minAmountB: string, maxAmountB: string }>} A promise that resolves to an object containing
+   * the minimum and maximum amount of the second coin.
+   */
+  public static async getMaxAndMinSecondCoinAmount({
+    coinTypeA,
+    amountA,
+    coinTypeB,
+    decimalsB,
+  }: {
+    coinTypeA: string;
+    amountA: string;
+    coinTypeB: string;
+    decimalsB: number;
+  }): Promise<{ minAmountB: string; maxAmountB: string }> {
+    const sdk = new Aftermath("MAINNET");
+    const minWeightB = 0.05;
+    const maxWeightB = 0.95;
+
+    const prices = sdk.Prices();
+    const priceA: number = await prices.getCoinPrice({ coin: coinTypeA });
+    const priceB: number = await prices.getCoinPrice({ coin: coinTypeB });
+
+    const usdAmountA = new BigNumber(amountA).multipliedBy(priceA);
+    const minUsdAmountB = new BigNumber(minWeightB)
+      .multipliedBy(usdAmountA)
+      .dividedBy(new BigNumber(1).minus(minWeightB));
+    const maxUsdAmountB = new BigNumber(maxWeightB)
+      .multipliedBy(usdAmountA)
+      .dividedBy(new BigNumber(1).minus(maxWeightB));
+
+    const minAmountB = minUsdAmountB.dividedBy(priceB).toFixed(decimalsB);
+    const maxAmountB = maxUsdAmountB.dividedBy(priceB).toFixed(decimalsB);
+
+    return { minAmountB, maxAmountB };
+  }
+
+  /**
+   * Checks if a coin has a price retrievable from the API.
+   *
+   * @public
+   * @static
+   * @param {string} coinType - The type of the coin to check for price availability.
+   * @return {Promise<boolean>} A promise that resolves to true if the coin has a price retrievable from the
+   * API, otherwise false.
+   */
+  public static async coinHasPrice(coinType: string): Promise<boolean> {
+    const sdk = new Aftermath("MAINNET");
+    const prices = sdk.Prices();
+    const price: number = await prices.getCoinPrice({ coin: coinType });
+
+    return price !== -1;
   }
 }
