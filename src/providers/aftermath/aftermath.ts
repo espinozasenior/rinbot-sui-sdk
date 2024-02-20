@@ -4,7 +4,8 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "aftermath-ts-sdk";
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
-import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
+import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinAssetData, CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
 import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";
 import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
@@ -15,8 +16,20 @@ import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
 import { getCreatePoolCapIdAndLpCoinType, getPoolObjectIdFromTransactionResult } from "./create-pool-utils";
-import { AftermathOptions, CreateLpCoinInput, CreatePoolInput, GetWeightsInput, SmartOutputAmountData } from "./types";
-import { getPathMapAndCoinTypesSet, isApiResponseValid, isCoinMetadaWithInfoApiResponseValid } from "./utils";
+import {
+  AftermathOptions,
+  CreateLpCoinInput,
+  CreatePoolInput,
+  GetWeightsInput,
+  OwnedPoolInfo,
+  SmartOutputAmountData,
+} from "./types";
+import {
+  getOwnedPoolInfosFromPools,
+  getPathMapAndCoinTypesSet,
+  isApiResponseValid,
+  isCoinMetadaWithInfoApiResponseValid,
+} from "./utils";
 
 /**
  * @class AftermathSingleton
@@ -595,5 +608,34 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     const price: number = await prices.getCoinPrice({ coin: coinType });
 
     return price !== -1;
+  }
+
+  /**
+   * Retrieves information about owned pools.
+   *
+   * @public
+   * @static
+   * @param {CoinAssetData[]} allAssets - An array of all available coin asset data.
+   * @param {CoinManagerSingleton} coinManager - The coin manager instance.
+   * @return {Promise<OwnedPoolInfo[]>} A promise that resolves to an array of information about owned pools.
+   */
+  public static async getOwnedPoolsInfo(
+    allAssets: CoinAssetData[],
+    coinManager: CoinManagerSingleton,
+  ): Promise<OwnedPoolInfo[]> {
+    const lpCoinTypePart = "af_lp::AF_LP";
+    const sdk = new Aftermath("MAINNET");
+    const poolsSdk = sdk.Pools();
+
+    const lpCoins: CoinAssetData[] = allAssets.filter((asset) => asset.type.includes(lpCoinTypePart));
+    const poolObjectIds: string[] = await Promise.all(
+      lpCoins.map((lpCoin) => poolsSdk.getPoolObjectIdForLpCoinType({ lpCoinType: lpCoin.type })),
+    );
+    const pools: Pool[] = await poolsSdk.getPools({ objectIds: poolObjectIds });
+    await Promise.all(pools.map((pool) => pool.getStats()));
+
+    const ownedPoolInfos: OwnedPoolInfo[] = await getOwnedPoolInfosFromPools(pools, coinManager);
+
+    return ownedPoolInfos;
   }
 }

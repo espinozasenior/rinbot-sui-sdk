@@ -2,8 +2,10 @@
 
 import { CoinMetadata } from "@mysten/sui.js/client";
 import { CoinMetadaWithInfo, Pool, PoolCoin, PoolCoins, PoolObject, PoolStats, SuiNetwork } from "aftermath-ts-sdk";
-
+import BigNumber from "bignumber.js";
+import { CoinManagerSingleton } from "../../managers/CoinManager";
 import { CommonPoolData } from "../types";
+import { OwnedPoolCoinInfo, OwnedPoolInfo } from "./types";
 
 export const getPathMapAndCoinTypesSet = (
   pools: Pool[],
@@ -34,6 +36,40 @@ export const getPathMapAndCoinTypesSet = (
 
   return { pathMap, coinTypesSet };
 };
+
+export async function getOwnedPoolInfosFromPools(
+  pools: Pool[],
+  coinManager: CoinManagerSingleton,
+): Promise<OwnedPoolInfo[]> {
+  return await Promise.all(
+    pools.map(async (pool) => {
+      const coinTypes: string[] = Object.keys(pool.pool.coins);
+      const coins: OwnedPoolCoinInfo[] = await Promise.all(
+        coinTypes.map(async (type) => {
+          const coinInfo = pool.pool.coins[type];
+          const coinInfoFromStorage = await coinManager.getCoinByType2(type);
+          const decimals = coinInfo.decimals ?? coinInfoFromStorage?.decimals ?? 0;
+          const balance = new BigNumber(coinInfo.balance.toString()).dividedBy(10 ** decimals).toString();
+
+          return {
+            type,
+            balance,
+            symbol: coinInfoFromStorage?.symbol,
+          };
+        }),
+      );
+
+      return {
+        name: pool.pool.name,
+        apr: pool.stats?.apr.toString() ?? "0",
+        fees: pool.stats?.fees.toString() ?? "0",
+        tvl: pool.stats?.tvl.toString() ?? "0",
+        volume: pool.stats?.volume.toString() ?? "0",
+        coins,
+      };
+    }),
+  );
+}
 
 export function isApiResponseValid(pools: Pool[]): pools is Pool[] {
   return pools !== undefined && Array.isArray(pools) && pools.length > 0 && pools.every(isPoolValid);
