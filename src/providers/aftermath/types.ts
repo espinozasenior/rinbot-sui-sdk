@@ -37,3 +37,14 @@ export type GetWeightsInput = { coinA: GetWeightsCoinInfo; coinB: GetWeightsCoin
 export type GetLpCoinDecimalsCoinInfo = { decimals: number; weight: number };
 
 export type GetLpCoinDecimalsInput = { coinA: GetLpCoinDecimalsCoinInfo; coinB: GetLpCoinDecimalsCoinInfo };
+
+export type OwnedPoolCoinInfo = { symbol?: string | undefined; type: string; balance: string };
+
+export type OwnedPoolInfo = {
+  name: string;
+  volume: string;
+  tvl: string;
+  fees: string;
+  apr: string;
+  coins: OwnedPoolCoinInfo[];
+};
