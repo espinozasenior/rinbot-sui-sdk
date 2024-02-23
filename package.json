@@ -13,7 +13,7 @@
   "main": "dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aldrin-labs/aldrin-sdk.git"
+    "url": "git+https://github.com/aldrin-labs/rinbot-sui-sdk.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -29,7 +29,8 @@
     "lint": "tsc --noEmit && eslint src/**/*.ts",
     "build": "yarn rimraf dist && yarn run lint && tsup",
     "build:watch": "tsc --watch",
-    "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
+    "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
+    "deploy": "yarn lint && yarn build && yarn publish --access restricted"
   },
   "resolutions": {
     "@cetusprotocol/cetus-sui-clmm-sdk/@mysten/sui.js": "0.42.0",
