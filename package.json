@@ -30,7 +30,8 @@
     "build": "yarn rimraf dist && yarn run lint && tsup",
     "build:watch": "tsc --watch",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "deploy": "yarn lint && yarn build && yarn publish --access restricted"
+    "deploy": "yarn lint && yarn build && yarn publish --access restricted",
+    "generate": "mkdir -p __generated__ && sui-client-gen --manifest generate.toml --out __generated__/ --clean && eslint __generated__/ --fix && prettier --write __generated__/**/*.ts"
   },
   "resolutions": {
     "@cetusprotocol/cetus-sui-clmm-sdk/@mysten/sui.js": "0.42.0",
