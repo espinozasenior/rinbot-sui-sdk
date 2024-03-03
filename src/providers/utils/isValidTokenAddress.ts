@@ -1,4 +1,6 @@
-const tokenAddressRegex = /^0x[0-9a-fA-F]+::.+::.+$/;
+import { TOKEN_ADDRESS_BASE_REGEX } from "../common";
+
+const tokenAddressRegex = new RegExp(`^${TOKEN_ADDRESS_BASE_REGEX.source}$`);
 
 export type TokenAddress = `0x${string}::${string}::${string}`;
 

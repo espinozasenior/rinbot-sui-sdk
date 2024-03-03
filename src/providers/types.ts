@@ -1,6 +1,7 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { CommonCoinData, Provider, UpdatedCoinsCache } from "../managers/types";
 import { Storage } from "../storages/types";
+import { tryCatchWrapper } from "./utils/tryCatchWrapper";
 
 export type CommonPoolData = {
   base: string;
@@ -40,3 +41,5 @@ export type ExitHandlerOptions = {
   exit?: boolean;
   providerName?: string;
 };
+
+export type TryCatchWrapperResult = Awaited<ReturnType<typeof tryCatchWrapper>>;

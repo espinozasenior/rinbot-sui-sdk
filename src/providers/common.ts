@@ -5,6 +5,9 @@ export const SUI_DENOMINATOR = 10 ** SUI_DECIMALS;
 export const SHORT_SUI_COIN_TYPE = "0x2::sui::SUI";
 export const LONG_SUI_COIN_TYPE = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 export const SWAP_GAS_BUDGET = 50_000_000;
+export const MAX_BATCH_OBJECTS_PER_GET_OBJECT_REQUEST = 50;
+export const MAX_BATCH_EVENTS_PER_QUERY_EVENTS_REQUEST = 50;
+export const TOKEN_ADDRESS_BASE_REGEX = /0x[0-9a-fA-F]+::[0-9a-zA-z_-]+::[0-9a-zA-z_-]+/;
 
 export const exitHandler = (options: ExitHandlerOptions) => {
   if (options.cleanup) {
