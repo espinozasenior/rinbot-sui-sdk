@@ -3,7 +3,7 @@ import { AftermathSingleton } from "../providers/aftermath/aftermath";
 import { CetusSingleton } from "../providers/cetus/cetus";
 import { FlowxSingleton } from "../providers/flowx/flowx";
 import { TurbosSingleton } from "../providers/turbos/turbos";
-import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
+import { TryCatchWrapperResult } from "../providers/types";
 
 export type CommonCoinData = {
   symbol?: string;
@@ -27,7 +27,7 @@ export type ProvidersToRouteDataMap = Map<
   string,
   {
     provider: Provider;
-    route: Awaited<ReturnType<typeof tryCatchWrapper>>;
+    route: TryCatchWrapperResult;
   }
 >;
 
@@ -79,4 +79,10 @@ export type CreateCoinExternalApiResType = {
   modules: string[] | number[][];
   dependencies: string[];
   digest: number[];
+};
+
+export type BestRouteData = {
+  maxOutputProvider: Provider;
+  maxOutputAmount: bigint;
+  route: TryCatchWrapperResult;
 };

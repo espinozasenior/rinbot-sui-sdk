@@ -1,8 +1,8 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { CoinManagerSingleton } from "./CoinManager";
-import { IRouteManager, Providers } from "./types";
-import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 import { SWAP_GAS_BUDGET } from "../providers/common";
+import { CoinManagerSingleton } from "./CoinManager";
+import { BestRouteData, IRouteManager, Providers } from "./types";
+import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 
 /**
  * @class RouteManager
@@ -52,18 +52,18 @@ export class RouteManager implements IRouteManager {
 
   /**
    * @public
-   * @method getBestRouteTransaction
-   * @description Gets the best route transaction for token swapping.
+   * @method getBestRouteData
+   * @description Gets the best route data for token swapping.
    * @param {Object} options - The options for getting the best route transaction.
    * @param {string} options.tokenFrom - The token to swap from.
    * @param {string} options.tokenTo - The token to swap to.
    * @param {string} options.amount - The amount to swap.
    * @param {number} options.slippagePercentage - The slippage percentage.
    * @param {string} options.signerAddress - The address of the signer.
-   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @return {Promise<BestRouteData>} A promise that resolves to the best route data for token swapping.
    * @throws {Error} Throws an error if there is no path for the specified tokens.
    */
-  public async getBestRouteTransaction({
+  public async getBestRouteData({
     tokenFrom,
     tokenTo,
     amount,
@@ -75,7 +75,7 @@ export class RouteManager implements IRouteManager {
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
-  }): Promise<TransactionBlock> {
+  }): Promise<BestRouteData> {
     if (tokenFromIsTokenTo(tokenFrom, tokenTo)) {
       throw new Error("[RouteManager] getBestRouteTransaction: tokenFrom is equal to tokenTo.");
     }
@@ -152,8 +152,45 @@ export class RouteManager implements IRouteManager {
 
     const maxOutputProvider = routeData.provider;
 
+    return { maxOutputProvider, maxOutputAmount, route };
+  }
+
+  /**
+   * @public
+   * @method getBestRouteTransaction
+   * @description Gets the best route transaction for token swapping.
+   * @param {Object} options - The options for getting the best route transaction.
+   * @param {string} options.tokenFrom - The token to swap from.
+   * @param {string} options.tokenTo - The token to swap to.
+   * @param {string} options.amount - The amount to swap.
+   * @param {number} options.slippagePercentage - The slippage percentage.
+   * @param {string} options.signerAddress - The address of the signer.
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @throws {Error} Throws an error if there is no path for the specified tokens.
+   */
+  public async getBestRouteTransaction({
+    tokenFrom,
+    tokenTo,
+    amount,
+    slippagePercentage,
+    signerAddress,
+  }: {
+    tokenFrom: string;
+    tokenTo: string;
+    amount: string;
+    slippagePercentage: number;
+    signerAddress: string;
+  }): Promise<TransactionBlock> {
+    const { maxOutputProvider, route } = await this.getBestRouteData({
+      tokenFrom,
+      tokenTo,
+      amount,
+      slippagePercentage,
+      signerAddress,
+    });
+
     const transaction = await maxOutputProvider.getSwapTransaction({
-      route: route,
+      route,
       publicKey: signerAddress,
       slippagePercentage,
     });
