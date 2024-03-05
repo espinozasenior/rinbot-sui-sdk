@@ -157,7 +157,7 @@ export class SurfdogLaunchpadSingleton {
     return { tx, txRes: buyUserTicketTxRes };
   }
 
-  public async checkSpinStatusByTx({ tx }: { tx: SuiTransactionBlockResponse }) {
+  public checkSpinStatusByTx({ tx }: { tx: SuiTransactionBlockResponse }) {
     if (!tx.balanceChanges) {
       console.error("[SurfdogLaunchpadSingleton.checkSpinStatusByTx]", tx);
 
