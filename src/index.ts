@@ -39,3 +39,9 @@ export * from "./storages/types";
 
 // Misc
 export { SUI_DECIMALS, isValidSuiAddress } from "@mysten/sui.js/utils";
+
+// Launchpad
+export * from "./launchpad/surfdog/surfdog";
+export * from "./launchpad/surfdog/types";
+export * as mainnetSurfdogConfig from "./launchpad/surfdog/mainnet.config";
+export * as testnetSurfdogConfig from "./launchpad/surfdog/testnet.config";
