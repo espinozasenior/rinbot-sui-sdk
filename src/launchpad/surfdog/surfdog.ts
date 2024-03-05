@@ -2,6 +2,7 @@
 import { SuiClient, SuiTransactionBlockResponse } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromB64 } from "@mysten/sui.js/utils";
+import BigNumber from "bignumber.js";
 import {
   buy as createBuyTicketTransaction,
   createUserState as createUserStateTransaction,
@@ -14,6 +15,7 @@ export class SurfdogLaunchpadSingleton {
   private static _instance: SurfdogLaunchpadSingleton;
   private provider: SuiClient;
   private config: SurfDogConfig;
+  public static GAS_BUDGET_FOR_BUYING_TICKET = 10_000;
 
   /**
    * Constructs a new instance of the SuiProvider class with the provided SUI provider URL.
@@ -154,6 +156,8 @@ export class SurfdogLaunchpadSingleton {
       payment: coin,
     });
 
+    tx.setGasBudget(SurfdogLaunchpadSingleton.GAS_BUDGET_FOR_BUYING_TICKET);
+
     return { tx, txRes: buyUserTicketTxRes };
   }
 
@@ -174,5 +178,21 @@ export class SurfdogLaunchpadSingleton {
       // console.debug("[SurfdogLaunchpadSingleton.checkSpinStatusByTx] user lost");
       return false;
     }
+  }
+
+  public async getMaxTicketsCount(suiBalance: string, ticketPrice: string) {
+    const suiBalanceBN = new BigNumber(suiBalance);
+    const ticketPriceBN = new BigNumber(ticketPrice);
+    const gasBudgetBN = new BigNumber(SurfdogLaunchpadSingleton.GAS_BUDGET_FOR_BUYING_TICKET);
+
+    let ticketsCount = 0;
+    let availableSuiBalanceBN = suiBalanceBN;
+
+    while (availableSuiBalanceBN.gte(ticketPriceBN.plus(gasBudgetBN))) {
+      ticketsCount = ticketsCount + 1;
+      availableSuiBalanceBN = availableSuiBalanceBN.minus(ticketPriceBN.plus(gasBudgetBN));
+    }
+
+    return ticketsCount;
   }
 }
