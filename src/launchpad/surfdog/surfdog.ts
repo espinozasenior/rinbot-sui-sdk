@@ -180,7 +180,7 @@ export class SurfdogLaunchpadSingleton {
     }
   }
 
-  public async getMaxTicketsCount(suiBalance: string, ticketPrice: string) {
+  public getMaxTicketsCount(suiBalance: string, ticketPrice: string) {
     const suiBalanceBN = new BigNumber(suiBalance);
     const ticketPriceBN = new BigNumber(ticketPrice);
     const gasBudgetBN = new BigNumber(SurfdogLaunchpadSingleton.GAS_BUDGET_FOR_BUYING_TICKET);
