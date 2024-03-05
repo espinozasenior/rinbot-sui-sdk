@@ -71,21 +71,13 @@ export class SurfdogLaunchpadSingleton {
       owner: publicKey,
     });
 
-    if (!object.data[0]) {
-      console.log("User does not have a state object");
-      throw new Error("User does not have a state object");
-    }
+    if (!(Array.isArray(object.data) && object.data[0] && object.data[0].data && object.data[0].data.bcs)) {
+      console.warn(`User ${publicKey} does not have state objects`);
 
-    if (!object.data[0].data) {
-      console.log("User does not have a data for state object");
-      throw new Error("User does not have a data for state object");
+      return null;
     }
 
     const userStateBcs = object.data[0].data.bcs;
-    if (!userStateBcs) {
-      console.log("User does not have a state object");
-      return;
-    }
 
     const isBcsBytesInStateBcs = "bcsBytes" in userStateBcs;
     if (!isBcsBytesInStateBcs) {
