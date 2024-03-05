@@ -15,7 +15,7 @@ export class SurfdogLaunchpadSingleton {
   private static _instance: SurfdogLaunchpadSingleton;
   private provider: SuiClient;
   private config: SurfDogConfig;
-  public static GAS_BUDGET_FOR_BUYING_TICKET = 10_000;
+  public static GAS_BUDGET_FOR_BUYING_TICKET = 10_000_000;
 
   /**
    * Constructs a new instance of the SuiProvider class with the provided SUI provider URL.
