@@ -1,5 +1,5 @@
 /* eslint-disable require-jsdoc */
-import { SuiClient } from "@mysten/sui.js/client";
+import { SuiClient, SuiTransactionBlockResponse } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromB64 } from "@mysten/sui.js/utils";
 import {
@@ -81,7 +81,7 @@ export class SurfdogLaunchpadSingleton {
 
     const isBcsBytesInStateBcs = "bcsBytes" in userStateBcs;
     if (!isBcsBytesInStateBcs) {
-      console.debug("[SurfdogLaunchpadSingleton.getUserState] bcsBytes does not exist stateBcs", userStateBcs);
+      console.error("[SurfdogLaunchpadSingleton.getUserState] bcsBytes does not exist stateBcs", userStateBcs);
       throw new Error("bcsBytes does not exist stateBcs");
     }
 
@@ -105,19 +105,19 @@ export class SurfdogLaunchpadSingleton {
     });
 
     if (!object.data) {
-      console.debug("[SurfdogLaunchpadSingleton.getGameState] object.data", object.data);
+      console.error("[SurfdogLaunchpadSingleton.getGameState] object.data", object.data);
       throw new Error("Failed to fetch game state: object.data is empty");
     }
 
     const stateBcs = object.data.bcs;
     if (!stateBcs) {
-      console.debug("[SurfdogLaunchpadSingleton.getGameState] State does not exist bsc", stateBcs);
+      console.error("[SurfdogLaunchpadSingleton.getGameState] State does not exist bsc", stateBcs);
       throw new Error("State does not exist bsc");
     }
 
     const isBcsBytesInStateBcs = "bcsBytes" in stateBcs;
     if (!isBcsBytesInStateBcs) {
-      console.debug("[SurfdogLaunchpadSingleton.getGameState] bcsBytes does not exist stateBcs", stateBcs);
+      console.error("[SurfdogLaunchpadSingleton.getGameState] bcsBytes does not exist stateBcs", stateBcs);
       throw new Error("bcsBytes does not exist stateBcs");
     }
 
@@ -155,5 +155,24 @@ export class SurfdogLaunchpadSingleton {
     });
 
     return { tx, txRes: buyUserTicketTxRes };
+  }
+
+  public async checkSpinStatusByTx({ tx }: { tx: SuiTransactionBlockResponse }) {
+    if (!tx.balanceChanges) {
+      console.error("[SurfdogLaunchpadSingleton.checkSpinStatusByTx]", tx);
+
+      throw new Error("No balanceChanges present in spin transaction");
+    }
+
+    const surfMoved = tx.balanceChanges.find((a) => a.coinType === SURF.$typeName);
+    if (surfMoved) {
+      // user has won
+      // console.debug("[SurfdogLaunchpadSingleton.checkSpinStatusByTx] user won");
+      return true;
+    } else {
+      // user has lost
+      // console.debug("[SurfdogLaunchpadSingleton.checkSpinStatusByTx] user lost");
+      return false;
+    }
   }
 }
