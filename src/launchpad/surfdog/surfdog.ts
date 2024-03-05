@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 import { SuiClient, SuiTransactionBlockResponse } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { fromB64 } from "@mysten/sui.js/utils";
+import { SUI_DECIMALS, fromB64 } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import {
   buy as createBuyTicketTransaction,
@@ -183,7 +183,7 @@ export class SurfdogLaunchpadSingleton {
   public getMaxTicketsCount(suiBalance: string, ticketPrice: string) {
     const suiBalanceBN = new BigNumber(suiBalance);
     const ticketPriceBN = new BigNumber(ticketPrice);
-    const gasBudgetBN = new BigNumber(SurfdogLaunchpadSingleton.GAS_BUDGET_FOR_BUYING_TICKET);
+    const gasBudgetBN = new BigNumber(SurfdogLaunchpadSingleton.GAS_BUDGET_FOR_BUYING_TICKET).dividedBy(SUI_DECIMALS);
 
     let ticketsCount = 0;
     let availableSuiBalanceBN = suiBalanceBN;
