@@ -30,4 +30,25 @@ module.exports = {
     "max-len": ["error", { code: 120 }],
     "prettier/prettier": 2, // Means error
   },
+  overrides: [
+    {
+      files: ["tests/**/*"],
+      env: {
+        jest: true,
+      },
+    },
+    // Generated types from sui-client-gen
+    {
+      files: ["__generated__/**/*"],
+      rules: {
+        "@typescript-eslint/ban-types": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "valid-jsdoc": "off",
+        "require-jsdoc": "off",
+        "max-len": "off",
+        camelcase: "off",
+      },
+    },
+  ],
 };

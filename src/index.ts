@@ -3,17 +3,21 @@ export * from "./managers/CoinManager";
 export * from "./managers/RouteManager";
 export * from "./managers/WalletManager";
 export * from "./managers/types";
+export * from "./managers/dca/DCAManager";
+export * from "./managers/dca/types";
+export * from "./managers/dca/utils";
 
 // Providers (common & utils)
 export * from "./providers/common";
 export * from "./providers/utils/convertSlippage";
-export * from "./providers/utils/convertToInteger";
+export * from "./providers/utils/convertToBNFormat";
 export * from "./providers/utils/isValidTokenAddress";
 export * from "./providers/utils/normalizeSuiCoinType";
 export * from "./providers/utils/tryCatchWrapper";
 export * from "./providers/utils/getSuiProvider";
 export * from "./providers/utils/isValidTokenAmount";
 export * from "./providers/utils/transactionFromSerializedTransaction";
+export * from "./providers/utils/isSuiCoinType";
 
 // Aftermath
 export * from "./providers/aftermath/aftermath";
@@ -36,6 +40,7 @@ export * from "./providers/turbos/utils";
 export * from "./storages/RedisStorage";
 export * from "./storages/InMemoryStorage";
 export * from "./storages/types";
+export * from "./storages/utils/typeguards";
 
 // Misc
 export { SUI_DECIMALS, isValidSuiAddress } from "@mysten/sui.js/utils";

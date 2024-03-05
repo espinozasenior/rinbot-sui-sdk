@@ -20,18 +20,18 @@ export function isStorageValue(data: unknown): data is StorageValue {
 }
 
 export function isCommonCoinDataArray(data: unknown): data is CommonCoinData[] {
+  return Array.isArray(data) && data.every((item) => isCommonCoinData(item));
+}
+
+export function isCommonCoinData(data: unknown): data is CommonCoinData {
   return (
-    Array.isArray(data) &&
-    data.every(
-      (item) =>
-        typeof item === "object" &&
-        item !== null &&
-        "type" in item &&
-        typeof (item as CommonCoinData).type === "string" &&
-        "decimals" in item &&
-        typeof (item as CommonCoinData).decimals === "number" &&
-        ((item as CommonCoinData).symbol === undefined || typeof (item as CommonCoinData).symbol === "string"),
-    )
+    typeof data === "object" &&
+    data !== null &&
+    "type" in data &&
+    typeof (data as CommonCoinData).type === "string" &&
+    "decimals" in data &&
+    typeof (data as CommonCoinData).decimals === "number" &&
+    ((data as CommonCoinData).symbol === undefined || typeof (data as CommonCoinData).symbol === "string")
   );
 }
 
