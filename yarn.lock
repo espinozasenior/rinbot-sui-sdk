@@ -490,10 +490,10 @@
   resolved "https://registry.npmjs.org/@eslint/js/-/js-8.56.0.tgz#ef20350fec605a7f7035a01764731b2de0f3782b"
   integrity sha512-gMsVel9D7f2HLkBma9VbtzZRehRogVRfbr++f06nL2vnCGCNlzOD+/MUov/F4p8myyAHspEhVobgjpX64q5m6A==
 
-"@flowx-pkg/ts-sdk@^0.0.8":
-  version "0.0.8"
-  resolved "https://registry.npmjs.org/@flowx-pkg/ts-sdk/-/ts-sdk-0.0.8.tgz#386854454f85c028f62b1dc0720c81b3607521ff"
-  integrity sha512-0ZCnZ0nFMlr5dUg3xfPvMzU0nyk+M3aRJJbaT463V2K3n32zDe0jNuV7MXW7RyY0iJQoN8fEzYiqSXrmsWwqlQ==
+"@flowx-pkg/ts-sdk@^0.0.11":
+  version "0.0.11"
+  resolved "https://registry.npmjs.org/@flowx-pkg/ts-sdk/-/ts-sdk-0.0.11.tgz#27f427a3cef2c6d66155897c1af2ad82c9f8fd48"
+  integrity sha512-IpOXGGY/O7rLsDBhO+WAKxrtVAcEP9scJiZy1ZSAnoGeMYxySaarHj4nqEgQVCqJl2biGBxNsriFSfQ/y9Z6+A==
   dependencies:
     "@mysten/sui.js" "^0.35.1"
     bignumber.js "^9.1.2"
