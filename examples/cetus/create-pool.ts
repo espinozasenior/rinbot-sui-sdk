@@ -33,7 +33,7 @@ export const cetus = async () => {
     throw new Error("Such pool already exists!");
   }
 
-  const { transaction: createPoolTransaction, paramsSwapped } = await cetus.getCreatePoolTransaction({
+  const createPoolTransaction = await cetus.getCreatePoolTransaction({
     coinTypeA,
     coinTypeB,
     decimalsA,
@@ -59,8 +59,8 @@ export const cetus = async () => {
   const transaction = await cetus.getAddLiquidityTransaction({
     pool,
     coinAmountA: amountA,
-    decimalsA: paramsSwapped ? decimalsB : decimalsA,
-    decimalsB: paramsSwapped ? decimalsA : decimalsB,
+    decimalsA: decimalsB, // Consuming params were swapped and TESTCNTWO is coinA
+    decimalsB: decimalsA,
     slippage,
     publicKey: user,
   });
