@@ -461,9 +461,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
    * @param {string} params.price - The price of coinB in terms of coinA (how much coinB is needed to buy 1 coinA).
    * @param {number} params.tickSpacing - The tick spacing of the pool.
    * @param {string} params.uri - The URI of the pool icon.
-   * @return {Promise<{ transaction: TransactionBlock, paramsSwapped: boolean }>} A promise that resolves to
-   * an object containing the transaction block for creating the pool and a boolean indicating if the parameters
-   * were swapped.
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for creating the pool.
    */
   public async getCreatePoolTransaction({
     coinTypeA,
@@ -481,7 +479,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     price: string;
     tickSpacing: number;
     uri?: string;
-  }): Promise<{ transaction: TransactionBlock; paramsSwapped: boolean }> {
+  }): Promise<TransactionBlock> {
     const swapParams: boolean = isSortedSymbols(normalizeSuiAddress(coinTypeA), normalizeSuiAddress(coinTypeB));
     const resultCoinTypeA = swapParams ? coinTypeB : coinTypeA;
     const resultCoinTypeB = swapParams ? coinTypeA : coinTypeB;
@@ -503,7 +501,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
       uri,
     });
 
-    return { transaction: createPoolTransaction, paramsSwapped: swapParams };
+    return createPoolTransaction;
   }
 
   /**
