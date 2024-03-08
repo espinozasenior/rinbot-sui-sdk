@@ -1,6 +1,7 @@
 /* eslint-disable require-jsdoc */
 
 import { CommonCoinData } from "../../managers/types";
+import { CetusPathForStorage } from "../../providers/cetus/types";
 import { ShortCoinMetadata } from "../../providers/flowx/types";
 import { ShortPoolData } from "../../providers/turbos/types";
 import { CommonPoolData } from "../../providers/types";
@@ -79,5 +80,25 @@ export function isShortPoolDataArray(data: unknown): data is ShortPoolData[] {
         "coinTypeB" in item &&
         typeof (item as ShortPoolData).coinTypeB === "string",
     )
+  );
+}
+
+export function isCetusPathForStorageArray(data: unknown): data is CetusPathForStorage[] {
+  if (!Array.isArray(data)) return false;
+
+  return data.every(
+    (item) =>
+      typeof item === "object" &&
+      item !== null &&
+      "base" in item &&
+      typeof (item as CetusPathForStorage).base === "string" &&
+      "quote" in item &&
+      typeof (item as CetusPathForStorage).quote === "string" &&
+      "addressMap" in item &&
+      Array.isArray((item as CetusPathForStorage).addressMap) &&
+      (item as CetusPathForStorage).addressMap.every(
+        (pair) =>
+          Array.isArray(pair) && pair.length === 2 && typeof pair[0] === "number" && typeof pair[1] === "string",
+      ),
   );
 }

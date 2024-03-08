@@ -5,6 +5,7 @@ import { ShortPoolData } from "../providers/turbos/types";
 import { CommonPoolData } from "../providers/types";
 import { InMemoryStorageSingleton } from "./InMemoryStorage";
 import { RedisStorageSingleton } from "./RedisStorage";
+import { CetusPathForStorage } from "../providers/cetus/types";
 
 export type Storage = InMemoryStorageSingleton | RedisStorageSingleton;
 
@@ -27,6 +28,7 @@ export enum StorageProperty {
   Paths = "paths",
   Pools = "pools",
   CoinsMetadata = "coinsMetadata",
+  CetusPaths = "cetusPaths",
 }
 
 export type StorageValue =
@@ -34,6 +36,7 @@ export type StorageValue =
   | { value: CommonPoolData[]; timestamp: string }
   | { value: ShortCoinMetadata[]; timestamp: string }
   | { value: ShortPoolData[]; timestamp: string }
+  | { value: CetusPathForStorage[]; timestamp: string }
   | null;
 
 export type RedisStorageClient = ReturnType<typeof createClient>;

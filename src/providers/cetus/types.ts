@@ -73,7 +73,7 @@ export interface APIResponse {
   data?: { lp_list: LPList[] };
 }
 
-export type CoinNodeWithSymbol = CoinNode & { symbol: string; type: string };
+export type CoinNodeWithSymbol = CoinNode & { symbol?: string; type: string };
 export type CoinMap = Map<string, CoinNodeWithSymbol>;
 export type PathMap = Map<string, PathLink>;
 
@@ -82,4 +82,31 @@ export type CetusOptions = ProviderOptions & {
   suiProviderUrl: string;
   proxy?: string;
   simulationAccount?: string;
+};
+
+export type CetusCreatePoolEventParsedJson = {
+  coin_type_a: string;
+  coin_type_b: string;
+  pool_id: string;
+  tick_spacing: number;
+};
+
+export type CetusOwnedPool = {
+  name: string;
+  poolAddress: string;
+  coinTypeA: string;
+  coinTypeB: string;
+  coinSymbolA?: string;
+  coinSymbolB?: string;
+  amountA: string;
+  amountB: string;
+  feeRate: string;
+  amountAIsRaw: boolean;
+  amountBIsRaw: boolean;
+};
+
+export type CetusPathForStorage = {
+  base: string;
+  quote: string;
+  addressMap: [number, string][];
 };

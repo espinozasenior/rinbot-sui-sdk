@@ -1,7 +1,9 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { NoRoutesError } from "../errors/NoRoutesError";
+import { CetusSingleton } from "../providers/cetus/cetus";
 import { SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
-import { BestRouteData, IRouteManager, Providers } from "./types";
+import { BestRouteData, IRouteManager, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 
 /**
@@ -99,6 +101,10 @@ export class RouteManager implements IRouteManager {
       filtredProviders.map((provider) => provider.providerName),
     );
 
+    let providersByOutputAmountsResultMap: Map<bigint, string>;
+    let routesByProviderResultMap: ProvidersToRouteDataMap;
+    let outputAmounts: bigint[];
+
     const { providersByOutputAmountsMap, routesByProviderMap } = await getRouterMaps({
       filtredProviders,
       tokenFrom,
@@ -108,26 +114,55 @@ export class RouteManager implements IRouteManager {
       slippagePercentage,
     });
 
-    const outputAmounts: bigint[] = Array.from(providersByOutputAmountsMap.keys());
+    providersByOutputAmountsResultMap = providersByOutputAmountsMap;
+    routesByProviderResultMap = routesByProviderMap;
+    outputAmounts = Array.from(providersByOutputAmountsResultMap.keys());
+
     const eachOutputAmountIs0: boolean = outputAmounts.every((amount) => amount === BigInt(0));
 
+    /**
+     * Tries to find Cetus route separately through graph traversal when Cetus exists in `filteredProviders`,
+     * because Cetus initially uses fetching off-chain API for finding route and route params, which works fast,
+     * but not reliable (timeouts).
+     * By default, we don't allow graph traversal search, because of it's slowness in implementation of Cetus SDK,
+     * but in case there's no other way to find the route, we use it as a fallback option.
+     * This feature initially designed to support trading on community created pools on Cetus, since in 90% of cases,
+     * Cetus off-chain API timeouts the request.
+     */
     if (eachOutputAmountIs0) {
-      throw new Error(
-        `[RouteManager] There is no paths for coins "${tokenFrom}" and "${tokenTo}" (all outputAmounts = 0)`,
-      );
+      const cetus = filtredProviders.find((provider) => provider.providerName === "Cetus");
+
+      if (cetus === undefined) {
+        throw new NoRoutesError(
+          `[RouteManager] There is no paths for coins "${tokenFrom}" and "${tokenTo}" (all outputAmounts = 0)`,
+        );
+      }
+
+      const cetusInstance = cetus as CetusSingleton;
+      const { cetusOutputAmount, providersByOutputAmountsMap, routesByProviderMap } =
+        await cetusInstance.getRouteDataWithGraph({
+          inputAmount: amount,
+          slippagePercentage,
+          coinTypeFrom: tokenFrom,
+          coinTypeTo: tokenTo,
+        });
+
+      providersByOutputAmountsResultMap = providersByOutputAmountsMap;
+      routesByProviderResultMap = routesByProviderMap;
+      outputAmounts = [cetusOutputAmount];
     }
 
     const maxOutputAmount: bigint = outputAmounts.reduce((max, currentValue) => {
       return currentValue > max ? currentValue : max;
     });
-    const providerWithMaxOutputAmount: string | undefined = providersByOutputAmountsMap.get(maxOutputAmount);
+    const providerWithMaxOutputAmount: string | undefined = providersByOutputAmountsResultMap.get(maxOutputAmount);
 
     // log info >>>
     let stringResult = "{ ";
-    providersByOutputAmountsMap.forEach((value, key) => (stringResult += `${key}n => ${value}, `));
+    providersByOutputAmountsResultMap.forEach((value, key) => (stringResult += `${key}n => ${value}, `));
     stringResult += "}";
     console.log(
-      "providersByOutputAmountsMap:",
+      "providersByOutputAmountsResultMap:",
       stringResult + "; maxOutputAmount:",
       maxOutputAmount + "n; providerWithMaxOutputAmount:",
       providerWithMaxOutputAmount,
@@ -138,7 +173,7 @@ export class RouteManager implements IRouteManager {
       throw new Error(`[Route] Cannot find provider with output amount "${maxOutputAmount}".`);
     }
 
-    const routeData = routesByProviderMap.get(providerWithMaxOutputAmount);
+    const routeData = routesByProviderResultMap.get(providerWithMaxOutputAmount);
 
     if (routeData === undefined) {
       throw new Error(`[Route] Cannot find route data for provider "${providerWithMaxOutputAmount}".`);
