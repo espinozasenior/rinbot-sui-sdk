@@ -40,7 +40,7 @@ describe("FlowxSingleton", () => {
     });
   });
 
-  describe.skip("getRouteData", () => {
+  describe("getRouteData", () => {
     it("should return outputAmount and route", async () => {
       const { outputAmount, route } = await flowxSingleton.getRouteData({
         coinTypeFrom: SUI_COIN_TYPE,
@@ -55,7 +55,7 @@ describe("FlowxSingleton", () => {
     });
   });
 
-  describe.skip("getSwapTransaction", () => {
+  describe("getSwapTransaction", () => {
     it("should return swap transaction", async () => {
       const { route } = await flowxSingleton.getRouteData({
         coinTypeFrom: SUI_COIN_TYPE,
