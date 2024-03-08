@@ -1,6 +1,14 @@
 import { CoinNode, PathLink } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import { CoinsCache, PathsCache } from "../types";
-import { APIResponse, CoinInfo, CoinMap, CoinNodeWithSymbol, LPList, PathMap } from "./types";
+import {
+  APIResponse,
+  CetusCreatePoolEventParsedJson,
+  CoinInfo,
+  CoinMap,
+  CoinNodeWithSymbol,
+  LPList,
+  PathMap,
+} from "./types";
 
 /* eslint-disable require-jsdoc */
 export function isApiResponseValid(
@@ -123,4 +131,26 @@ export function getCoinsAndPathsCachesFromMaps({ paths, coins }: { paths: PathMa
   });
 
   return { coinsCache, pathsCache };
+}
+
+export function isCetusCreatePoolEventParsedJson(data: unknown): data is CetusCreatePoolEventParsedJson {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "coin_type_a" in data &&
+    typeof data.coin_type_a === "string" &&
+    "coin_type_b" in data &&
+    typeof data.coin_type_b === "string" &&
+    "pool_id" in data &&
+    typeof data.pool_id === "string" &&
+    "tick_spacing" in data &&
+    typeof data.tick_spacing === "number"
+  );
+}
+
+export function getCoinMapFromCoinsCache(coinsCache: CoinsCache): CoinMap {
+  const coins: CoinMap = new Map();
+  coinsCache.forEach((coinData, coinType) => coins.set(coinType, { ...coinData, address: coinType }));
+
+  return coins;
 }
