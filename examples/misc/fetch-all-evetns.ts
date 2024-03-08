@@ -1,4 +1,5 @@
 import { EventId, PaginatedEvents, SuiClient, SuiEvent } from "@mysten/sui.js/client";
+import { MAX_BATCH_EVENTS_PER_QUERY_EVENTS_REQUEST } from "../../src/providers/common";
 
 export const fetchAllEvents = async () => {
   const suiProviderUrl = "https://fullnode.mainnet.sui.io";
@@ -6,7 +7,7 @@ export const fetchAllEvents = async () => {
   const publicKey = "";
 
   console.time("fetchEvents");
-  const pageCapacity = 50;
+  const pageCapacity = MAX_BATCH_EVENTS_PER_QUERY_EVENTS_REQUEST;
   const allEvents: SuiEvent[] = [];
   let nextCursor: EventId | undefined | null = null;
   let events: PaginatedEvents = await provider.queryEvents({
