@@ -1,3 +1,4 @@
+import { PathLink } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { CommonCoinData, Provider, UpdatedCoinsCache } from "../managers/types";
 import { Storage } from "../storages/types";
@@ -14,6 +15,7 @@ export type PathsCache = Map<string, CommonPoolData>;
 export type CacheOptions = {
   storage?: Storage;
   updateIntervalInMs: number;
+  updateIntervally?: boolean;
 };
 
 export type GetRouteDataInput<T extends Provider> = Parameters<T["getRouteData"]>[0];
@@ -25,7 +27,7 @@ export type GetSwapTransactionInput<T extends Provider> = Parameters<T["getSwapT
 // TODO: Add comments about using `storage` & use-cases, as well as conflicts with `lazyLoading` option
 export interface IPoolProvider<T extends Provider> {
   getCoins(): UpdatedCoinsCache;
-  getPaths(): Map<string, CommonPoolData>;
+  getPaths(): Map<string, CommonPoolData | PathLink>;
   getRouteData(arg: GetRouteDataInput<T>): GetRouteDataOutput<T>;
   getSwapTransaction(arg: GetSwapTransactionInput<T>): Promise<TransactionBlock>;
 }

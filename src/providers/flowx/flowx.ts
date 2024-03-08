@@ -50,7 +50,8 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
    */
   private constructor(options: Omit<FlowxOptions, "lazyLoading">) {
     super();
-    this.cacheOptions = options.cacheOptions;
+    const { updateIntervally = true, ...restCacheOptions } = options.cacheOptions;
+    this.cacheOptions = { updateIntervally, ...restCacheOptions };
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
@@ -88,7 +89,7 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
 
     await this.fillCacheFromStorage();
     await this.updateCaches();
-    this.updateCachesIntervally();
+    this.cacheOptions.updateIntervally && this.updateCachesIntervally();
 
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
@@ -155,6 +156,8 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
           pathsCache: this.getPaths(),
           coinsMetadataCache: this.coinsMetadataCache,
         });
+
+        console.debug("[FlowX] Caches are updated and stored.");
       } catch (error) {
         console.error("[Flowx] Caches update failed:", error);
       }

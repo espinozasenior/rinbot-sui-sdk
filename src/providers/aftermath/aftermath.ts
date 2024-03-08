@@ -45,7 +45,7 @@ import {
  */
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
   private static _instance: AftermathSingleton;
-  private static AFTERMATH_POOL_URL = "https://aftermath.finance/pools";
+  public static AFTERMATH_POOL_URL = "https://aftermath.finance/pools";
   public isSmartRoutingAvailable = true;
   public providerName = "Aftermath";
   public aftermathSdk: Aftermath;
@@ -63,7 +63,8 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
   private constructor(options: Omit<AftermathOptions, "lazyLoading">) {
     super();
     this.aftermathSdk = new Aftermath("MAINNET");
-    this.cacheOptions = options.cacheOptions;
+    const { updateIntervally = true, ...restCacheOptions } = options.cacheOptions;
+    this.cacheOptions = { updateIntervally, ...restCacheOptions };
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
@@ -101,7 +102,7 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     console.debug(`[${this.providerName}] Singleton initiating.`);
     await this.fillCacheFromStorage();
     await this.updateCaches();
-    this.updateCachesIntervally();
+    this.cacheOptions.updateIntervally && this.updateCachesIntervally();
 
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
@@ -160,6 +161,8 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
           coinsCache: this.getCoins(),
           pathsCache: this.getPaths(),
         });
+
+        console.debug("[Aftermath] Caches are updated and stored.");
       } catch (error) {
         console.error("[Aftermath] Caches update failed:", error);
       }
