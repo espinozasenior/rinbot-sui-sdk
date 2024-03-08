@@ -65,6 +65,7 @@ export async function getOwnedPoolInfosFromPools(
         fees: pool.stats?.fees.toString() ?? "0",
         tvl: pool.stats?.tvl.toString() ?? "0",
         volume: pool.stats?.volume.toString() ?? "0",
+        poolObjectId: pool.pool.objectId,
         coins,
       };
     }),

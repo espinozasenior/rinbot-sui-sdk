@@ -46,5 +46,6 @@ export type OwnedPoolInfo = {
   tvl: string;
   fees: string;
   apr: string;
+  poolObjectId: string;
   coins: OwnedPoolCoinInfo[];
 };

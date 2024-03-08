@@ -54,7 +54,8 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     super();
     const provider = new SuiClient({ url: options.suiProviderUrl });
     this.turbosSdk = new TurbosSdk(Network.mainnet, provider);
-    this.cacheOptions = options.cacheOptions;
+    const { updateIntervally = true, ...restCacheOptions } = options.cacheOptions;
+    this.cacheOptions = { updateIntervally, ...restCacheOptions };
     this.proxy = options.proxy;
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
@@ -92,7 +93,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
 
     await this.fillCacheFromStorage();
     await this.updateCaches();
-    this.updateCachesIntervally();
+    this.cacheOptions.updateIntervally && this.updateCachesIntervally();
 
     this.bufferEvent("cachesUpdate", this.getCoins());
   }
@@ -159,6 +160,8 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
           pathsCache: this.getPaths(),
           poolsCache: this.getPools(),
         });
+
+        console.debug("[Turbos] Caches are updated and stored.");
       } catch (error) {
         console.error("[Turbos] Caches update failed:", error);
       }

@@ -1,6 +1,6 @@
 {
   "name": "@avernikoz/rinbot-sui-sdk",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Sui Trading Bot SDK (typescript)",
   "files": [
     "dist"
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@cetusprotocol/cetus-sui-clmm-sdk": "^3.17.8",
-    "@flowx-pkg/ts-sdk": "^0.0.8",
+    "@flowx-pkg/ts-sdk": "^0.0.11",
     "@mysten/sui.js": "^0.42.0",
     "@types/redis": "^4.0.11",
     "aftermath-ts-sdk": "^1.1.32",
