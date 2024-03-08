@@ -25,7 +25,7 @@ import { SuiClient, SuiParsedData } from "@mysten/sui.js/client";
 
 export function isMemCoinOwnerCap(type: string): boolean {
   type = compressSuiType(type);
-  return type === "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::MemCoinOwnerCap";
+  return type === "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::MemCoinOwnerCap";
 }
 
 export interface MemCoinOwnerCapFields {
@@ -36,12 +36,12 @@ export type MemCoinOwnerCapReified = Reified<MemCoinOwnerCap, MemCoinOwnerCapFie
 
 export class MemCoinOwnerCap implements StructClass {
   static readonly $typeName =
-    "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::MemCoinOwnerCap";
+    "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::MemCoinOwnerCap";
   static readonly $numTypeParams = 0;
 
   readonly $typeName = MemCoinOwnerCap.$typeName;
 
-  readonly $fullTypeName: "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::MemCoinOwnerCap";
+  readonly $fullTypeName: "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::MemCoinOwnerCap";
 
   readonly $typeArgs: [];
 
@@ -51,7 +51,7 @@ export class MemCoinOwnerCap implements StructClass {
     this.$fullTypeName = composeSuiType(
       MemCoinOwnerCap.$typeName,
       ...typeArgs,
-    ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::MemCoinOwnerCap";
+    ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::MemCoinOwnerCap";
     this.$typeArgs = typeArgs;
 
     this.id = fields.id;
@@ -63,7 +63,7 @@ export class MemCoinOwnerCap implements StructClass {
       fullTypeName: composeSuiType(
         MemCoinOwnerCap.$typeName,
         ...[],
-      ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::MemCoinOwnerCap",
+      ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::MemCoinOwnerCap",
       typeArgs: [] as [],
       reifiedTypeArgs: [],
       fromFields: (fields: Record<string, any>) => MemCoinOwnerCap.fromFields(fields),
@@ -173,7 +173,7 @@ export class MemCoinOwnerCap implements StructClass {
 
 export function isState(type: string): boolean {
   type = compressSuiType(type);
-  return type.startsWith("0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::State<");
+  return type.startsWith("0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::State<");
 }
 
 export interface StateFields<T extends PhantomTypeArgument> {
@@ -191,12 +191,12 @@ export interface StateFields<T extends PhantomTypeArgument> {
 export type StateReified<T extends PhantomTypeArgument> = Reified<State<T>, StateFields<T>>;
 
 export class State<T extends PhantomTypeArgument> implements StructClass {
-  static readonly $typeName = "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::State";
+  static readonly $typeName = "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::State";
   static readonly $numTypeParams = 1;
 
   readonly $typeName = State.$typeName;
 
-  readonly $fullTypeName: `0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::State<${PhantomToTypeStr<T>}>`;
+  readonly $fullTypeName: `0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::State<${PhantomToTypeStr<T>}>`;
 
   readonly $typeArgs: [PhantomToTypeStr<T>];
 
@@ -214,7 +214,7 @@ export class State<T extends PhantomTypeArgument> implements StructClass {
     this.$fullTypeName = composeSuiType(
       State.$typeName,
       ...typeArgs,
-    ) as `0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::State<${PhantomToTypeStr<T>}>`;
+    ) as `0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::State<${PhantomToTypeStr<T>}>`;
     this.$typeArgs = typeArgs;
 
     this.id = fields.id;
@@ -234,7 +234,7 @@ export class State<T extends PhantomTypeArgument> implements StructClass {
       fullTypeName: composeSuiType(
         State.$typeName,
         ...[extractType(T)],
-      ) as `0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::State<${PhantomToTypeStr<ToPhantomTypeArgument<T>>}>`,
+      ) as `0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::State<${PhantomToTypeStr<ToPhantomTypeArgument<T>>}>`,
       typeArgs: [extractType(T)] as [PhantomToTypeStr<ToPhantomTypeArgument<T>>],
       reifiedTypeArgs: [T],
       fromFields: (fields: Record<string, any>) => State.fromFields(T, fields),
@@ -416,7 +416,7 @@ export class State<T extends PhantomTypeArgument> implements StructClass {
 
 export function isUserState(type: string): boolean {
   type = compressSuiType(type);
-  return type === "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::UserState";
+  return type === "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::UserState";
 }
 
 export interface UserStateFields {
@@ -428,12 +428,12 @@ export interface UserStateFields {
 export type UserStateReified = Reified<UserState, UserStateFields>;
 
 export class UserState implements StructClass {
-  static readonly $typeName = "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::UserState";
+  static readonly $typeName = "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::UserState";
   static readonly $numTypeParams = 0;
 
   readonly $typeName = UserState.$typeName;
 
-  readonly $fullTypeName: "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::UserState";
+  readonly $fullTypeName: "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::UserState";
 
   readonly $typeArgs: [];
 
@@ -445,7 +445,7 @@ export class UserState implements StructClass {
     this.$fullTypeName = composeSuiType(
       UserState.$typeName,
       ...typeArgs,
-    ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::UserState";
+    ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::UserState";
     this.$typeArgs = typeArgs;
 
     this.id = fields.id;
@@ -459,7 +459,7 @@ export class UserState implements StructClass {
       fullTypeName: composeSuiType(
         UserState.$typeName,
         ...[],
-      ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::meme::UserState",
+      ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::meme::UserState",
       typeArgs: [] as [],
       reifiedTypeArgs: [],
       fromFields: (fields: Record<string, any>) => UserState.fromFields(fields),

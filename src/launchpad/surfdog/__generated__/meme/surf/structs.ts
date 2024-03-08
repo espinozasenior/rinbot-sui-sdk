@@ -17,7 +17,7 @@ import { SuiClient, SuiParsedData } from "@mysten/sui.js/client";
 
 export function isSURF(type: string): boolean {
   type = compressSuiType(type);
-  return type === "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::surf::SURF";
+  return type === "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::surf::SURF";
 }
 
 export interface SURFFields {
@@ -27,12 +27,12 @@ export interface SURFFields {
 export type SURFReified = Reified<SURF, SURFFields>;
 
 export class SURF implements StructClass {
-  static readonly $typeName = "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::surf::SURF";
+  static readonly $typeName = "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::surf::SURF";
   static readonly $numTypeParams = 0;
 
   readonly $typeName = SURF.$typeName;
 
-  readonly $fullTypeName: "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::surf::SURF";
+  readonly $fullTypeName: "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::surf::SURF";
 
   readonly $typeArgs: [];
 
@@ -42,7 +42,7 @@ export class SURF implements StructClass {
     this.$fullTypeName = composeSuiType(
       SURF.$typeName,
       ...typeArgs,
-    ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::surf::SURF";
+    ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::surf::SURF";
     this.$typeArgs = typeArgs;
 
     this.dummyField = fields.dummyField;
@@ -54,7 +54,7 @@ export class SURF implements StructClass {
       fullTypeName: composeSuiType(
         SURF.$typeName,
         ...[],
-      ) as "0xae40d60ccae9366903e142ad222b91953e699221c51b9a2647d69cfe8ef2ff39::surf::SURF",
+      ) as "0xd06278ad71b5a4d622f179bd21d163d2efc8aaf14e1750884026f63e3d07ca3a::surf::SURF",
       typeArgs: [] as [],
       reifiedTypeArgs: [],
       fromFields: (fields: Record<string, any>) => SURF.fromFields(fields),
