@@ -39,7 +39,7 @@ module.exports = {
     },
     // Generated types from sui-client-gen
     {
-      files: ["__generated__/**/*"],
+      files: ["__generated__/**/*", "src/launchpad/surfdog/__generated__/**/*"],
       rules: {
         "@typescript-eslint/ban-types": "off",
         "@typescript-eslint/no-explicit-any": "off",

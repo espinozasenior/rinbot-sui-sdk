@@ -44,3 +44,14 @@ export * from "./storages/utils/typeguards";
 
 // Misc
 export { SUI_DECIMALS, isValidSuiAddress } from "@mysten/sui.js/utils";
+export { TransactionBlock } from "@mysten/sui.js/transactions";
+
+// Launchpad
+export * from "./launchpad/surfdog/surfdog";
+export * from "./launchpad/surfdog/types";
+export * as mainnetSurfdogConfig from "./launchpad/surfdog/mainnet.config";
+export * as testnetSurfdogConfig from "./launchpad/surfdog/testnet.config";
+
+// Transaction
+export * from "./transactions/types";
+export * from "./transactions/utils";
