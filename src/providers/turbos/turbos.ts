@@ -33,7 +33,7 @@ import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPo
  * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  */
 export class TurbosSingleton extends EventEmitter implements IPoolProvider<TurbosSingleton> {
-  private static _instance: TurbosSingleton;
+  private static _instance: TurbosSingleton | undefined;
   private static TURBOS_API_URL = "https://api.turbos.finance";
   public turbosSdk: TurbosSdk;
   public isSmartRoutingAvailable = false;
@@ -442,5 +442,15 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     });
 
     return transaction;
+  }
+
+  /**
+   * Removes the current instance of TurbosSingleton.
+   *
+   * Disclaimer: While this method in this class is marked as public, it is strongly discouraged
+   * to use it directly unless you are certain about the behavior.
+   */
+  public static removeInstance() {
+    TurbosSingleton._instance = undefined;
   }
 }

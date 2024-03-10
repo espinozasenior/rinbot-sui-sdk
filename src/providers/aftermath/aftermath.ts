@@ -44,7 +44,7 @@ import {
  * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  */
 export class AftermathSingleton extends EventEmitter implements IPoolProvider<AftermathSingleton> {
-  private static _instance: AftermathSingleton;
+  private static _instance: AftermathSingleton | undefined;
   public static AFTERMATH_POOL_URL = "https://aftermath.finance/pools";
   public isSmartRoutingAvailable = true;
   public providerName = "Aftermath";
@@ -640,5 +640,15 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     const ownedPoolInfos: OwnedPoolInfo[] = await getOwnedPoolInfosFromPools(pools, coinManager);
 
     return ownedPoolInfos;
+  }
+
+  /**
+   * Removes the current instance of AftermathSingleton.
+   *
+   * Disclaimer: While this method in this class is marked as public, it is strongly discouraged
+   * to use it directly unless you are certain about the behavior.
+   */
+  public static removeInstance() {
+    AftermathSingleton._instance = undefined;
   }
 }
