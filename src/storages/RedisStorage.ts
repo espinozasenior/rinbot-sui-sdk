@@ -11,7 +11,7 @@ import { isStorageValue } from "./utils/typeguards";
  * External usage may lead to unintended behavior and issues.
  */
 export class RedisStorageSingleton implements IStorage {
-  private static _instance: RedisStorageSingleton;
+  private static _instance: RedisStorageSingleton | undefined;
   private client: RedisStorageClient;
   private static version = 3;
 
@@ -83,5 +83,15 @@ export class RedisStorageSingleton implements IStorage {
     } else {
       throw new Error(`[RedisStorage] getCache: value ${value} is not StorageValue.`);
     }
+  }
+
+  /**
+   * Removes the current instance of RedisStorageSingleton.
+   *
+   * Disclaimer: While this method in this class is marked as public, it is strongly discouraged
+   * to use it directly unless you are certain about the behavior.
+   */
+  public static removeInstance() {
+    RedisStorageSingleton._instance = undefined;
   }
 }
