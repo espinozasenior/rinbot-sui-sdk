@@ -54,7 +54,7 @@ import {
  * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  */
 export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusSingleton> {
-  private static _instance: CetusSingleton;
+  private static _instance: CetusSingleton | undefined;
   public providerName = "Cetus";
   public isSmartRoutingAvailable = true;
   public cetusSdk: CetusClmmSDK;
@@ -992,5 +992,15 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     }
 
     return { routesByProviderMap, providersByOutputAmountsMap, cetusOutputAmount };
+  }
+
+  /**
+   * Removes the current instance of CetusSingleton.
+   *
+   * Disclaimer: While this method in this class is marked as public, it is strongly discouraged
+   * to use it directly unless you are certain about the behavior.
+   */
+  public static removeInstance() {
+    CetusSingleton._instance = undefined;
   }
 }

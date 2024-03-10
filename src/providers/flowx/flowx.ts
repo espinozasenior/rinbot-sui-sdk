@@ -34,7 +34,7 @@ import { getCoinsMetadataCache } from "../../storages/utils/getCoinsMetadataCach
  * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
  */
 export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxSingleton> {
-  private static _instance: FlowxSingleton;
+  private static _instance: FlowxSingleton | undefined;
   public providerName = "Flowx";
   public isSmartRoutingAvailable = false;
   public pathsCache: PathsCache = new Map();
@@ -350,5 +350,15 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
     const txBlock = new TransactionBlock(TransactionBlock.from(legacyTxBlock.serialize()));
 
     return txBlock;
+  }
+
+  /**
+   * Removes the current instance of FlowxSingleton.
+   *
+   * Disclaimer: While this method in this class is marked as public, it is strongly discouraged
+   * to use it directly unless you are certain about the behavior.
+   */
+  public static removeInstance() {
+    FlowxSingleton._instance = undefined;
   }
 }

@@ -24,11 +24,12 @@ export async function storeCaches({
 }): Promise<void> {
   try {
     const { data: coins }: { data: CommonCoinData[] } = coinsCache;
+    const timestamp = Date.now().toString();
 
     await storage.setCache({
       provider,
       property: StorageProperty.Coins,
-      value: { value: coins, timestamp: Date.now().toString() },
+      value: { value: coins, timestamp },
     });
 
     if (pathsCache !== undefined) {
@@ -37,7 +38,7 @@ export async function storeCaches({
       await storage.setCache({
         provider,
         property: StorageProperty.Paths,
-        value: { value: paths, timestamp: Date.now().toString() },
+        value: { value: paths, timestamp },
       });
     }
 
@@ -45,13 +46,13 @@ export async function storeCaches({
       (await storage.setCache({
         provider,
         property: StorageProperty.CoinsMetadata,
-        value: { value: coinsMetadataCache, timestamp: Date.now().toString() },
+        value: { value: coinsMetadataCache, timestamp },
       }));
     poolsCache !== undefined &&
       (await storage.setCache({
         provider,
         property: StorageProperty.Pools,
-        value: { value: poolsCache, timestamp: Date.now().toString() },
+        value: { value: poolsCache, timestamp },
       }));
   } catch (error) {
     console.error(`[storeCaches] error for params: provider ${provider} `, error);
