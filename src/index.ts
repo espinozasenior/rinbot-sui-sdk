@@ -55,3 +55,6 @@ export * as testnetSurfdogConfig from "./launchpad/surfdog/testnet.config";
 // Transaction
 export * from "./transactions/types";
 export * from "./transactions/utils";
+
+// Errors
+export * from "./errors/NoRoutesError";
