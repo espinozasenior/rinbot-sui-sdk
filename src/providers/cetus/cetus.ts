@@ -867,11 +867,20 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   }
 
   /**
-   * Creates a new instance of Cetus SDK with the provided options.
-   * @return {CetusClmmSDK} A new instance of Cetus SDK.
+   * Creates a new instance of the Cetus SDK with the provided options.
+   * If `simulationAccountAddress` is not provided, it will use the simulation account from `this.cetusSDKConfig`.
+   * @param {string} [simulationAccountAddress] - The address for simulation account (optional).
+   * @return {CetusClmmSDK} A new instance of the Cetus SDK.
    */
-  public getNewCetusSdk() {
-    return new CetusClmmSDK(this.cetusSDKConfig);
+  public getNewCetusSdk(simulationAccountAddress?: string) {
+    // TODO: We might not need to specify signerAddress here, depends on internal Cetus smart-contract structure
+    return new CetusClmmSDK({
+      ...this.cetusSDKConfig,
+      simulationAccount:
+        simulationAccountAddress !== undefined
+          ? { address: simulationAccountAddress }
+          : this.cetusSDKConfig.simulationAccount,
+    });
   }
 
   /**
@@ -912,18 +921,20 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     coinTypeTo,
     inputAmount,
     slippagePercentage = 10,
+    publicKey,
   }: {
     coinTypeFrom: string;
     coinTypeTo: string;
     inputAmount: string;
     slippagePercentage: number;
+    publicKey: string;
   }) {
     console.debug("Finding Cetus route separately, because all the providers have no route...");
 
     const routesByProviderMap: ProvidersToRouteDataMap = new Map();
     const providersByOutputAmountsMap: Map<bigint, string> = new Map();
 
-    const sdk = this.getNewCetusSdk(); // We re-create Cetus sdk to avoid race-conditions
+    const sdk = this.getNewCetusSdk(publicKey); // We re-create Cetus sdk to avoid race-conditions
     this.updateGraph(sdk);
 
     const pathExist = this.checkPathsExistInGraph(coinTypeFrom, coinTypeTo, sdk);

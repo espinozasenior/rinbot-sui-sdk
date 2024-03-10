@@ -145,6 +145,8 @@ export class RouteManager implements IRouteManager {
           slippagePercentage,
           coinTypeFrom: tokenFrom,
           coinTypeTo: tokenTo,
+          // TODO: We might not need to specify signerAddress here, depends on internal Cetus smart-contract structure
+          publicKey: signerAddress,
         });
 
       providersByOutputAmountsResultMap = providersByOutputAmountsMap;
