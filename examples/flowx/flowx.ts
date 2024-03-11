@@ -1,8 +1,7 @@
+import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { FlowxSingleton } from "../../src/providers/flowx/flowx";
-import { cacheOptions, keypair, provider, signAndExecuteTransaction } from "../common";
-
-const FUD_COIN_TYPE = "0x76cb819b01abed502bee8a702b4c2d547532c12f25001c9dea795a5e631c26f1::fud::FUD";
-const SUI_COIN_TYPE = "0x2::sui::SUI";
+import { FUD_COIN_TYPE } from "../coin-types";
+import { cacheOptions, initAndGetRedisStorage, provider, user } from "../common";
 
 // yarn ts-node examples/flowx/flowx.ts
 export const flowx = async ({
@@ -18,39 +17,39 @@ export const flowx = async ({
   slippagePercentage: number;
   signerAddress: string;
 }) => {
-  const flowxInstance = await FlowxSingleton.getInstance({ cacheOptions });
-  const calculatedData = await flowxInstance.getRouteData({
+  const storage = await initAndGetRedisStorage();
+
+  const flowx: FlowxSingleton = await FlowxSingleton.getInstance({
+    cacheOptions: { storage, ...cacheOptions },
+    lazyLoading: false,
+  });
+
+  const calculatedData = await flowx.getRouteData({
     coinTypeFrom: tokenFrom,
     coinTypeTo: tokenTo,
     inputAmount: amount,
     publicKey: signerAddress,
     slippagePercentage,
   });
-
   console.debug("calc: ", calculatedData);
 
-  const txBlock = await flowxInstance.getSwapTransaction({
-    publicKey: keypair.toSuiAddress(),
+  const txBlock = await flowx.getSwapTransaction({
+    publicKey: user,
     slippagePercentage,
     route: calculatedData.route,
   });
 
-  console.debug("txBlock: ", txBlock);
-
   const res = await provider.devInspectTransactionBlock({
     transactionBlock: txBlock,
-    sender: keypair.toSuiAddress(),
+    sender: user,
   });
-
-  // const res = await signAndExecuteTransaction(txBlock, keypair);
-
   console.debug("res: ", res);
 };
 
 flowx({
-  tokenFrom: SUI_COIN_TYPE,
+  tokenFrom: LONG_SUI_COIN_TYPE,
   tokenTo: FUD_COIN_TYPE,
-  amount: "0.0123",
+  amount: "0.001",
   slippagePercentage: 10,
-  signerAddress: keypair.toSuiAddress(),
+  signerAddress: user,
 });
