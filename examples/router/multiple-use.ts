@@ -2,9 +2,9 @@ import { CoinManagerSingleton } from "../../src/managers/CoinManager";
 import { RouteManager } from "../../src/managers/RouteManager";
 import { SHORT_SUI_COIN_TYPE } from "../../src/providers/common";
 import { USDC_COIN_TYPE } from "../coin-types";
-import { initAndGetRedisStorage, initAndGetProviders, provider, suiProviderUrl, user } from "../common";
+import { initAndGetProviders, initAndGetRedisStorage, keypair, provider, suiProviderUrl, user } from "../common";
 
-// yarn ts-node examples/router/router.ts
+// yarn ts-node examples/router/multiple-use.ts
 export const router = async ({
   tokenFrom,
   tokenTo,
@@ -26,19 +26,28 @@ export const router = async ({
   const routerManager = RouteManager.getInstance(providers, coinManager);
   console.timeEnd("All init");
 
-  console.time("getBestRouteTransaction");
-  const tx = await routerManager.getBestRouteTransaction({
-    tokenFrom,
-    tokenTo,
-    amount,
-    slippagePercentage,
-    signerAddress,
-  });
-  console.timeEnd("getBestRouteTransaction");
+  let isUpdatingCurrently = false;
+  setInterval(async () => {
+    if (isUpdatingCurrently) {
+      return;
+    }
+    isUpdatingCurrently = true;
 
-  const res = await provider.devInspectTransactionBlock({ sender: user, transactionBlock: tx });
+    console.time("getBestRouteTransaction");
+    const trx = await routerManager.getBestRouteTransaction({
+      tokenFrom,
+      tokenTo,
+      amount,
+      slippagePercentage,
+      signerAddress,
+    });
+    console.timeEnd("getBestRouteTransaction");
 
-  console.debug("res:", res);
+    const res = await provider.devInspectTransactionBlock({ sender: user, transactionBlock: trx });
+    console.debug("res:", res);
+
+    isUpdatingCurrently = false;
+  }, 5_000); // 5 sec
 };
 
 router({
@@ -46,5 +55,5 @@ router({
   tokenTo: USDC_COIN_TYPE,
   amount: "0.1",
   slippagePercentage: 10,
-  signerAddress: user,
+  signerAddress: keypair.toSuiAddress(),
 });
