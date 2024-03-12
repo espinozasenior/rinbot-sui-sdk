@@ -1,7 +1,12 @@
+import { buildDcaTxBlock } from "../../src/managers/dca/adapters/flowxAdapter";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { FlowxSingleton } from "../../src/providers/flowx/flowx";
 import { FUD_COIN_TYPE } from "../coin-types";
 import { cacheOptions, initAndGetRedisStorage, provider, user } from "../common";
+
+// TODO: These are dummy values
+const GAS_PROVISION = 505050505;
+const DCA_ID = "0x99999";
 
 // yarn ts-node examples/flowx/flowx-dca.ts
 export const flowx = async ({
@@ -33,8 +38,6 @@ export const flowx = async ({
   });
   console.debug("calc: ", calculatedData);
 
-  // const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
-
   const txBlock = await flowx.getSwapTransactionDoctored({
     publicKey: user,
     slippagePercentage,
@@ -42,6 +45,13 @@ export const flowx = async ({
   });
 
   console.debug("blockData: ", JSON.stringify(txBlock.blockData));
+  console.debug("\n\n\n\n\n");
+
+  const txBlockDca = buildDcaTxBlock(txBlock, tokenFrom, tokenTo, DCA_ID, GAS_PROVISION);
+
+  console.debug("\n\n\n\n\n");
+  console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
+
   //   const res = await provider.devInspectTransactionBlock({
   //     transactionBlock: txBlock,
   //     sender: user,
