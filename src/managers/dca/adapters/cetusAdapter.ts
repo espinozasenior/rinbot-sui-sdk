@@ -1,17 +1,17 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { TxBlock, Transaction, Arguments, Argument, Input } from "../txBlock";
-import { DCA_CONTRACT } from "../utils";
+import { DCA_CONTRACT, fromArgument } from "../utils";
 
 const swapPatterns: Record<string, `${string}::${string}::${string}`> = {
-  ".*::router::swap$": `${DCA_CONTRACT}::${"router"}::${"swap"}`,
-  ".*::router::swap_ab_bc$": `${DCA_CONTRACT}::${"router"}::${"swap_ab_bc"}`,
-  ".*::router::swap_ab_cb$": `${DCA_CONTRACT}::${"router"}::${"swap_ab_cb"}`,
-  ".*::router::swap_ba_bc$": `${DCA_CONTRACT}::${"router"}::${"swap_ba_bc"}`,
-  ".*::router::swap_ba_cb$": `${DCA_CONTRACT}::${"router"}::${"swap_ba_cb"}`,
+  ".*::router::swap$": `${DCA_CONTRACT}::${"cetus"}::${"swap"}`,
+  ".*::router::swap_ab_bc$": `${DCA_CONTRACT}::${"cetus"}::${"swap_ab_bc"}`,
+  ".*::router::swap_ab_cb$": `${DCA_CONTRACT}::${"cetus"}::${"swap_ab_cb"}`,
+  ".*::router::swap_ba_bc$": `${DCA_CONTRACT}::${"cetus"}::${"swap_ba_bc"}`,
+  ".*::router::swap_ba_cb$": `${DCA_CONTRACT}::${"cetus"}::${"swap_ba_cb"}`,
 };
 
 const checkPatterns: Record<string, `${string}::${string}::${string}`> = {
-  ".*::router::check_coin_threshold$": `${DCA_CONTRACT}::${"router"}::${"check_coin_threshold"}`,
+  ".*::router::check_coin_threshold$": `${DCA_CONTRACT}::${"cetus"}::${"check_coin_threshold"}`,
 };
 
 type SwapParams = {
@@ -85,8 +85,8 @@ export function buildDcaTxBlock(
 
       if (swapMatch) {
         const parts = transaction.target.split("::");
-        let newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${parts[1]}::${parts[2]}`;
-        isSimpleSwap = newTarget === `${DCA_CONTRACT}::${"router"}::${"swap"}`;
+        let newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${"cetus"}::${parts[2]}`;
+        isSimpleSwap = newTarget === `${DCA_CONTRACT}::${"cetus"}::${"swap"}`;
 
         // if pattern is swap --> route: if a2b == true --> swap_ab, else --> swap_ba
         if (isSimpleSwap) {
@@ -94,10 +94,10 @@ export function buildDcaTxBlock(
           const argument6 = transaction.arguments[5];
           if (argument6 && argument6.kind === "Input" && argument6.value === "true") {
             // Modify the function name to swap_ab
-            newTarget = `${DCA_CONTRACT}::${"router"}::${"swap_ab"}`;
+            newTarget = `${DCA_CONTRACT}::${"cetus"}::${"swap_ab"}`;
           } else if (argument6 && argument6.kind === "Input" && argument6.value === "false") {
             // Modify the function name to swap_ba
-            newTarget = `${DCA_CONTRACT}::${"router"}::${"swap_ba"}`;
+            newTarget = `${DCA_CONTRACT}::${"cetus"}::${"swap_ba"}`;
           } else {
             throw new Error("Incoherent function parameter");
           }
@@ -214,7 +214,7 @@ export function buildDcaTxBlock(
 
         if (checkMatch) {
           const parts = transaction.target.split("::");
-          const newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${parts[1]}::${parts[2]}`;
+          const newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${"cetus"}::${parts[2]}`;
 
           const arg1 = transaction.arguments[1] as {
             kind: "Input";
@@ -262,10 +262,3 @@ export function buildDcaTxBlock(
   const newTxBlock = TransactionBlock.from(JSON.stringify(dcaBlock));
   return newTxBlock;
 }
-
-const fromArgument = (arg: Argument, idx: number) => ({
-  kind: arg.kind,
-  value: arg.value,
-  type: arg.type,
-  index: idx,
-});
