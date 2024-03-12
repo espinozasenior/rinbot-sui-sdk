@@ -42,18 +42,7 @@ export const cetusDca = async ({
     publicKey: signerAddress,
   });
 
-  const mockedAssets: CoinAsset[] = [
-    {
-      coinAddress: tokenFrom,
-      coinObjectId: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      balance: BigInt("9999999999999999999"),
-    },
-    {
-      coinAddress: tokenTo,
-      coinObjectId: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      balance: BigInt("9999999999999999999"),
-    },
-  ];
+  const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
 
   const txBlock: TransactionBlock = await cetus.getSwapTransactionWithAssets({
     route: calculatedData.route,
@@ -84,3 +73,16 @@ cetusDca({
   slippagePercentage: 10,
   signerAddress: user,
 });
+
+const getMockedAssets = (tokenFrom: string, tokenTo: string): CoinAsset[] => [
+  {
+    coinAddress: tokenFrom,
+    coinObjectId: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    balance: BigInt("9999999999999999999"),
+  },
+  {
+    coinAddress: tokenTo,
+    coinObjectId: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    balance: BigInt("9999999999999999999"),
+  },
+];
