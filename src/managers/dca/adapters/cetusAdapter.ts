@@ -1,110 +1,271 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { TxBlock } from "../txBlock";
+import { TxBlock, Transaction, Arguments, Argument, Input } from "../txBlock";
+import { DCA_CONTRACT } from "../utils";
 
-const DCA = "0x495de18feac86973ee1f88d9ad2cc52592ec8f2afdf05e95a1aa3bf1ef312b84";
+const swapPatterns: Record<string, `${string}::${string}::${string}`> = {
+  ".*::router::swap$": `${DCA_CONTRACT}::${"router"}::${"swap"}`,
+  ".*::router::swap_ab_bc$": `${DCA_CONTRACT}::${"router"}::${"swap_ab_bc"}`,
+  ".*::router::swap_ab_cb$": `${DCA_CONTRACT}::${"router"}::${"swap_ab_cb"}`,
+  ".*::router::swap_ba_bc$": `${DCA_CONTRACT}::${"router"}::${"swap_ba_bc"}`,
+  ".*::router::swap_ba_cb$": `${DCA_CONTRACT}::${"router"}::${"swap_ba_cb"}`,
+};
 
-type PatternReplacement = {
-  pattern: RegExp;
-  replacement: `${string}::${string}::${string}`;
+const checkPatterns: Record<string, `${string}::${string}::${string}`> = {
+  ".*::router::check_coin_threshold$": `${DCA_CONTRACT}::${"router"}::${"check_coin_threshold"}`,
+};
+
+type SwapParams = {
+  globalConfig: Argument;
+  poolA: Argument;
+  poolB: Argument;
+  inputFunds: Argument;
+  outputFunds: Argument;
+  // If simple swap then exists, else no
+  a2b?: Argument;
+  byAmountIn: Argument;
+  amount0: Argument;
+  amount1: Argument;
+  sqrtPriceLimit0: Argument;
+  sqrtPriceLimit1: Argument;
+  clock: Argument;
+  dca: Argument;
+  gasGost: Argument;
 };
 
 /**
- * Builds a new DCA (Dollar-Cost Averaging) transaction block by modifying an existing transaction block.
- * @param {TransactionBlock} txBlock - The original transaction block to be modified.
- * @param {string} dcaId - The ID of the DCA object.
- * @param {number} gasCost - The gas cost of the DCA transaction.
- * @return {TransactionBlock} A new transaction block modified for DCA.
+ * Builds a transaction block for Dollar Cost Averaging (DCA).
+ * @param {TransactionBlock} txBlock - The transaction block to build upon.
+ * @param {string} tokenFrom - The token to be exchanged from.
+ * @param {string} tokenTo - The token to be exchanged to.
+ * @param {string} dcaId - The ID for the Dollar Cost Averaging (DCA) operation.
+ * @param {number} gasCost - The gas cost for the transaction.
+ * @return {TransactionBlock} - The built transaction block for DCA.
  */
-export function buildDcaTxBlock(txBlock: TransactionBlock, dcaId: string, gasCost: number): TransactionBlock {
-  // Initialize a clone TransactionBlock
-  const dcaBlock: TxBlock = { ...txBlock.blockData };
-  const dcaIdx = dcaBlock.inputs.length;
+export function buildDcaTxBlock(
+  txBlock: TransactionBlock,
+  tokenFrom: string,
+  tokenTo: string,
+  dcaId: string,
+  gasCost: number,
+): TransactionBlock {
+  let isSimpleSwap = false;
 
-  dcaBlock.inputs.push({
-    kind: "Input",
-    index: dcaIdx,
-    type: "object",
-    value: dcaId,
+  // Initialize a TransactionBlock
+  const dcaBlock: TxBlock = {
+    version: 1,
+    transactions: [],
+    inputs: [],
+    gasConfig: txBlock.blockData.gasConfig,
+    sender: txBlock.blockData.sender,
+    expiration: txBlock.blockData.expiration,
+  };
+
+  // 1. Transaction to create Coin<tokenFrom>
+  dcaBlock.transactions.push({
+    kind: "MoveCall",
+    target: "0x2::coin::zero",
+    arguments: [],
+    typeArguments: [tokenFrom],
   });
 
-  const gasCostIdx = dcaBlock.inputs.length;
-
-  dcaBlock.inputs.push({
-    kind: "Input",
-    index: gasCostIdx,
-    type: "pure",
-    value: gasCost,
+  // 2. Transaction to create Coin<tokenTo>
+  dcaBlock.transactions.push({
+    kind: "MoveCall",
+    target: "0x2::coin::zero",
+    arguments: [],
+    typeArguments: [tokenTo],
   });
 
-  dcaBlock.transactions.forEach((transaction) => {
+  const swapPatternRegex = new RegExp(Object.keys(swapPatterns).join("|"));
+  const checkPatternRegex = new RegExp(Object.keys(checkPatterns).join("|"));
+
+  txBlock.blockData.transactions.forEach((transaction) => {
     if (transaction.kind === "MoveCall" && transaction.target) {
-      // Now TypeScript knows transaction is of a type that includes "target"
-      const patterns: PatternReplacement[] = [
-        { pattern: /.*::router::swap$/, replacement: `${DCA}::${"router"}::${"swap"}` },
-        { pattern: /.*::router::swap_ab_bc$/, replacement: `${DCA}::${"router"}::${"swap_ab_bc"}` },
-        { pattern: /.*::router::swap_ab_cb$/, replacement: `${DCA}::${"router"}::${"swap_ab_cb"}` },
-        { pattern: /.*::router::swap_ba_bc$/, replacement: `${DCA}::${"router"}::${"swap_ba_bc"}` },
-        { pattern: /.*::router::swap_ba_cb$/, replacement: `${DCA}::${"router"}::${"swap_ba_cb"}` },
-      ];
+      const swapMatch: RegExpExecArray | null = swapPatternRegex.exec(transaction.target);
 
-      let isModified = false;
-      for (const { pattern, replacement } of patterns) {
-        if (pattern.test(transaction.target)) {
-          isModified = true;
-          transaction.target = replacement;
+      if (swapMatch) {
+        const parts = transaction.target.split("::");
+        let newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${parts[1]}::${parts[2]}`;
+        isSimpleSwap = newTarget === `${DCA_CONTRACT}::${"router"}::${"swap"}`;
 
-          // if pattern is swap --> route: if a2b == true --> swap_ab, else --> swap_ba
-          if (replacement === `${DCA}::${"router"}::${"swap"}`) {
-            // Check if the argument at index 6 (arguments[5]) has value "true" or "false"
-            const argument6 = transaction.arguments[5];
-            if (argument6 && argument6.kind === "Input" && argument6.value === "true") {
-              // Modify the function name to swap_ab
-              transaction.target = `${DCA}::${"router"}::${"swap_ab"}`;
-            } else if (argument6 && argument6.kind === "Input" && argument6.value === "false") {
-              // Modify the function name to swap_ba
-              transaction.target = `${DCA}::${"router"}::${"swap_ba"}`;
-            } else {
-              throw new Error("Incoherent function parameter");
-            }
+        // if pattern is swap --> route: if a2b == true --> swap_ab, else --> swap_ba
+        if (isSimpleSwap) {
+          // Check if the argument at index 6 (arguments[5]) has value "true" or "false"
+          const argument6 = transaction.arguments[5];
+          if (argument6 && argument6.kind === "Input" && argument6.value === "true") {
+            // Modify the function name to swap_ab
+            newTarget = `${DCA_CONTRACT}::${"router"}::${"swap_ab"}`;
+          } else if (argument6 && argument6.kind === "Input" && argument6.value === "false") {
+            // Modify the function name to swap_ba
+            newTarget = `${DCA_CONTRACT}::${"router"}::${"swap_ba"}`;
+          } else {
+            throw new Error("Incoherent function parameter");
           }
+        }
 
-          break;
+        const swapParams: SwapParams = isSimpleSwap
+          ? {
+              globalConfig: fromArgument(transaction.arguments[0] as Argument, 0),
+              poolA: fromArgument(transaction.arguments[1] as Argument, 1),
+              poolB: fromArgument(transaction.arguments[2] as Argument, 2),
+              inputFunds: { kind: "Result", index: 0 } as Argument,
+              outputFunds: { kind: "Result", index: 1 } as Argument,
+              a2b: fromArgument(transaction.arguments[5] as Argument, 3),
+              byAmountIn: fromArgument(transaction.arguments[6] as Argument, 4),
+              amount0: fromArgument(transaction.arguments[7] as Argument, 5),
+              amount1: fromArgument(transaction.arguments[8] as Argument, 6),
+              sqrtPriceLimit0: fromArgument(transaction.arguments[9] as Argument, 7),
+              sqrtPriceLimit1: fromArgument(transaction.arguments[10] as Argument, 8),
+              clock: fromArgument(transaction.arguments[10] as Argument, 9),
+              dca: { kind: "Input", value: dcaId, index: 9, type: "object" },
+              gasGost: { kind: "Input", value: gasCost, index: 10, type: "pure" },
+            }
+          : {
+              globalConfig: fromArgument(transaction.arguments[0] as Argument, 0),
+              poolA: fromArgument(transaction.arguments[1] as Argument, 1),
+              poolB: fromArgument(transaction.arguments[2] as Argument, 2),
+              inputFunds: { kind: "Result", index: 0 } as Argument,
+              outputFunds: { kind: "Result", index: 1 } as Argument,
+              byAmountIn: fromArgument(transaction.arguments[5] as Argument, 3),
+              amount0: fromArgument(transaction.arguments[6] as Argument, 4),
+              amount1: fromArgument(transaction.arguments[7] as Argument, 5),
+              sqrtPriceLimit0: fromArgument(transaction.arguments[8] as Argument, 6),
+              sqrtPriceLimit1: fromArgument(transaction.arguments[9] as Argument, 7),
+              clock: fromArgument(transaction.arguments[10] as Argument, 8),
+              dca: { kind: "Input", value: dcaId, index: 9, type: "object" },
+              gasGost: { kind: "Input", value: gasCost, index: 10, type: "pure" },
+            };
+
+        const inputs = isSimpleSwap
+          ? [
+              swapParams.globalConfig as Input,
+              swapParams.poolA as Input,
+              swapParams.poolB as Input,
+              swapParams.a2b as Input,
+              swapParams.byAmountIn as Input,
+              swapParams.amount0 as Input,
+              swapParams.amount1 as Input,
+              swapParams.sqrtPriceLimit0 as Input,
+              swapParams.sqrtPriceLimit1 as Input,
+              swapParams.clock as Input,
+              swapParams.dca as Input,
+              swapParams.gasGost as Input,
+            ]
+          : [
+              swapParams.globalConfig as Input,
+              swapParams.poolA as Input,
+              swapParams.poolB as Input,
+              swapParams.byAmountIn as Input,
+              swapParams.amount0 as Input,
+              swapParams.amount1 as Input,
+              swapParams.sqrtPriceLimit0 as Input,
+              swapParams.sqrtPriceLimit1 as Input,
+              swapParams.clock as Input,
+              swapParams.dca as Input,
+              swapParams.gasGost as Input,
+            ];
+
+        const args: Arguments = isSimpleSwap
+          ? [
+              swapParams.globalConfig,
+              swapParams.poolA,
+              swapParams.poolB,
+              swapParams.inputFunds,
+              swapParams.outputFunds,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              swapParams.a2b!,
+              swapParams.outputFunds,
+              swapParams.byAmountIn,
+              swapParams.amount0,
+              swapParams.amount1,
+              swapParams.sqrtPriceLimit0,
+              swapParams.sqrtPriceLimit1,
+              swapParams.clock,
+              swapParams.dca,
+              swapParams.gasGost,
+            ]
+          : [
+              swapParams.globalConfig,
+              swapParams.poolA,
+              swapParams.poolB,
+              swapParams.inputFunds,
+              swapParams.outputFunds,
+              swapParams.byAmountIn,
+              swapParams.amount0,
+              swapParams.amount1,
+              swapParams.sqrtPriceLimit0,
+              swapParams.sqrtPriceLimit1,
+              swapParams.clock,
+              swapParams.dca,
+              swapParams.gasGost,
+            ];
+
+        const tx: Transaction = {
+          arguments: args,
+          kind: transaction.kind,
+          target: newTarget,
+          typeArguments: transaction.typeArguments,
+        };
+
+        dcaBlock.inputs.push(...inputs);
+        dcaBlock.transactions.push(tx);
+      } else {
+        const checkMatch = checkPatternRegex.exec(transaction.target);
+
+        if (checkMatch) {
+          const parts = transaction.target.split("::");
+          const newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${parts[1]}::${parts[2]}`;
+
+          const arg1 = transaction.arguments[1] as {
+            kind: "Input";
+            index: number;
+            type: "object" | "pure" | undefined;
+            value: any;
+          };
+
+          const minOutputArg = {
+            kind: "Input",
+            // This is the value produced by the Cetus SDK
+            // that corresponds to the minOutput amount
+            value: arg1.value,
+            index: dcaBlock.inputs.length,
+            type: "pure",
+          };
+
+          const args: Arguments = [
+            {
+              kind: "NestedResult",
+              // this is the index of the swap transaction, which is 2,
+              // i.e. the third element in the transactoin vec
+              index: 2,
+              // second element in the result array corresponding to second tx,
+              // i.e this is the output funds
+              resultIndex: 1,
+            },
+            minOutputArg as Argument,
+          ];
+
+          const tx: Transaction = {
+            arguments: args,
+            kind: transaction.kind,
+            typeArguments: transaction.typeArguments,
+            target: newTarget,
+          };
+
+          dcaBlock.inputs.push(minOutputArg as Input);
+          dcaBlock.transactions.push(tx);
         }
       }
-
-      if (isModified) {
-        // Push DCA object param
-        transaction.arguments.push({
-          kind: "Input",
-          index: dcaIdx,
-          type: "object",
-          value: dcaId,
-        });
-
-        // Push gas cost estimate
-        transaction.arguments.push({
-          kind: "Input",
-          index: gasCostIdx,
-          type: "pure",
-          value: gasCost,
-        });
-      }
-    }
-  });
-
-  // console.log(dcaBlock.transactions);
-
-  dcaBlock.transactions.forEach((transaction, index) => {
-    console.debug(`Transaction ${index + 1}:`);
-    if ("arguments" in transaction) {
-      console.debug("Arguments: ", transaction.arguments);
-    } else if ("objects" in transaction) {
-      console.debug("Objects: ", transaction.objects);
-    } else {
-      console.debug("No arguments or objects found for this transaction.");
     }
   });
 
   const newTxBlock = TransactionBlock.from(JSON.stringify(dcaBlock));
   return newTxBlock;
 }
+
+const fromArgument = (arg: Argument, idx: number) => ({
+  kind: arg.kind,
+  value: arg.value,
+  type: arg.type,
+  index: idx,
+});

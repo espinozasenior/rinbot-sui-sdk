@@ -1,5 +1,5 @@
+import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/cetusAdapter";
-import { DCA_CONTRACT } from "../../src/managers/dca/utils";
 import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
@@ -7,7 +7,9 @@ import { CETUS_COIN_TYPE } from "../coin-types";
 import { cacheOptions, initAndGetRedisStorage, suiProviderUrl, user } from "../common";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 
+// TODO: These are dummy values
 const GAS_PROVISION = 505050505;
+const DCA_ID = "0x99999";
 
 // yarn ts-node examples/cetus/cetus-dca.ts
 export const cetusDca = async ({
@@ -39,31 +41,34 @@ export const cetusDca = async ({
     slippagePercentage,
     publicKey: signerAddress,
   });
-  console.debug("calculatedData: ", calculatedData);
 
-  const txBlock: TransactionBlock = await cetus.getSwapTransaction({
+  const mockedAssets: CoinAsset[] = [
+    {
+      coinAddress: tokenFrom,
+      coinObjectId: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      balance: BigInt("9999999999999999999"),
+    },
+    {
+      coinAddress: tokenTo,
+      coinObjectId: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      balance: BigInt("9999999999999999999"),
+    },
+  ];
+
+  const txBlock: TransactionBlock = await cetus.getSwapTransactionWithAssets({
     route: calculatedData.route,
     publicKey: signerAddress,
     slippagePercentage,
+    coinAssets: mockedAssets,
   });
 
-  const txBlockDca = buildDcaTxBlock(txBlock, DCA_CONTRACT, GAS_PROVISION);
-
-  console.debug("txBlockDca: ", txBlockDca.blockData.inputs);
-  console.debug("\n\n\n\n\n");
-  console.debug("txBlockDca: ", txBlockDca.blockData.transactions);
+  console.debug(`Original TxBlock: ${JSON.stringify(txBlock.blockData)}`);
   console.debug("\n\n\n\n\n");
 
-  txBlockDca.blockData.transactions.forEach((transaction, index) => {
-    console.debug(`Transaction ${index + 1}:`);
-    if ("arguments" in transaction) {
-      console.debug("Arguments: ", transaction.arguments);
-    } else if ("objects" in transaction) {
-      console.debug("Objects: ", transaction.objects);
-    } else {
-      console.debug("No arguments or objects found for this transaction.");
-    }
-  });
+  const txBlockDca = buildDcaTxBlock(txBlock, tokenFrom, tokenTo, DCA_ID, GAS_PROVISION);
+
+  console.debug("\n\n\n\n\n");
+  console.debug(`Doctored TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
   // const res = await provider.devInspectTransactionBlock({
   //   transactionBlock: txBlock,
