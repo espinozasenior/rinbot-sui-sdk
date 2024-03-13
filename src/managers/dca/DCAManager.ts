@@ -402,14 +402,16 @@ export class DCAManagerSingleton {
     baseCoinAccount,
     addOrdersCount = 0,
 
+    gasCoinAccount,
+
     transaction,
   }: GetDCADepositBaseTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::deposit_base`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::deposit_input`,
       typeArguments: [baseCoinType, quoteCoinType],
-      arguments: [obj(tx, dca), obj(tx, baseCoinAccount), tx.pure(addOrdersCount)],
+      arguments: [obj(tx, dca), obj(tx, baseCoinAccount), tx.pure(addOrdersCount), obj(tx, gasCoinAccount)],
     });
 
     tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
