@@ -8,5 +8,5 @@ export const cacheOptions: CacheOptions = {
   updateIntervalInMs: 60_000 * 30, // 30 min
 };
 // Public key for tests, nothing special
-export const publicKey = "0x046f718ca3fdd519f6d21ad5b18a7fafaafeb85fd311ef8b99db22df7ec15d5d";
+export const publicKey = "0xcd1748a65ed64fe676bf336b9b542128fd3e726370e72e62c8f8abc49c61644c";
 export const provider = new SuiClient({ url: suiProviderUrl });

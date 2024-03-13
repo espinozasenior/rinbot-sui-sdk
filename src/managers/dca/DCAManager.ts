@@ -4,7 +4,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js/utils";
 import { MAX_BATCH_EVENTS_PER_QUERY_EVENTS_REQUEST } from "../../providers/common";
 import { getAllObjects } from "../../providers/utils/getAllObjects";
-import { GetTransactionType, TransactionResult } from "../../transactions/types";
+import { GetTransactionType } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
 import {
   CreateDCADepositBaseTransactionArgs,
@@ -34,7 +34,7 @@ import { filterValidDCAObjects, getBaseQuoteCoinTypesFromDCAType, hasMinMaxPrice
  */
 export class DCAManagerSingleton {
   // TODO: Change DCA_PACKAGE_ADDRESS & maybe move all that params to args for singleton
-  public static DCA_PACKAGE_ADDRESS = "0xa7ecb584b83f9ebffae0f2a3f091b6961871167255f909c24dc2436aca225f2f";
+  public static DCA_PACKAGE_ADDRESS = "0xa74eb3567306ba569100dab765ed9bbbb83d581d912f742fd93ade2a1c4adb2f";
   public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
   public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "";
@@ -234,7 +234,7 @@ export class DCAManagerSingleton {
   }
 
   public static getCreateDCAEventsFromUserEvents(userEvents: SuiEvent[]) {
-    return userEvents.filter((event) => event.type.includes(this.DCA_EVENT_TYPE));
+    return userEvents.filter((event) => event.type.includes(DCAManagerSingleton.DCA_EVENT_TYPE));
   }
 
   public static async createDCAInitTransaction({
@@ -297,11 +297,11 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::init_account`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::init_account`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [
         obj(tx, SUI_CLOCK_OBJECT_ID),
-        tx.pure(this.DCA_DELEGETEE_ACCOUNT_ADDRESS, "address"),
+        tx.pure(DCAManagerSingleton.DCA_DELEGETEE_ACCOUNT_ADDRESS, "address"),
         obj(tx, baseCoinAccount),
         tx.pure(every, "u64"),
         tx.pure(totalOrders, "u64"),
@@ -309,7 +309,7 @@ export class DCAManagerSingleton {
       ],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -330,11 +330,11 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::init_account_with_params`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::init_account_with_params`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [
         obj(tx, SUI_CLOCK_OBJECT_ID),
-        tx.pure(this.DCA_DELEGETEE_ACCOUNT_ADDRESS, "address"),
+        tx.pure(DCAManagerSingleton.DCA_DELEGETEE_ACCOUNT_ADDRESS, "address"),
         obj(tx, baseCoinAccount),
         tx.pure(every, "u64"),
         tx.pure(totalOrders, "u64"),
@@ -344,7 +344,7 @@ export class DCAManagerSingleton {
       ],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -400,12 +400,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::deposit_base`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::deposit_base`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), obj(tx, baseCoinAccount), tx.pure(addOrdersCount)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -424,12 +424,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::withdraw_base`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::withdraw_base`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), tx.pure(baseCoinAmountToWithdrawFromDCA), tx.pure(removeOrdersCount)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -445,12 +445,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::init_trade`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::init_trade`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), obj(tx, SUI_CLOCK_OBJECT_ID)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -469,12 +469,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::resolve_trade`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::resolve_trade`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), obj(tx, quoteAmount), obj(tx, initTradePromise)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -489,12 +489,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::increase_remaining_orders`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::increase_remaining_orders`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), tx.pure(addOrdersCount)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -508,12 +508,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::set_inactive_as_delegatee`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::set_inactive_as_delegatee`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -527,12 +527,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::reactivate_as_owner`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::reactivate_as_owner`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
@@ -550,12 +550,12 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${this.DCA_PACKAGE_ADDRESS}::dca::redeem_funds_and_close`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::redeem_funds_and_close`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca)],
     });
 
-    tx.setGasBudget(this.DCA_GAS_BUGET);
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 
     return { tx, txRes };
   }
