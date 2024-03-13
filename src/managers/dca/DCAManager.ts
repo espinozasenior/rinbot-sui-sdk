@@ -18,7 +18,7 @@ import {
   GetDCAInitWithPriceParamsTransactionArgs,
   GetDCARedeemFundsAndCloseTransactionArgs,
   GetDCAResolveTradeTransactionArgs,
-  GetDCASetInactiveAsDelegateeTransactionArgs,
+  GetDCASetInactiveTransactionArgs,
   GetDCASetReactivateAsOwnerTransactionArgs,
   GetDCAWithdrawBaseTransactionArgs,
   SuiEventDCACreate,
@@ -542,16 +542,19 @@ export class DCAManagerSingleton {
     return { tx, txRes };
   }
 
-  public static async getDCASetInactiveAsDelegateeTransaction({
+  /**
+   * Set DCA to inactive state, should be signed from either `delegatee` or an `owner` of DCA.
+   */
+  public static async getDCASetInactiveTransaction({
     dca,
     baseCoinType,
     quoteCoinType,
     transaction,
-  }: GetDCASetInactiveAsDelegateeTransactionArgs): GetTransactionType {
+  }: GetDCASetInactiveTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::set_inactive_as_delegatee`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::set_inactive`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca)],
     });
@@ -561,6 +564,9 @@ export class DCAManagerSingleton {
     return { tx, txRes };
   }
 
+  /**
+   * Set DCA to inactive state, should be signed only from an `owner` of DCA.
+   */
   public static async getDCAReactivateAsOwnerTransaction({
     dca,
     baseCoinType,
@@ -582,7 +588,9 @@ export class DCAManagerSingleton {
 
   /**
    * Retrieves DCA transaction which would redeem funds in DCA and close DCA.
-   * @comment This method is a work in progress and is not functioning correctly at the moment.
+   * @comment This method is a work in progress and is not functioning correctly at the moment
+   * (because SUI doesn't support deletion of shared or immutable objects at the moment).
+   * It suppose to work from 1.20 version of SUI mainnet
    */
   public static async getDCARedeemFundsAndCloseTransaction({
     dca,

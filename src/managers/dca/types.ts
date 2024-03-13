@@ -105,7 +105,7 @@ export interface GetDCAIncreaseOrdersRemainingTransactionArgs {
   addOrdersCount: number;
 }
 
-export interface GetDCASetInactiveAsDelegateeTransactionArgs {
+export interface GetDCASetInactiveTransactionArgs {
   dca: ObjectArg;
 
   baseCoinType: string;
@@ -114,8 +114,8 @@ export interface GetDCASetInactiveAsDelegateeTransactionArgs {
   transaction?: TransactionBlock;
 }
 
-export type GetDCASetReactivateAsOwnerTransactionArgs = GetDCASetInactiveAsDelegateeTransactionArgs;
-export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveAsDelegateeTransactionArgs;
+export type GetDCASetReactivateAsOwnerTransactionArgs = GetDCASetInactiveTransactionArgs;
+export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveTransactionArgs;
 
 export type DCACreateEventParsedJson = {
   delegatee: string;

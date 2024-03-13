@@ -5,14 +5,14 @@ import { user } from "../common";
 import { delegateeUser } from "./common";
 
 // yarn ts-node examples/dca/set-dca-inactive-as-delegatee.ts
-export const setDCAInactiveAsDelegatee = async () => {
-  const suiProviderUrl = "https://fullnode.testnet.sui.io";
+export const setDCAInactive = async () => {
+  const suiProviderUrl = "https://fullnode.mainnet.sui.io";
   const provider = new SuiClient({ url: suiProviderUrl });
   const transaction = new TransactionBlock();
 
   const dcaInstance = DCAManagerSingleton.getInstance(suiProviderUrl);
   const dcas = await dcaInstance.getDCAsByUser({ publicKey: user });
-  const desiredObjectId = "0x3d8999900847d0c7ccca6f965bc02041c478b582aa03e1708d603f7a92358402";
+  const desiredObjectId = "0x4f9fcd90fb8e852899d45693e196d49b07a579ffbc1ca40292cd07f9e9675bdd";
 
   const currentDCAData = dcas.find((el) => el.fields.id.id === desiredObjectId);
   console.debug("currentDCAData: ", currentDCAData);
@@ -24,7 +24,7 @@ export const setDCAInactiveAsDelegatee = async () => {
   const baseCoinType = currentDCAData.fields.base_coin_type;
   const quoteCoinType = currentDCAData.fields.quote_coin_type;
 
-  const { tx, txRes } = await DCAManagerSingleton.getDCASetInactiveAsDelegateeTransaction({
+  const { tx, txRes } = await DCAManagerSingleton.getDCASetInactiveTransaction({
     baseCoinType,
     quoteCoinType,
 
@@ -32,8 +32,15 @@ export const setDCAInactiveAsDelegatee = async () => {
     transaction,
   });
 
+  // From delegatee
+  // const res = await provider.devInspectTransactionBlock({
+  //   sender: delegateeUser,
+  //   transactionBlock: tx,
+  // });
+
+  // From user
   const res = await provider.devInspectTransactionBlock({
-    sender: delegateeUser,
+    sender: user,
     transactionBlock: tx,
   });
 
@@ -46,4 +53,4 @@ export const setDCAInactiveAsDelegatee = async () => {
   console.debug("res: ", res);
 };
 
-setDCAInactiveAsDelegatee();
+setDCAInactive();
