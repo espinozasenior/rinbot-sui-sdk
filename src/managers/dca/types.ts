@@ -44,6 +44,8 @@ export interface GetDCADepositBaseTransactionArgs {
   baseCoinAccount: ObjectArg;
   addOrdersCount?: number;
 
+  gasCoinAccount: ObjectArg;
+
   transaction?: TransactionBlock;
 }
 
@@ -126,13 +128,13 @@ export interface DCAContent {
 
 export type DCAContentFields = {
   active: boolean;
-  base_balance: string;
+  input_balance: string;
   delegatee: string;
   every: string;
+  gas_budget: string;
   id: { id: string };
   last_time_ms: string;
   owner: string;
-  quote_balance: string;
   remaining_orders: string;
   split_allocation: string;
   start_time_ms: string;
@@ -140,8 +142,8 @@ export type DCAContentFields = {
   trade_params: {
     type: string;
     fields: {
-      max_price: string;
-      min_price: string;
+      max_price: string | null;
+      min_price: string | null;
     };
   };
 };
