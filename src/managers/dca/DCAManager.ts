@@ -514,19 +514,28 @@ export class DCAManagerSingleton {
 
   public static async getDCAIncreaseOrdersRemainingTransaction({
     dca,
+    publicKey,
     baseCoinType,
     quoteCoinType,
     transaction,
-    addOrdersCount = 0,
-    gasCoinAccount,
+    addOrdersCount,
   }: GetDCAIncreaseOrdersRemainingTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
+
+    const DCA_ALL_SWAPS_GAS_BUGET_BN = new BigNumber(addOrdersCount).multipliedBy(
+      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS),
+    );
+
+    // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(DCA_ALL_SWAPS_GAS_BUGET_BN)]);
 
     const txRes = tx.moveCall({
       target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::increase_remaining_orders`,
       typeArguments: [baseCoinType, quoteCoinType],
-      arguments: [obj(tx, dca), obj(tx, gasCoinAccount), tx.pure(addOrdersCount)],
+      arguments: [obj(tx, dca), obj(tx, coin), tx.pure(addOrdersCount)],
     });
+
+    tx.transferObjects([coin], tx.pure(publicKey));
 
     tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
 

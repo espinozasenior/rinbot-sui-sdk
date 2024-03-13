@@ -95,15 +95,14 @@ export interface GetDCAResolveTradeTransactionArgs {
 }
 
 export interface GetDCAIncreaseOrdersRemainingTransactionArgs {
+  publicKey: string;
   dca: ObjectArg;
 
   baseCoinType: string;
   quoteCoinType: string;
 
-  gasCoinAccount: ObjectArg;
-
   transaction?: TransactionBlock;
-  addOrdersCount?: number;
+  addOrdersCount: number;
 }
 
 export interface GetDCASetInactiveAsDelegateeTransactionArgs {

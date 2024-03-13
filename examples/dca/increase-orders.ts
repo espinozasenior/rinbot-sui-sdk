@@ -25,12 +25,6 @@ export const increaseOrders = async () => {
   const quoteCoinType = currentDCAData.fields.quote_coin_type;
   const addOrdersCount = 1;
 
-  // TODO: Calculate that for given DCA inputs
-  const DCA_ALL_SWAPS_GAS_BUGET = addOrdersCount * DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS;
-
-  // TODO: Check that user has enough SUI for DCA gasCoinAccount
-  const [coin] = transaction.splitCoins(transaction.gas, [transaction.pure(DCA_ALL_SWAPS_GAS_BUGET)]);
-
   const { tx, txRes } = await DCAManagerSingleton.getDCAIncreaseOrdersRemainingTransaction({
     baseCoinType,
     quoteCoinType,
