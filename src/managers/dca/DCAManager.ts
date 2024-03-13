@@ -494,13 +494,14 @@ export class DCAManagerSingleton {
     quoteCoinType,
     transaction,
     addOrdersCount = 0,
+    gasCoinAccount,
   }: GetDCAIncreaseOrdersRemainingTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
       target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::increase_remaining_orders`,
       typeArguments: [baseCoinType, quoteCoinType],
-      arguments: [obj(tx, dca), tx.pure(addOrdersCount)],
+      arguments: [obj(tx, dca), obj(tx, gasCoinAccount), tx.pure(addOrdersCount)],
     });
 
     tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);

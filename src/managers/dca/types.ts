@@ -92,6 +92,8 @@ export interface GetDCAIncreaseOrdersRemainingTransactionArgs {
   baseCoinType: string;
   quoteCoinType: string;
 
+  gasCoinAccount: ObjectArg;
+
   transaction?: TransactionBlock;
   addOrdersCount?: number;
 }
