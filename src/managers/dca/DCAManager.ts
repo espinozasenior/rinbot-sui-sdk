@@ -329,6 +329,8 @@ export class DCAManagerSingleton {
     timeScale, // minute
     totalOrders, // 15 orders
 
+    gasCoinAccount,
+
     transaction,
   }: GetDCAInitWithPriceParamsTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
@@ -343,6 +345,7 @@ export class DCAManagerSingleton {
         tx.pure(every, "u64"),
         tx.pure(totalOrders, "u64"),
         tx.pure(timeScale, "u8"),
+        obj(tx, gasCoinAccount),
         tx.pure(minPrice, "u64"),
         tx.pure(maxPrice, "u64"),
       ],

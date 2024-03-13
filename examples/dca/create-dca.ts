@@ -49,8 +49,8 @@ export const createDCA = async () => {
     baseCoinType,
     quoteCoinType,
     every: 10,
-    // maxPrice: "2",
-    // minPrice: "1",
+    maxPrice: "2",
+    minPrice: "1",
     timeScale: DCATimescale.Hours,
     totalOrders,
 
