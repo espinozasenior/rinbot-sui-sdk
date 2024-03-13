@@ -433,7 +433,7 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::withdraw_base`,
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::withdraw_input`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca), tx.pure(baseCoinAmountToWithdrawFromDCA), tx.pure(removeOrdersCount)],
     });
