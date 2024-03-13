@@ -30,7 +30,11 @@ export type GetDCAInitWithPriceParamsTransactionArgs = {
   maxPrice: string;
 } & GetDCAInitTransactionArgs;
 
-export type CreateDCAInitTransactionArgs = Omit<GetDCAInitTransactionArgs, "baseCoinAccount"> & {
+export type CreateDCAInitTransactionArgs = Omit<
+  Omit<GetDCAInitTransactionArgs, "baseCoinAccount">,
+  "gasCoinAccount"
+> & {
+  publicKey: string;
   baseCoinAmountToDepositIntoDCA: string;
   allCoinObjectsList: CoinStruct[];
   minPrice?: string;

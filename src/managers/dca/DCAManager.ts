@@ -24,6 +24,7 @@ import {
   SuiEventDCACreate,
 } from "./types";
 import { filterValidDCAObjects, getBaseQuoteCoinTypesFromDCAType, hasMinMaxPriceParams } from "./utils";
+import BigNumber from "bignumber.js";
 
 /**
  * @class DCAManagerSingleton
@@ -240,10 +241,18 @@ export class DCAManagerSingleton {
 
   public static async createDCAInitTransaction({
     allCoinObjectsList,
+    publicKey,
 
     ...dcaParams
   }: CreateDCAInitTransactionArgs) {
     const tx = dcaParams.transaction ?? new TransactionBlock();
+
+    const DCA_ALL_SWAPS_GAS_BUGET_BN = new BigNumber(dcaParams.totalOrders).multipliedBy(
+      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS),
+    );
+
+    // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(DCA_ALL_SWAPS_GAS_BUGET_BN)]);
 
     // TODO: Unify the merge & split coins with all the rest of the methods
     if (allCoinObjectsList.length === 0) {
@@ -271,15 +280,19 @@ export class DCAManagerSingleton {
       ? DCAManagerSingleton.getDCAInitWithParamsTransaction({
           ...dcaParams,
           baseCoinAccount: coinSplitTxResult,
+          gasCoinAccount: coin,
           transaction: tx,
         })
       : DCAManagerSingleton.getDCAInitTransaction({
           ...dcaParams,
           baseCoinAccount: coinSplitTxResult,
+          gasCoinAccount: coin,
           transaction: tx,
         });
 
     const { tx: dcaTransaction, txRes: dcaTransactionRes } = await result;
+
+    tx.transferObjects([coin], tx.pure(publicKey));
 
     return { tx: dcaTransaction, txRes: dcaTransactionRes };
   }
