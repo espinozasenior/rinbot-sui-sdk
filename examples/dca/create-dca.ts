@@ -1,43 +1,30 @@
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import {
-  AftermathSingleton,
-  CetusSingleton,
-  CoinManagerSingleton,
-  Providers,
-  TurbosSingleton,
-  WalletManagerSingleton,
-  clmmMainnet,
-} from "../../src";
+import { CoinManagerSingleton, WalletManagerSingleton } from "../../src";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
-import { cacheOptions, keypair } from "../common";
 import { DCATimescale } from "../../src/managers/dca/types";
+import { RINCEL_COIN_TYPE, USDC_COIN_TYPE } from "../coin-types";
+import { initAndGetProviders, initAndGetRedisStorage, keypair, user } from "../common";
 
 // yarn ts-node examples/dca/create-dca.ts
 export const createDCA = async () => {
-  const suiProviderUrl = "https://fullnode.testnet.sui.io";
+  const suiProviderUrl = "https://fullnode.mainnet.sui.io";
   const provider = new SuiClient({ url: suiProviderUrl });
   const transaction = new TransactionBlock();
   const sender = keypair.toSuiAddress();
 
-  const baseCoinType = "0x608edfcf51144b7618fc497eacd0ed0583351de9c527974f40110ff6921d8489::lol::LOL";
-  const quoteCoinType = "0x35dcf2176f5fbffb789639ebecadc7670a14a90b315bf210e76978bdfc0e6fe9::sss::SSS";
+  // const baseCoinType = "0x608edfcf51144b7618fc497eacd0ed0583351de9c527974f40110ff6921d8489::lol::LOL";
+  // const quoteCoinType = "0x35dcf2176f5fbffb789639ebecadc7670a14a90b315bf210e76978bdfc0e6fe9::sss::SSS";
 
-  const baseCoinAmountToDepositIntoDCA = "50";
+  const baseCoinType = USDC_COIN_TYPE;
+  const quoteCoinType = RINCEL_COIN_TYPE;
 
-  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
-    suiProviderUrl,
-    cacheOptions,
-    lazyLoading: false,
-  });
-  const cetus: CetusSingleton = await CetusSingleton.getInstance({
-    sdkOptions: clmmMainnet,
-    cacheOptions,
-    suiProviderUrl,
-    lazyLoading: false,
-  });
-  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions, lazyLoading: false });
-  const providers: Providers = [turbos, cetus, aftermath];
+  // TODO: Need to calculate that based on the decimals ob baseCoinType
+  // TODO: Need to update inner function where this value is used
+  const baseCoinAmountToDepositIntoDCA = "150000";
+
+  const storage = await initAndGetRedisStorage();
+  const providers = await initAndGetProviders(storage);
   const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
   const walletManager: WalletManagerSingleton = WalletManagerSingleton.getInstance(provider, coinManager);
 
@@ -45,6 +32,15 @@ export const createDCA = async () => {
     publicKey: keypair.toSuiAddress(),
     coinType: baseCoinType,
   });
+
+  const totalOrders = 10;
+
+  // TODO: Calculate that for given DCA inputs
+  const DCA_ALL_SWAPS_GAS_BUGET = totalOrders * DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS;
+
+  // TODO: Check that user has enough SUI for DCA gasCoinAccount
+
+  const [coin] = transaction.splitCoins(transaction.gas, [transaction.pure(DCA_ALL_SWAPS_GAS_BUGET)]);
 
   const { tx, txRes } = await DCAManagerSingleton.createDCAInitTransaction({
     allCoinObjectsList,
@@ -56,9 +52,14 @@ export const createDCA = async () => {
     // maxPrice: "2",
     // minPrice: "1",
     timeScale: DCATimescale.Hours,
-    totalOrders: 15,
+    totalOrders,
+
+    gasCoinAccount: coin,
+
     transaction,
   });
+
+  tx.transferObjects([coin], tx.pure(user));
 
   const res = await provider.devInspectTransactionBlock({
     sender: sender,
@@ -66,6 +67,7 @@ export const createDCA = async () => {
   });
 
   console.debug("tx.blockData: ", tx.blockData);
+  console.debug("tx.blockdata.transactions", tx.blockData.transactions);
 
   // const res = await provider.signAndExecuteTransactionBlock({
   //   signer: keypair,
