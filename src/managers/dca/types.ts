@@ -20,6 +20,8 @@ export type GetDCAInitTransactionArgs = {
   baseCoinAccount: ObjectArg;
   totalOrders: number;
 
+  gasCoinAccount: ObjectArg;
+
   transaction?: TransactionBlock;
 };
 
