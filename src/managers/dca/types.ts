@@ -46,14 +46,18 @@ export interface GetDCADepositBaseTransactionArgs {
   baseCoinType: string;
   quoteCoinType: string;
   baseCoinAccount: ObjectArg;
-  addOrdersCount?: number;
+  addOrdersCount: number;
 
   gasCoinAccount: ObjectArg;
 
   transaction?: TransactionBlock;
 }
 
-export type CreateDCADepositBaseTransactionArgs = Omit<GetDCADepositBaseTransactionArgs, "baseCoinAccount"> & {
+export type CreateDCADepositBaseTransactionArgs = Omit<
+  Omit<GetDCADepositBaseTransactionArgs, "baseCoinAccount">,
+  "gasCoinAccount"
+> & {
+  publicKey: string;
   baseCoinAmountToDepositIntoDCA: string;
   allCoinObjectsList: CoinStruct[];
 };

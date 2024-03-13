@@ -37,12 +37,6 @@ export const depositBase = async () => {
   const baseCoinAmountToDepositIntoDCA = "250000";
   const addOrdersCount = 1;
 
-  // TODO: Calculate that for given DCA inputs
-  const DCA_ALL_SWAPS_GAS_BUGET = addOrdersCount * DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS;
-
-  // TODO: Check that user has enough SUI for DCA gasCoinAccount
-  const [coin] = transaction.splitCoins(transaction.gas, [transaction.pure(DCA_ALL_SWAPS_GAS_BUGET)]);
-
   const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
     suiProviderUrl,
     cacheOptions,
@@ -65,6 +59,8 @@ export const depositBase = async () => {
   });
 
   const { tx, txRes } = await DCAManagerSingleton.createDCADepositBaseTransaction({
+    publicKey: user,
+
     allCoinObjectsList,
     baseCoinAmountToDepositIntoDCA,
 
@@ -74,11 +70,8 @@ export const depositBase = async () => {
     dca: desiredObjectId,
     addOrdersCount,
 
-    gasCoinAccount: coin,
     transaction,
   });
-
-  tx.transferObjects([coin], tx.pure(user));
 
   const res = await provider.devInspectTransactionBlock({
     sender: sender,
