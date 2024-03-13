@@ -20,7 +20,7 @@ import {
 } from "./types";
 import { getCoinsMap, getPathsMap, isCoinListValid, isPairListValid } from "./utils";
 import { getCoinsMetadataCache } from "../../storages/utils/getCoinsMetadataCache";
-import { swapExactInputDoctored } from "../../managers/dca/flowxUtils";
+import { swapExactInputDoctored } from "../../managers/dca/adapterUtils/flowxUtils";
 
 /**
  * @class FlowxSingleton

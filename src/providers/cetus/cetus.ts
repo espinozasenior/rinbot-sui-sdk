@@ -459,7 +459,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
    * @param {number} params.slippagePercentage - The slippage percentage.
    * @return {Promise<any>} A Promise that resolves to the swap transaction payload.
    */
-  public async getSwapTransactionWithAssets({
+  public async getSwapTransactionDoctored({
     route,
     publicKey,
     slippagePercentage,

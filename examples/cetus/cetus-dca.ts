@@ -7,6 +7,14 @@ import { CETUS_COIN_TYPE } from "../coin-types";
 import { cacheOptions, initAndGetRedisStorage, suiProviderUrl, user } from "../common";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 
+// The transaction flow is the following when selling non-SUI OR SUI token for X:
+// 1. SplitCoins(input Coin)
+// 2. CoinZero (for output coin)
+// 3. Swap (...)
+// 4. CheckCoinThreshold(...)
+// 5. MergeCoins(Input coins)
+// 6. MergeCoins(Output coins)
+
 // TODO: These are dummy values
 const GAS_PROVISION = 505050505;
 const DCA_ID = "0x99999";
@@ -42,11 +50,17 @@ export const cetusDca = async ({
     publicKey: signerAddress,
   });
 
+  console.log(tokenFrom);
+  console.log(tokenTo);
+
   const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
 
-  const txBlock: TransactionBlock = await cetus.getSwapTransactionWithAssets({
+  // Standard behaviour of `cetus.getSwapTransaction` is that it will fail if
+  // the user does not have coins available for the trade. We therefore use a
+  // doctored up version of the method that mock the coin objects
+  const txBlock: TransactionBlock = await cetus.getSwapTransactionDoctored({
     route: calculatedData.route,
-    publicKey: signerAddress,
+    publicKey: signerAddress, // this MUST be the user address, not the delegatee
     slippagePercentage,
     coinAssets: mockedAssets,
   });
@@ -66,6 +80,7 @@ export const cetusDca = async ({
   // console.debug("res: ", res);
 };
 
+// Sui --> Cetus
 cetusDca({
   tokenFrom: LONG_SUI_COIN_TYPE,
   tokenTo: CETUS_COIN_TYPE,
@@ -73,6 +88,15 @@ cetusDca({
   slippagePercentage: 10,
   signerAddress: user,
 });
+
+// BUCK --> USDC
+// cetusDca({
+//   tokenFrom: "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK",
+//   tokenTo: "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+//   amount: "0.0001",
+//   slippagePercentage: 10,
+//   signerAddress: user,
+// });
 
 const getMockedAssets = (tokenFrom: string, tokenTo: string): CoinAsset[] => [
   {

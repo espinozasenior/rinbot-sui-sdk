@@ -1,5 +1,5 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { BigNumberInstance } from "../../providers/flowx/calculateAmountOutInternal";
+import { BigNumberInstance } from "../../../providers/flowx/calculateAmountOutInternal";
 import { estimateDealine } from "@flowx-pkg/ts-sdk";
 
 export const CONTAINER_OBJECT_ID = "0xb65dcbf63fd3ad5d0ebfbf334780dc9f785eff38a4459e37ab08fa79576ee511";
