@@ -26,18 +26,15 @@ export const increaseOrders = async () => {
   const addOrdersCount = 1;
 
   const { tx, txRes } = await DCAManagerSingleton.getDCAIncreaseOrdersRemainingTransaction({
+    publicKey: user,
     baseCoinType,
     quoteCoinType,
 
     dca: desiredObjectId,
     addOrdersCount,
 
-    gasCoinAccount: coin,
-
     transaction,
   });
-
-  tx.transferObjects([coin], tx.pure(user));
 
   const res = await provider.devInspectTransactionBlock({
     sender: sender,
