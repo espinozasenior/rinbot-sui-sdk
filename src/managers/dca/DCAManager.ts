@@ -34,10 +34,11 @@ import { filterValidDCAObjects, getBaseQuoteCoinTypesFromDCAType, hasMinMaxPrice
  */
 export class DCAManagerSingleton {
   // TODO: Change DCA_PACKAGE_ADDRESS & maybe move all that params to args for singleton
-  public static DCA_PACKAGE_ADDRESS = "0xa74eb3567306ba569100dab765ed9bbbb83d581d912f742fd93ade2a1c4adb2f";
+  public static DCA_PACKAGE_ADDRESS = "0x021464c5246d6ec60b10fc46a0adb7ff9915f6f07c8fc0bcbc8607541db912de";
   public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
-  public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "";
+  public static DCA_MINIMUM_GAS_FUNDS = 25_000_000;
+  public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "0x42dbd0fea6fefd7689d566287581724151b5327c08b76bdb9df108ca3b48d1d5";
   private static _instance: DCAManagerSingleton;
   private provider: SuiClient;
 
@@ -292,6 +293,8 @@ export class DCAManagerSingleton {
     timeScale, // minute
     totalOrders, // 15 orders
 
+    gasCoinAccount,
+
     transaction,
   }: GetDCAInitTransactionArgs): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
@@ -306,6 +309,7 @@ export class DCAManagerSingleton {
         tx.pure(every, "u64"),
         tx.pure(totalOrders, "u64"),
         tx.pure(timeScale, "u8"),
+        obj(tx, gasCoinAccount),
       ],
     });
 
