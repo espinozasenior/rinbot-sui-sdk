@@ -7,10 +7,12 @@ import { getAllObjects } from "../../providers/utils/getAllObjects";
 import { GetTransactionType } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
 import {
+  CreateDCAAddGasBudgetTransaction,
   CreateDCADepositBaseTransactionArgs,
   CreateDCAInitTransactionArgs,
   DCACreateEventParsedJson,
   DCAObject,
+  GetDCAAddGasBudgetTransactionArgs,
   GetDCADepositBaseTransactionArgs,
   GetDCAIncreaseOrdersRemainingTransactionArgs,
   GetDCAInitTradeTransactionArgs,
@@ -604,6 +606,43 @@ export class DCAManagerSingleton {
       target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::redeem_funds_and_close`,
       typeArguments: [baseCoinType, quoteCoinType],
       arguments: [obj(tx, dca)],
+    });
+
+    tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static async createDCAAddGasBudgetTransaction({ publicKey, ...dcaParams }: CreateDCAAddGasBudgetTransaction) {
+    const tx = dcaParams.transaction ?? new TransactionBlock();
+
+    // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(dcaParams.gasAmountToAdd)]);
+
+    const { tx: dcaTransaction, txRes: dcaTransactionRes } = await DCAManagerSingleton.getDCAAddGasBudgetTransaction({
+      ...dcaParams,
+      gasCoinAccount: coin,
+      transaction: tx,
+    });
+
+    return { tx: dcaTransaction, txRes: dcaTransactionRes };
+  }
+
+  public static async getDCAAddGasBudgetTransaction({
+    dca,
+    baseCoinType,
+    quoteCoinType,
+
+    transaction,
+
+    gasCoinAccount,
+  }: GetDCAAddGasBudgetTransactionArgs): GetTransactionType {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::add_gas_budget`,
+      typeArguments: [baseCoinType, quoteCoinType],
+      arguments: [obj(tx, dca), obj(tx, gasCoinAccount)],
     });
 
     tx.setGasBudget(DCAManagerSingleton.DCA_GAS_BUGET);

@@ -117,6 +117,12 @@ export interface GetDCASetInactiveTransactionArgs {
 export type GetDCASetReactivateAsOwnerTransactionArgs = GetDCASetInactiveTransactionArgs;
 export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveTransactionArgs;
 
+export type GetDCAAddGasBudgetTransactionArgs = { gasCoinAccount: ObjectArg } & GetDCASetInactiveTransactionArgs;
+export type CreateDCAAddGasBudgetTransaction = {
+  gasAmountToAdd: string;
+  publicKey: string;
+} & Omit<GetDCAAddGasBudgetTransactionArgs, "gasCoinAccount">;
+
 export type DCACreateEventParsedJson = {
   delegatee: string;
   id: string;
