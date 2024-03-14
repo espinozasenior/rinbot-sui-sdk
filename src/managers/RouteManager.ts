@@ -6,6 +6,10 @@ import { CoinManagerSingleton } from "./CoinManager";
 import { BestRouteData, IRouteManager, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 import { GetTransactionType } from "../transactions/types";
+import BigNumber from "bignumber.js";
+import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
+import { CoinStruct } from "@mysten/sui.js/client";
+import { SUI_DECIMALS } from "..";
 
 /**
  * @class RouteManager
@@ -220,7 +224,12 @@ export class RouteManager implements IRouteManager {
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
-    fee?: { feeAmountInMIST: string; feeCollectorAddress: string };
+    fee?: {
+      feeAmount: string;
+      feeCollectorAddress: string;
+      tokenFromCoinObjects?: CoinStruct[];
+      tokenFromDecimals?: number;
+    };
   }): Promise<TransactionBlock> {
     const { maxOutputProvider, route } = await this.getBestRouteData({
       tokenFrom,
@@ -241,13 +250,64 @@ export class RouteManager implements IRouteManager {
     // We can do the simulation on our side, but it will slowdown the swap
     transaction.setGasBudget(SWAP_GAS_BUDGET);
 
+    // TODO: Remove that into the FeeManager
     if (fee) {
-      const { tx } = await RouteManager.getFeeInSuiTransaction({ transaction, fee });
+      const { feeAmount, feeCollectorAddress, tokenFromCoinObjects, tokenFromDecimals } = fee;
 
-      return tx;
+      if (isSuiCoinType(tokenFrom)) {
+        const { tx } = await RouteManager.getFeeInSuiTransaction({
+          transaction,
+          fee: {
+            feeAmountInMIST: feeAmount,
+            feeCollectorAddress,
+          },
+        });
+        return tx;
+      } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
+        const { tx } = await RouteManager.getFeeInCoinTransaction({
+          transaction,
+          fee: {
+            feeAmount: feeAmount,
+            feeCollectorAddress,
+            allCoinObjectsList: tokenFromCoinObjects,
+          },
+        });
+        return tx;
+      } else {
+        console.warn(
+          "[getBestRouteTransaction] unexpected behaviour: params for fees object is not correctly provided",
+        );
+
+        throw new Error("Unexpected params getBestRouteTransaction");
+      }
     }
 
     return transaction;
+  }
+
+  /**
+   * Calculates the fee amount based on the fee percentage and amount.
+   * @param {Object} params - The parameters object.
+   * @param {string} params.feePercentage - The fee percentage as a string.
+   * @param {string} params.amount - The amount as a string.
+   * @param {number} params.tokenDecimals - The decimals of `coinType`.
+   * @return {string} The calculated fee amount as a string.
+   */
+  public static calculateFeeAmountIn({
+    feePercentage,
+    amount,
+    tokenDecimals,
+  }: {
+    feePercentage: string;
+    amount: string;
+    tokenDecimals: number;
+  }): string {
+    const feePercentageBig = new BigNumber(feePercentage);
+    const amountBig = new BigNumber(amount);
+    const feeAmount = amountBig.times(feePercentageBig).dividedBy(100);
+    const feeAmountInDecimals = new BigNumber(feeAmount).multipliedBy(10 ** tokenDecimals).toString();
+
+    return feeAmountInDecimals.toString();
   }
 
   /**
@@ -269,6 +329,43 @@ export class RouteManager implements IRouteManager {
     const tx = transaction ?? new TransactionBlock();
     const [coin] = tx.splitCoins(tx.gas, [tx.pure(feeAmountInMIST)]);
     const txRes = tx.transferObjects([coin], tx.pure(feeCollectorAddress));
+
+    return { tx, txRes };
+  }
+
+  /**
+   * @public
+   * @method getFeeInCoinTransaction
+   * @description Gets the transaction for deducting fees in any `coinType`
+   * from `signer` and transfer it to the `feeCollectorAddress`, based on the specified `feeAmount`.
+   *
+   * @return {GetTransactionType}
+   * A promise that resolves to the transaction block and transaction result for the adding transaction.
+   */
+  public static async getFeeInCoinTransaction({
+    transaction,
+    fee: { feeAmount, feeCollectorAddress, allCoinObjectsList },
+  }: {
+    transaction?: TransactionBlock;
+    fee: { feeAmount: string; feeCollectorAddress: string; allCoinObjectsList: CoinStruct[] };
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const sourceCoinObjectId = allCoinObjectsList[0].coinObjectId;
+    const isMergeCoinsRequired = allCoinObjectsList.length > 1;
+
+    if (isMergeCoinsRequired) {
+      console.warn("[getFeeInCoinTransaction] [isMergeCoinsRequired]");
+      const coinObjectIdsToMerge = allCoinObjectsList.slice(1).map((el) => el.coinObjectId);
+
+      tx.mergeCoins(
+        tx.object(sourceCoinObjectId),
+        coinObjectIdsToMerge.map((el) => tx.object(el)),
+      );
+    }
+
+    const coinSplitTxResult = tx.splitCoins(tx.object(sourceCoinObjectId), [tx.pure(feeAmount)]);
+    const txRes = tx.transferObjects([coinSplitTxResult], tx.pure(feeCollectorAddress));
 
     return { tx, txRes };
   }
