@@ -225,7 +225,7 @@ export class RouteManager implements IRouteManager {
     slippagePercentage: number;
     signerAddress: string;
     fee?: {
-      feePercentage: string;
+      feeAmount: string;
       feeCollectorAddress: string;
       tokenFromCoinObjects?: CoinStruct[];
       tokenFromDecimals?: number;
@@ -252,14 +252,9 @@ export class RouteManager implements IRouteManager {
 
     // TODO: Remove that into the FeeManager
     if (fee) {
-      const { feePercentage, feeCollectorAddress, tokenFromCoinObjects, tokenFromDecimals } = fee;
+      const { feeAmount, feeCollectorAddress, tokenFromCoinObjects, tokenFromDecimals } = fee;
 
       if (isSuiCoinType(tokenFrom)) {
-        const feeAmount = RouteManager.calculateFeeAmountIn({
-          feePercentage: feePercentage,
-          amount,
-          tokenDecimals: SUI_DECIMALS,
-        });
         const { tx } = await RouteManager.getFeeInSuiTransaction({
           transaction,
           fee: {
@@ -269,11 +264,6 @@ export class RouteManager implements IRouteManager {
         });
         return tx;
       } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
-        const feeAmount = RouteManager.calculateFeeAmountIn({
-          feePercentage: feePercentage,
-          amount,
-          tokenDecimals: tokenFromDecimals,
-        });
         const { tx } = await RouteManager.getFeeInCoinTransaction({
           transaction,
           fee: {
