@@ -9,6 +9,7 @@ import { GetTransactionType } from "../transactions/types";
 import BigNumber from "bignumber.js";
 import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
 import { CoinStruct } from "@mysten/sui.js/client";
+import { SUI_DECIMALS } from "..";
 
 /**
  * @class RouteManager
@@ -254,21 +255,29 @@ export class RouteManager implements IRouteManager {
       const { feePercentage, feeCollectorAddress, tokenFromCoinObjects, tokenFromDecimals } = fee;
 
       if (isSuiCoinType(tokenFrom)) {
-        const feeAmount = RouteManager.calculateFeeAmountIn({ feePercentage: feePercentage, amount });
+        const feeAmount = RouteManager.calculateFeeAmountIn({
+          feePercentage: feePercentage,
+          amount,
+          tokenDecimals: SUI_DECIMALS,
+        });
         const { tx } = await RouteManager.getFeeInSuiTransaction({
           transaction,
           fee: {
-            feeAmountInMIST: new BigNumber(feeAmount).multipliedBy(SUI_DENOMINATOR).toString(),
+            feeAmountInMIST: feeAmount,
             feeCollectorAddress,
           },
         });
         return tx;
       } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
-        const feeAmount = RouteManager.calculateFeeAmountIn({ feePercentage: feePercentage, amount });
+        const feeAmount = RouteManager.calculateFeeAmountIn({
+          feePercentage: feePercentage,
+          amount,
+          tokenDecimals: tokenFromDecimals,
+        });
         const { tx } = await RouteManager.getFeeInCoinTransaction({
           transaction,
           fee: {
-            feeAmount: new BigNumber(feeAmount).multipliedBy(10 ** tokenFromDecimals).toString(),
+            feeAmount: feeAmount,
             feeCollectorAddress,
             allCoinObjectsList: tokenFromCoinObjects,
           },
@@ -289,13 +298,24 @@ export class RouteManager implements IRouteManager {
    * @param {Object} params - The parameters object.
    * @param {string} params.feePercentage - The fee percentage as a string.
    * @param {string} params.amount - The amount as a string.
+   * @param {number} params.tokenDecimals - The decimals of `coinType`.
    * @return {string} The calculated fee amount as a string.
    */
-  public static calculateFeeAmountIn({ feePercentage, amount }: { feePercentage: string; amount: string }): string {
+  public static calculateFeeAmountIn({
+    feePercentage,
+    amount,
+    tokenDecimals,
+  }: {
+    feePercentage: string;
+    amount: string;
+    tokenDecimals: number;
+  }): string {
     const feePercentageBig = new BigNumber(feePercentage);
     const amountBig = new BigNumber(amount);
     const feeAmount = amountBig.times(feePercentageBig).dividedBy(100);
-    return feeAmount.toString();
+    const feeAmountInDecimals = new BigNumber(feeAmount).multipliedBy(10 ** tokenDecimals).toString();
+
+    return feeAmountInDecimals.toString();
   }
 
   /**
