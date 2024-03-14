@@ -1,11 +1,14 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { NoRoutesError } from "../errors/NoRoutesError";
 import { CetusSingleton } from "../providers/cetus/cetus";
-import { SWAP_GAS_BUDGET } from "../providers/common";
+import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
 import { BestRouteData, IRouteManager, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 import { GetTransactionType } from "../transactions/types";
+import BigNumber from "bignumber.js";
+import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
+import { CoinStruct } from "@mysten/sui.js/client";
 
 /**
  * @class RouteManager
@@ -220,7 +223,12 @@ export class RouteManager implements IRouteManager {
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
-    fee?: { feeAmountInMIST: string; feeCollectorAddress: string };
+    fee?: {
+      feePercentage: string;
+      feeCollectorAddress: string;
+      tokenFromCoinObjects?: CoinStruct[];
+      tokenFromDecimals?: number;
+    };
   }): Promise<TransactionBlock> {
     const { maxOutputProvider, route } = await this.getBestRouteData({
       tokenFrom,
@@ -241,13 +249,53 @@ export class RouteManager implements IRouteManager {
     // We can do the simulation on our side, but it will slowdown the swap
     transaction.setGasBudget(SWAP_GAS_BUDGET);
 
+    // TODO: Remove that into the FeeManager
     if (fee) {
-      const { tx } = await RouteManager.getFeeInSuiTransaction({ transaction, fee });
+      const { feePercentage, feeCollectorAddress, tokenFromCoinObjects, tokenFromDecimals } = fee;
 
-      return tx;
+      if (isSuiCoinType(tokenFrom)) {
+        const feeAmount = RouteManager.calculateFeeAmountIn({ feePercentage: feePercentage, amount });
+        const { tx } = await RouteManager.getFeeInSuiTransaction({
+          transaction,
+          fee: {
+            feeAmountInMIST: new BigNumber(feeAmount).multipliedBy(SUI_DENOMINATOR).toString(),
+            feeCollectorAddress,
+          },
+        });
+        return tx;
+      } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
+        const feeAmount = RouteManager.calculateFeeAmountIn({ feePercentage: feePercentage, amount });
+        const { tx } = await RouteManager.getFeeInCoinTransaction({
+          transaction,
+          fee: {
+            feeAmount: new BigNumber(feeAmount).multipliedBy(10 ** tokenFromDecimals).toString(),
+            feeCollectorAddress,
+            allCoinObjectsList: tokenFromCoinObjects,
+          },
+        });
+        return tx;
+      } else {
+        console.warn(
+          "[getBestRouteTransaction] unexpected behaviour: params for fees object is not correctly provided",
+        );
+      }
     }
 
     return transaction;
+  }
+
+  /**
+   * Calculates the fee amount based on the fee percentage and amount.
+   * @param {Object} params - The parameters object.
+   * @param {string} params.feePercentage - The fee percentage as a string.
+   * @param {string} params.amount - The amount as a string.
+   * @return {string} The calculated fee amount as a string.
+   */
+  public static calculateFeeAmountIn({ feePercentage, amount }: { feePercentage: string; amount: string }): string {
+    const feePercentageBig = new BigNumber(feePercentage);
+    const amountBig = new BigNumber(amount);
+    const feeAmount = amountBig.times(feePercentageBig).dividedBy(100);
+    return feeAmount.toString();
   }
 
   /**
@@ -269,6 +317,43 @@ export class RouteManager implements IRouteManager {
     const tx = transaction ?? new TransactionBlock();
     const [coin] = tx.splitCoins(tx.gas, [tx.pure(feeAmountInMIST)]);
     const txRes = tx.transferObjects([coin], tx.pure(feeCollectorAddress));
+
+    return { tx, txRes };
+  }
+
+  /**
+   * @public
+   * @method getFeeInCoinTransaction
+   * @description Gets the transaction for deducting fees in any `coinType`
+   * from `signer` and transfer it to the `feeCollectorAddress`, based on the specified `feeAmount`.
+   *
+   * @return {GetTransactionType}
+   * A promise that resolves to the transaction block and transaction result for the adding transaction.
+   */
+  public static async getFeeInCoinTransaction({
+    transaction,
+    fee: { feeAmount, feeCollectorAddress, allCoinObjectsList },
+  }: {
+    transaction?: TransactionBlock;
+    fee: { feeAmount: string; feeCollectorAddress: string; allCoinObjectsList: CoinStruct[] };
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const sourceCoinObjectId = allCoinObjectsList[0].coinObjectId;
+    const isMergeCoinsRequired = allCoinObjectsList.length > 1;
+
+    if (isMergeCoinsRequired) {
+      console.warn("[getFeeInCoinTransaction] [isMergeCoinsRequired]");
+      const coinObjectIdsToMerge = allCoinObjectsList.slice(1).map((el) => el.coinObjectId);
+
+      tx.mergeCoins(
+        tx.object(sourceCoinObjectId),
+        coinObjectIdsToMerge.map((el) => tx.object(el)),
+      );
+    }
+
+    const coinSplitTxResult = tx.splitCoins(tx.object(sourceCoinObjectId), [tx.pure(feeAmount)]);
+    const txRes = tx.transferObjects([coinSplitTxResult], tx.pure(feeCollectorAddress));
 
     return { tx, txRes };
   }
