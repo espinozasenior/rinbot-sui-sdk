@@ -202,6 +202,7 @@ export class RouteManager implements IRouteManager {
    * @param {string} options.amount - The amount to swap.
    * @param {number} options.slippagePercentage - The slippage percentage.
    * @param {string} options.signerAddress - The address of the signer.
+   * @param {object} options.fee - The fee in SUI that would be deducted from user's account
    * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
    * @throws {Error} Throws an error if there is no path for the specified tokens.
    */
@@ -211,12 +212,14 @@ export class RouteManager implements IRouteManager {
     amount,
     slippagePercentage,
     signerAddress,
+    fee,
   }: {
     tokenFrom: string;
     tokenTo: string;
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
+    fee?: { feeAmountInMIST: string; feeCollectorAddress: string };
   }): Promise<TransactionBlock> {
     const { maxOutputProvider, route } = await this.getBestRouteData({
       tokenFrom,
@@ -237,6 +240,34 @@ export class RouteManager implements IRouteManager {
     // We can do the simulation on our side, but it will slowdown the swap
     transaction.setGasBudget(SWAP_GAS_BUDGET);
 
+    if (fee) {
+      const { tx } = await RouteManager.getFeeInSuiTransaction({ transaction, fee });
+
+      return tx;
+    }
+
     return transaction;
+  }
+
+  /**
+   * @public
+   * @method getFeeTransaction
+   * @description Gets the transaction for deducting fees in SUI coin
+   * from `signer` and transfer it to the `feeCollectorAddress`, based on the specified `feeAmountInMIST`.
+   *
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   */
+  public static async getFeeInSuiTransaction({
+    transaction,
+    fee: { feeAmountInMIST, feeCollectorAddress },
+  }: {
+    transaction: TransactionBlock;
+    fee: { feeAmountInMIST: string; feeCollectorAddress: string };
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure(feeAmountInMIST)]);
+    const txRes = tx.transferObjects([coin], tx.pure(feeCollectorAddress));
+
+    return { tx, txRes };
   }
 }
