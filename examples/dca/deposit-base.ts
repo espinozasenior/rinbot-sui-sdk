@@ -10,18 +10,20 @@ import {
   clmmMainnet,
 } from "../../src";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
-import { cacheOptions, keypair } from "../common";
+import { cacheOptions, keypair, user } from "../common";
 
 // yarn ts-node examples/dca/deposit-base.ts
 export const depositBase = async () => {
-  const suiProviderUrl = "https://fullnode.testnet.sui.io";
+  const suiProviderUrl = "https://fullnode.mainnet.sui.io";
   const provider = new SuiClient({ url: suiProviderUrl });
   const transaction = new TransactionBlock();
   const sender = keypair.toSuiAddress();
 
   const dcaInstance = DCAManagerSingleton.getInstance(suiProviderUrl);
   const dcas = await dcaInstance.getDCAsByUser({ publicKey: sender });
-  const desiredObjectId = "0x3d8999900847d0c7ccca6f965bc02041c478b582aa03e1708d603f7a92358402";
+
+  console.debug("dcas: ", dcas);
+  const desiredObjectId = "0x4f9fcd90fb8e852899d45693e196d49b07a579ffbc1ca40292cd07f9e9675bdd";
 
   const currentDCAData = dcas.find((el) => el.fields.id.id === desiredObjectId);
 
@@ -32,7 +34,7 @@ export const depositBase = async () => {
   const baseCoinType = currentDCAData.fields.base_coin_type;
   const quoteCoinType = currentDCAData.fields.quote_coin_type;
 
-  const baseCoinAmountToDepositIntoDCA = "25";
+  const baseCoinAmountToDepositIntoDCA = "250000";
   const addOrdersCount = 1;
 
   const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
@@ -57,6 +59,8 @@ export const depositBase = async () => {
   });
 
   const { tx, txRes } = await DCAManagerSingleton.createDCADepositBaseTransaction({
+    publicKey: user,
+
     allCoinObjectsList,
     baseCoinAmountToDepositIntoDCA,
 
@@ -65,6 +69,7 @@ export const depositBase = async () => {
 
     dca: desiredObjectId,
     addOrdersCount,
+
     transaction,
   });
 
@@ -72,6 +77,19 @@ export const depositBase = async () => {
     sender: sender,
     transactionBlock: tx,
   });
+
+  // const res = await provider.signAndExecuteTransactionBlock({
+  //   signer: keypair,
+  //   transactionBlock: tx,
+  //   options: {
+  //     showBalanceChanges: true,
+  //     showEffects: true,
+  //     showEvents: true,
+  //     showInput: true,
+  //     showObjectChanges: true,
+  //     showRawInput: true,
+  //   },
+  // });
 
   console.debug("txRes: ", txRes);
   console.debug("tx: ", tx);

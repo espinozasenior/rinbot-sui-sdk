@@ -1,18 +1,18 @@
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
-import { user } from "../common";
+import { keypair, user } from "../common";
 import { delegateeUser } from "./common";
 
-// yarn ts-node examples/dca/set-dca-inactive-as-delegatee.ts
-export const setDCAInactiveAsDelegatee = async () => {
-  const suiProviderUrl = "https://fullnode.testnet.sui.io";
+// yarn ts-node examples/dca/add-gas-budget.ts
+export const addGasBudget = async () => {
+  const suiProviderUrl = "https://fullnode.mainnet.sui.io";
   const provider = new SuiClient({ url: suiProviderUrl });
   const transaction = new TransactionBlock();
 
   const dcaInstance = DCAManagerSingleton.getInstance(suiProviderUrl);
   const dcas = await dcaInstance.getDCAsByUser({ publicKey: user });
-  const desiredObjectId = "0x3d8999900847d0c7ccca6f965bc02041c478b582aa03e1708d603f7a92358402";
+  const desiredObjectId = "0x4f9fcd90fb8e852899d45693e196d49b07a579ffbc1ca40292cd07f9e9675bdd";
 
   const currentDCAData = dcas.find((el) => el.fields.id.id === desiredObjectId);
   console.debug("currentDCAData: ", currentDCAData);
@@ -24,18 +24,33 @@ export const setDCAInactiveAsDelegatee = async () => {
   const baseCoinType = currentDCAData.fields.base_coin_type;
   const quoteCoinType = currentDCAData.fields.quote_coin_type;
 
-  const { tx, txRes } = await DCAManagerSingleton.getDCASetInactiveAsDelegateeTransaction({
+  const { tx, txRes } = await DCAManagerSingleton.createDCAAddGasBudgetTransaction({
     baseCoinType,
     quoteCoinType,
+
+    gasAmountToAdd: "40000",
 
     dca: desiredObjectId,
     transaction,
   });
 
   const res = await provider.devInspectTransactionBlock({
-    sender: delegateeUser,
+    sender: user,
     transactionBlock: tx,
   });
+
+  // const res = await provider.signAndExecuteTransactionBlock({
+  //   signer: keypair,
+  //   transactionBlock: tx,
+  //   options: {
+  //     showBalanceChanges: true,
+  //     showEffects: true,
+  //     showEvents: true,
+  //     showInput: true,
+  //     showObjectChanges: true,
+  //     showRawInput: true,
+  //   },
+  // });
 
   console.debug("txRes: ", txRes);
   console.debug("tx: ", tx);
@@ -46,4 +61,4 @@ export const setDCAInactiveAsDelegatee = async () => {
   console.debug("res: ", res);
 };
 
-setDCAInactiveAsDelegatee();
+addGasBudget();

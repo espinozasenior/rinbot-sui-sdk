@@ -10,7 +10,7 @@ if (
   throw new Error("Empty mnemonic or private key");
 }
 
-export const delegateeMnemonic = normalizeMnemonic(process.env.SUI_WALLET_SEED_PHRASE ?? "");
+export const delegateeMnemonic = normalizeMnemonic(process.env.SUI_DELEGATEE_WALLET_SEED_PHRASE ?? "");
 
 export const delegateeKeypair = process.env.SUI_DELEGATEE_WALLET_PRIVATE_KEY_ARRAY
   ? Ed25519Keypair.fromSecretKey(hexStringToUint8Array(process.env.SUI_DELEGATEE_WALLET_PRIVATE_KEY_ARRAY))

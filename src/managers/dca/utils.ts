@@ -7,13 +7,13 @@ import { TOKEN_ADDRESS_BASE_REGEX } from "../../providers/common";
 export function isValidDCAFields(fields: MoveStruct): fields is DCAContentFields {
   const expectedKeys: (keyof DCAContentFields)[] = [
     "active",
-    "base_balance",
+    "input_balance",
     "delegatee",
     "every",
+    "gas_budget",
     "id",
     "last_time_ms",
     "owner",
-    "quote_balance",
     "remaining_orders",
     "split_allocation",
     "start_time_ms",
@@ -26,13 +26,13 @@ export function isValidDCAFields(fields: MoveStruct): fields is DCAContentFields
     // the "active" in fields is the ts-check bypass for MoveStruct type
     "active" in fields &&
     typeof fields.active === "boolean" &&
-    typeof fields.base_balance === "string" &&
+    typeof fields.input_balance === "string" &&
     typeof fields.delegatee === "string" &&
     typeof fields.every === "string" &&
+    typeof fields.gas_budget === "string" &&
     typeof fields.id === "object" && // Assuming id is always an object
     typeof fields.last_time_ms === "string" &&
     typeof fields.owner === "string" &&
-    typeof fields.quote_balance === "string" &&
     typeof fields.remaining_orders === "string" &&
     typeof fields.split_allocation === "string" &&
     typeof fields.start_time_ms === "string" &&
@@ -47,8 +47,8 @@ export function isValidDCAFields(fields: MoveStruct): fields is DCAContentFields
     "min_price" in fields.trade_params.fields &&
     typeof fields.trade_params.type === "string" &&
     typeof fields.trade_params.fields === "object" &&
-    typeof fields.trade_params.fields.max_price === "string" &&
-    typeof fields.trade_params.fields.min_price === "string"
+    (typeof fields.trade_params.fields.max_price === "string" || fields.trade_params.fields.max_price === null) &&
+    (typeof fields.trade_params.fields.min_price === "string" || fields.trade_params.fields.min_price === null)
   );
 }
 
