@@ -613,7 +613,7 @@ export class DCAManagerSingleton {
     return { tx, txRes };
   }
 
-  public static async createDCAAddGasBudgetTransaction({ publicKey, ...dcaParams }: CreateDCAAddGasBudgetTransaction) {
+  public static async createDCAAddGasBudgetTransaction({ ...dcaParams }: CreateDCAAddGasBudgetTransaction) {
     const tx = dcaParams.transaction ?? new TransactionBlock();
 
     // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN

@@ -120,7 +120,6 @@ export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveTransact
 export type GetDCAAddGasBudgetTransactionArgs = { gasCoinAccount: ObjectArg } & GetDCASetInactiveTransactionArgs;
 export type CreateDCAAddGasBudgetTransaction = {
   gasAmountToAdd: string;
-  publicKey: string;
 } & Omit<GetDCAAddGasBudgetTransactionArgs, "gasCoinAccount">;
 
 export type DCACreateEventParsedJson = {
