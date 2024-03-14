@@ -37,7 +37,7 @@ import BigNumber from "bignumber.js";
  */
 export class DCAManagerSingleton {
   // TODO: Change DCA_PACKAGE_ADDRESS & maybe move all that params to args for singleton
-  public static DCA_PACKAGE_ADDRESS = "0x021464c5246d6ec60b10fc46a0adb7ff9915f6f07c8fc0bcbc8607541db912de";
+  public static DCA_PACKAGE_ADDRESS = "0x89b1372fa44ac2312a3876d83612d1dc9d298af332a42a153913558332a564d0";
   public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
   public static DCA_MINIMUM_GAS_FUNDS = 25_000_000;
