@@ -3,7 +3,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
 import { NoRoutesError } from "../errors/NoRoutesError";
 import { CetusSingleton } from "../providers/cetus/cetus";
-import { SWAP_GAS_BUDGET } from "../providers/common";
+import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
 import { GetTransactionType } from "../transactions/types";
 import { CoinManagerSingleton } from "./CoinManager";
@@ -230,10 +230,16 @@ export class RouteManager implements IRouteManager {
       tokenFromDecimals?: number;
     };
   }): Promise<TransactionBlock> {
+    // Note: this works only for sui
+    const amountInCludingFees =
+      fee && isSuiCoinType(tokenFrom)
+        ? new BigNumber(amount).minus(new BigNumber(fee.feeAmount).dividedBy(SUI_DENOMINATOR)).toString()
+        : amount;
+
     const { maxOutputProvider, route } = await this.getBestRouteData({
       tokenFrom,
       tokenTo,
-      amount,
+      amount: amountInCludingFees,
       slippagePercentage,
       signerAddress,
     });
@@ -262,6 +268,7 @@ export class RouteManager implements IRouteManager {
           },
         });
         return tx;
+        // This else is not expected to work since it's impossible to split and merge the same coin
       } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
         const { tx } = await RouteManager.getFeeInCoinTransaction({
           transaction,
