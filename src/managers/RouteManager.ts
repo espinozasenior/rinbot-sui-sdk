@@ -261,7 +261,7 @@ export class RouteManager implements IRouteManager {
     transaction,
     fee: { feeAmountInMIST, feeCollectorAddress },
   }: {
-    transaction: TransactionBlock;
+    transaction?: TransactionBlock;
     fee: { feeAmountInMIST: string; feeCollectorAddress: string };
   }) {
     const tx = transaction ?? new TransactionBlock();
