@@ -29,29 +29,28 @@ export const addGasBudget = async () => {
     quoteCoinType,
 
     gasAmountToAdd: "40000",
-    publicKey: user,
 
     dca: desiredObjectId,
     transaction,
   });
 
-  //   const res = await provider.devInspectTransactionBlock({
-  //     sender: user,
-  //     transactionBlock: tx,
-  //   });
-
-  const res = await provider.signAndExecuteTransactionBlock({
-    signer: keypair,
+  const res = await provider.devInspectTransactionBlock({
+    sender: user,
     transactionBlock: tx,
-    options: {
-      showBalanceChanges: true,
-      showEffects: true,
-      showEvents: true,
-      showInput: true,
-      showObjectChanges: true,
-      showRawInput: true,
-    },
   });
+
+  // const res = await provider.signAndExecuteTransactionBlock({
+  //   signer: keypair,
+  //   transactionBlock: tx,
+  //   options: {
+  //     showBalanceChanges: true,
+  //     showEffects: true,
+  //     showEvents: true,
+  //     showInput: true,
+  //     showObjectChanges: true,
+  //     showRawInput: true,
+  //   },
+  // });
 
   console.debug("txRes: ", txRes);
   console.debug("tx: ", tx);
