@@ -252,7 +252,7 @@ export class RouteManager implements IRouteManager {
 
   /**
    * @public
-   * @method getFeeTransaction
+   * @method getFeeInSuiTransaction
    * @description Gets the transaction for deducting fees in SUI coin
    * from `signer` and transfer it to the `feeCollectorAddress`, based on the specified `feeAmountInMIST`.
    *
