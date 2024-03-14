@@ -1,15 +1,14 @@
+import { CoinStruct } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import BigNumber from "bignumber.js";
 import { NoRoutesError } from "../errors/NoRoutesError";
 import { CetusSingleton } from "../providers/cetus/cetus";
 import { SWAP_GAS_BUDGET } from "../providers/common";
+import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
+import { GetTransactionType } from "../transactions/types";
 import { CoinManagerSingleton } from "./CoinManager";
 import { BestRouteData, IRouteManager, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
-import { GetTransactionType } from "../transactions/types";
-import BigNumber from "bignumber.js";
-import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
-import { CoinStruct } from "@mysten/sui.js/client";
-import { SUI_DECIMALS } from "..";
 
 /**
  * @class RouteManager
