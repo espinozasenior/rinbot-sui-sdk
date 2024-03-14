@@ -5,6 +5,7 @@ import { SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
 import { BestRouteData, IRouteManager, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
+import { GetTransactionType } from "../transactions/types";
 
 /**
  * @class RouteManager
@@ -255,7 +256,8 @@ export class RouteManager implements IRouteManager {
    * @description Gets the transaction for deducting fees in SUI coin
    * from `signer` and transfer it to the `feeCollectorAddress`, based on the specified `feeAmountInMIST`.
    *
-   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @return {GetTransactionType}
+   * A promise that resolves to the transaction block and transaction result for the adding transaction.
    */
   public static async getFeeInSuiTransaction({
     transaction,
@@ -263,7 +265,7 @@ export class RouteManager implements IRouteManager {
   }: {
     transaction?: TransactionBlock;
     fee: { feeAmountInMIST: string; feeCollectorAddress: string };
-  }) {
+  }): GetTransactionType {
     const tx = transaction ?? new TransactionBlock();
     const [coin] = tx.splitCoins(tx.gas, [tx.pure(feeAmountInMIST)]);
     const txRes = tx.transferObjects([coin], tx.pure(feeCollectorAddress));
