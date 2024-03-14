@@ -287,6 +287,8 @@ export class RouteManager implements IRouteManager {
         console.warn(
           "[getBestRouteTransaction] unexpected behaviour: params for fees object is not correctly provided",
         );
+
+        throw new Error("Unexpected params getBestRouteTransaction");
       }
     }
 
