@@ -310,10 +310,10 @@ export class RouteManager implements IRouteManager {
   }): string {
     const feePercentageBig = new BigNumber(feePercentage);
     const amountBig = new BigNumber(amount);
-    const feeAmount = amountBig.times(feePercentageBig).dividedBy(100);
+    const feeAmount = amountBig.times(feePercentageBig).dividedBy(100).toFixed(tokenDecimals);
     const feeAmountInDecimals = new BigNumber(feeAmount).multipliedBy(10 ** tokenDecimals).toString();
 
-    return feeAmountInDecimals.toString();
+    return feeAmountInDecimals;
   }
 
   /**
