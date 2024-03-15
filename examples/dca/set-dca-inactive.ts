@@ -2,9 +2,10 @@ import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
 import { user } from "../common";
+import { delegateeUser } from "./common";
 
-// yarn ts-node examples/dca/reactivate-dca-as-owner.ts
-export const reactivateDCAAsOwner = async () => {
+// yarn ts-node examples/dca/set-dca-inactive-as-delegatee.ts
+export const setDCAInactive = async () => {
   const suiProviderUrl = "https://fullnode.mainnet.sui.io";
   const provider = new SuiClient({ url: suiProviderUrl });
   const transaction = new TransactionBlock();
@@ -23,7 +24,7 @@ export const reactivateDCAAsOwner = async () => {
   const baseCoinType = currentDCAData.fields.base_coin_type;
   const quoteCoinType = currentDCAData.fields.quote_coin_type;
 
-  const { tx, txRes } = await DCAManagerSingleton.getDCAReactivateAsOwnerTransaction({
+  const { tx, txRes } = await DCAManagerSingleton.getDCASetInactiveTransaction({
     baseCoinType,
     quoteCoinType,
 
@@ -31,6 +32,13 @@ export const reactivateDCAAsOwner = async () => {
     transaction,
   });
 
+  // From delegatee
+  // const res = await provider.devInspectTransactionBlock({
+  //   sender: delegateeUser,
+  //   transactionBlock: tx,
+  // });
+
+  // From user
   const res = await provider.devInspectTransactionBlock({
     sender: user,
     transactionBlock: tx,
@@ -41,8 +49,8 @@ export const reactivateDCAAsOwner = async () => {
   console.debug("tx.blockData: ", tx.blockData);
   console.dir(tx.blockData, { depth: null });
   console.debug("sender: ", user);
-  console.debug("delegateeUser: ", user);
+  console.debug("delegateeUser: ", delegateeUser);
   console.debug("res: ", res);
 };
 
-reactivateDCAAsOwner();
+setDCAInactive();

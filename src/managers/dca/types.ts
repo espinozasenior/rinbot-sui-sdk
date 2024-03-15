@@ -20,6 +20,8 @@ export type GetDCAInitTransactionArgs = {
   baseCoinAccount: ObjectArg;
   totalOrders: number;
 
+  gasCoinAccount: ObjectArg;
+
   transaction?: TransactionBlock;
 };
 
@@ -28,7 +30,11 @@ export type GetDCAInitWithPriceParamsTransactionArgs = {
   maxPrice: string;
 } & GetDCAInitTransactionArgs;
 
-export type CreateDCAInitTransactionArgs = Omit<GetDCAInitTransactionArgs, "baseCoinAccount"> & {
+export type CreateDCAInitTransactionArgs = Omit<
+  Omit<GetDCAInitTransactionArgs, "baseCoinAccount">,
+  "gasCoinAccount"
+> & {
+  publicKey: string;
   baseCoinAmountToDepositIntoDCA: string;
   allCoinObjectsList: CoinStruct[];
   minPrice?: string;
@@ -40,12 +46,18 @@ export interface GetDCADepositBaseTransactionArgs {
   baseCoinType: string;
   quoteCoinType: string;
   baseCoinAccount: ObjectArg;
-  addOrdersCount?: number;
+  addOrdersCount: number;
+
+  gasCoinAccount: ObjectArg;
 
   transaction?: TransactionBlock;
 }
 
-export type CreateDCADepositBaseTransactionArgs = Omit<GetDCADepositBaseTransactionArgs, "baseCoinAccount"> & {
+export type CreateDCADepositBaseTransactionArgs = Omit<
+  Omit<GetDCADepositBaseTransactionArgs, "baseCoinAccount">,
+  "gasCoinAccount"
+> & {
+  publicKey: string;
   baseCoinAmountToDepositIntoDCA: string;
   allCoinObjectsList: CoinStruct[];
 };
@@ -83,16 +95,17 @@ export interface GetDCAResolveTradeTransactionArgs {
 }
 
 export interface GetDCAIncreaseOrdersRemainingTransactionArgs {
+  publicKey: string;
   dca: ObjectArg;
 
   baseCoinType: string;
   quoteCoinType: string;
 
   transaction?: TransactionBlock;
-  addOrdersCount?: number;
+  addOrdersCount: number;
 }
 
-export interface GetDCASetInactiveAsDelegateeTransactionArgs {
+export interface GetDCASetInactiveTransactionArgs {
   dca: ObjectArg;
 
   baseCoinType: string;
@@ -101,8 +114,13 @@ export interface GetDCASetInactiveAsDelegateeTransactionArgs {
   transaction?: TransactionBlock;
 }
 
-export type GetDCASetReactivateAsOwnerTransactionArgs = GetDCASetInactiveAsDelegateeTransactionArgs;
-export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveAsDelegateeTransactionArgs;
+export type GetDCASetReactivateAsOwnerTransactionArgs = GetDCASetInactiveTransactionArgs;
+export type GetDCARedeemFundsAndCloseTransactionArgs = GetDCASetInactiveTransactionArgs;
+
+export type GetDCAAddGasBudgetTransactionArgs = { gasCoinAccount: ObjectArg } & GetDCASetInactiveTransactionArgs;
+export type CreateDCAAddGasBudgetTransaction = {
+  gasAmountToAdd: string;
+} & Omit<GetDCAAddGasBudgetTransactionArgs, "gasCoinAccount">;
 
 export type DCACreateEventParsedJson = {
   delegatee: string;
@@ -124,13 +142,13 @@ export interface DCAContent {
 
 export type DCAContentFields = {
   active: boolean;
-  base_balance: string;
+  input_balance: string;
   delegatee: string;
   every: string;
+  gas_budget: string;
   id: { id: string };
   last_time_ms: string;
   owner: string;
-  quote_balance: string;
   remaining_orders: string;
   split_allocation: string;
   start_time_ms: string;
@@ -138,8 +156,8 @@ export type DCAContentFields = {
   trade_params: {
     type: string;
     fields: {
-      max_price: string;
-      min_price: string;
+      max_price: string | null;
+      min_price: string | null;
     };
   };
 };
