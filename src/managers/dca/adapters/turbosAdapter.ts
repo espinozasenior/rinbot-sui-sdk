@@ -88,8 +88,6 @@ export function buildDcaTxBlock(
         const newTarget: `${string}::${string}::${string}` = `${DCA_CONTRACT}::${DCA_ROUTER}::${parts[2]}`;
         simpleSwap = parts[2] === "swap_a_b" || parts[2] === "swap_b_a";
 
-        console.log("Is SImpleSwap?" + simpleSwap);
-
         const swapParams: SwapParams = simpleSwap
           ? {
               pool: fromArgument(transaction.arguments[0] as Argument, inputIdx()),

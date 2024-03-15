@@ -61,7 +61,7 @@ export const flowx = async ({
   console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
   const res = await provider.devInspectTransactionBlock({
-    transactionBlock: txBlock,
+    transactionBlock: txBlockDca,
     sender: delegateeUser,
   });
   console.debug("res: ", res);
