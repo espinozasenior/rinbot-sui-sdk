@@ -6,7 +6,7 @@ import { TOKEN_ADDRESS_BASE_REGEX } from "../../providers/common";
 import { Argument } from "./txBlock";
 import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
 
-export const DCA_CONTRACT = "0xa74eb3567306ba569100dab765ed9bbbb83d581d912f742fd93ade2a1c4adb2f";
+export const DCA_CONTRACT = "0x9a6721b2b4f60c8db8d6e57fa226135f45cdbc8e5729c2b314205bcddcc9c8a2";
 
 export function isValidDCAFields(fields: MoveStruct): fields is DCAContentFields {
   const expectedKeys: (keyof DCAContentFields)[] = [
