@@ -1,11 +1,13 @@
 import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { DCAManagerSingleton } from "../../src";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/cetusAdapter";
 import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
-import { CETUS_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, suiProviderUrl, user } from "../common";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { USDC_COIN_TYPE } from "../coin-types";
+import { cacheOptions, initAndGetRedisStorage, provider, suiProviderUrl, user } from "../common";
+import { delegateeUser } from "../dca/common";
 
 // The transaction flow is the following when selling non-SUI OR SUI token for X:
 // 1. SplitCoins(input Coin)
@@ -16,8 +18,8 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 // 6. MergeCoins(Output coins)
 
 // TODO: These are dummy values
-const GAS_PROVISION = 505050505;
-const DCA_ID = "0x99999";
+const GAS_PROVISION = DCAManagerSingleton.DCA_GAS_BUGET;
+const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // yarn ts-node examples/cetus/cetus-dca.ts
 export const cetusDca = async ({
@@ -73,18 +75,18 @@ export const cetusDca = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Doctored TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  // const res = await provider.devInspectTransactionBlock({
-  //   transactionBlock: txBlock,
-  //   sender: user,
-  // });
-  // console.debug("res: ", res);
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: txBlock,
+    sender: delegateeUser,
+  });
+  console.debug("res: ", res);
 };
 
 // Sui --> Cetus
 cetusDca({
-  tokenFrom: LONG_SUI_COIN_TYPE,
-  tokenTo: CETUS_COIN_TYPE,
-  amount: "0.0001",
+  tokenFrom: USDC_COIN_TYPE,
+  tokenTo: LONG_SUI_COIN_TYPE,
+  amount: "1.333333",
   slippagePercentage: 10,
   signerAddress: user,
 });
