@@ -38,8 +38,8 @@ import BigNumber from "bignumber.js";
 export class DCAManagerSingleton {
   // TODO: Change DCA_PACKAGE_ADDRESS & maybe move all that params to args for singleton
   public static DCA_PACKAGE_ADDRESS = "0x9a6721b2b4f60c8db8d6e57fa226135f45cdbc8e5729c2b314205bcddcc9c8a2";
-  public static DCA_PACKEGE_ADDRESS_READ = "0x021464c5246d6ec60b10fc46a0adb7ff9915f6f07c8fc0bcbc8607541db912de";
-  public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKEGE_ADDRESS_READ}::dca::DCACreatedEvent`;
+  public static DCA_PACKAGE_ADDRESS_READ = "0x89b1372fa44ac2312a3876d83612d1dc9d298af332a42a153913558332a564d0";
+  public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS_READ}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
   public static DCA_MINIMUM_GAS_FUNDS = 25_000_000;
   public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "0x42dbd0fea6fefd7689d566287581724151b5327c08b76bdb9df108ca3b48d1d5";
