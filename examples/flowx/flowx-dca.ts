@@ -76,7 +76,7 @@ export const flowx = async ({
 //   signerAddress: user,
 // });
 
-// USDC --> FLX
+// USDC --> SUI
 flowx({
   tokenFrom: USDC_COIN_TYPE,
   tokenTo: LONG_SUI_COIN_TYPE,
