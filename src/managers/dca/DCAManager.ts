@@ -40,6 +40,7 @@ export class DCAManagerSingleton {
   public static DCA_PACKAGE_ADDRESS = "0x9a6721b2b4f60c8db8d6e57fa226135f45cdbc8e5729c2b314205bcddcc9c8a2";
   public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
+  // TODO: Rename DCA_MINIMUM_GAS_FUNDS to DCA_MINIMUM_GAS_FUNDS_PER_TRADE
   public static DCA_MINIMUM_GAS_FUNDS = 25_000_000;
   public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "0x42dbd0fea6fefd7689d566287581724151b5327c08b76bdb9df108ca3b48d1d5";
   private static _instance: DCAManagerSingleton;
