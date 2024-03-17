@@ -2,7 +2,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { TxBlock, Transaction, Arguments, Argument, Input } from "../txBlock";
 import { DCA_CONTRACT, fromArgument } from "../utils";
 
-const DCA_ROUTER = "flowx";
+const DCA_ROUTER = "flow_x";
 let InputIndex = 0;
 
 const swapPatterns: Record<string, `${string}::${string}::${string}`> = {
