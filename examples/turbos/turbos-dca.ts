@@ -38,7 +38,7 @@ const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f28
 
   const coinTypeFrom: string = USDC_COIN_TYPE;
   const coinTypeTo: string = LONG_SUI_COIN_TYPE;
-  const inputAmount = "1.333333";
+  const inputAmount = "0.333333";
 
   const routeData = await turbos.getRouteData({
     coinTypeFrom,

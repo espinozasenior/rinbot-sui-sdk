@@ -94,7 +94,7 @@ export const cetusDca = async ({
 cetusDca({
   tokenFrom: USDC_COIN_TYPE,
   tokenTo: LONG_SUI_COIN_TYPE,
-  amount: "1.333333",
+  amount: "0.333333",
   slippagePercentage: 10,
   signerAddress: user,
 });
