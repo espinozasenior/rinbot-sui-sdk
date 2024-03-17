@@ -37,10 +37,12 @@ import { CetusOptions, CetusOwnedPool, CoinMap, CoinNodeWithSymbol, LPList } fro
 import {
   getCoinMapFromCoinsCache,
   getCoinsAndPathsCachesFromMaps,
+  getMockedAssets,
   getPoolsDataFromApiData,
   isApiResponseValid,
   isCetusCreatePoolEventParsedJson,
 } from "./utils";
+import { buildDcaTxBlock } from "../../managers/dca/adapters/cetusAdapter";
 
 /**
  * @class CetusSingleton
@@ -463,13 +465,15 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     route,
     publicKey,
     slippagePercentage,
-    coinAssets,
   }: {
     route: AggregatorResult;
     publicKey: string;
     slippagePercentage: number;
-    coinAssets: CoinAsset[];
   }) {
+    // TODO: Check that `route.fromCoin` and `route.toCoin` remains always the same as in initial inputs provided
+    // In case if not, extend `route` prop to include initial params of coins to that type
+    const mockedAssets = getMockedAssets(route.fromCoin, route.toCoin);
+
     const absoluteSlippage = convertSlippage(slippagePercentage);
     // If find the best swap router, then send transaction.
     console.debug("txSignerPubkey: ", publicKey);
@@ -477,7 +481,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     const payload = await TransactionUtil.buildAggregatorSwapTransaction(
       this.cetusSdk,
       route,
-      coinAssets,
+      mockedAssets,
       "",
       absoluteSlippage,
       publicKey,
@@ -1040,4 +1044,6 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   public static removeInstance() {
     CetusSingleton._instance = undefined;
   }
+
+  public buildDcaTxBlockAdapter = buildDcaTxBlock;
 }

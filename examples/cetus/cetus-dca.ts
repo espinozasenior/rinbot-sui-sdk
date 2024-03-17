@@ -62,7 +62,7 @@ export const cetusDca = async ({
   console.log(tokenFrom);
   console.log(tokenTo);
 
-  const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
+  // const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
 
   // Standard behaviour of `cetus.getSwapTransaction` is that it will fail if
   // the user does not have coins available for the trade. We therefore use a
@@ -71,7 +71,6 @@ export const cetusDca = async ({
     route: calculatedData.route,
     publicKey: signerAddress, // this MUST be the user address, not the delegatee
     slippagePercentage,
-    coinAssets: mockedAssets,
   });
 
   console.debug(`Original TxBlock: ${JSON.stringify(txBlock.blockData)}`);
@@ -82,12 +81,12 @@ export const cetusDca = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Doctored TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  // const res = await provider.devInspectTransactionBlock({
-  //   transactionBlock: txBlockDca,
-  //   sender: delegateeUser,
-  // });
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: txBlockDca,
+    sender: delegateeUser,
+  });
 
-  const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
+  // const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
   console.debug("res: ", res);
 };
 
@@ -108,16 +107,3 @@ cetusDca({
 //   slippagePercentage: 10,
 //   signerAddress: user,
 // });
-
-const getMockedAssets = (tokenFrom: string, tokenTo: string): CoinAsset[] => [
-  {
-    coinAddress: tokenFrom,
-    coinObjectId: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    balance: BigInt("9999999999999999999"),
-  },
-  {
-    coinAddress: tokenTo,
-    coinObjectId: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    balance: BigInt("9999999999999999999"),
-  },
-];
