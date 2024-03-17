@@ -17,6 +17,7 @@ import { storeCaches } from "../../storages/utils/storeCaches";
 import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions } from "./types";
 import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
 import { swapDoctored } from "../../managers/dca/adapterUtils/turbosUtils";
+import { buildDcaTxBlock } from "../../managers/dca/adapters/turbosAdapter";
 
 // TODO: Need a fallback in case when API doesn't work
 // sdk.pool.getPools() doesn't work
@@ -490,4 +491,6 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   public static removeInstance() {
     TurbosSingleton._instance = undefined;
   }
+
+  public buildDcaTxBlockAdapter = buildDcaTxBlock;
 }

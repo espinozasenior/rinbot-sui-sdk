@@ -21,6 +21,7 @@ import {
 import { getCoinsMap, getPathsMap, isCoinListValid, isPairListValid } from "./utils";
 import { getCoinsMetadataCache } from "../../storages/utils/getCoinsMetadataCache";
 import { swapExactInputDoctored } from "../../managers/dca/adapterUtils/flowxUtils";
+import { buildDcaTxBlock } from "../../managers/dca/adapters/flowxAdapter";
 
 /**
  * @class FlowxSingleton
@@ -399,4 +400,6 @@ export class FlowxSingleton extends EventEmitter implements IPoolProvider<FlowxS
   public static removeInstance() {
     FlowxSingleton._instance = undefined;
   }
+
+  public buildDcaTxBlockAdapter = buildDcaTxBlock;
 }
