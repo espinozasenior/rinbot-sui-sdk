@@ -6,8 +6,15 @@ import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { USDC_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, provider, suiProviderUrl, user } from "../common";
-import { delegateeUser } from "../dca/common";
+import {
+  cacheOptions,
+  initAndGetRedisStorage,
+  provider,
+  signAndExecuteTransaction,
+  suiProviderUrl,
+  user,
+} from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
 
 // The transaction flow is the following when selling non-SUI OR SUI token for X:
 // 1. SplitCoins(input Coin)
@@ -75,10 +82,12 @@ export const cetusDca = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Doctored TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  const res = await provider.devInspectTransactionBlock({
-    transactionBlock: txBlockDca,
-    sender: delegateeUser,
-  });
+  // const res = await provider.devInspectTransactionBlock({
+  //   transactionBlock: txBlockDca,
+  //   sender: delegateeUser,
+  // });
+
+  const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
   console.debug("res: ", res);
 };
 

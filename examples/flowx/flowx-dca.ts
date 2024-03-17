@@ -3,8 +3,8 @@ import { buildDcaTxBlock } from "../../src/managers/dca/adapters/flowxAdapter";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { FlowxSingleton } from "../../src/providers/flowx/flowx";
 import { USDC_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, provider, user } from "../common";
-import { delegateeUser } from "../dca/common";
+import { cacheOptions, initAndGetRedisStorage, provider, signAndExecuteTransaction, user } from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
 
 // TODO: These are dummy values
 const GAS_PROVISION = DCAManagerSingleton.DCA_GAS_BUGET;
@@ -60,10 +60,12 @@ export const flowx = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  const res = await provider.devInspectTransactionBlock({
-    transactionBlock: txBlockDca,
-    sender: delegateeUser,
-  });
+  // const res = await provider.devInspectTransactionBlock({
+  //   transactionBlock: txBlockDca,
+  //   sender: delegateeUser,
+  // });
+
+  const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
   console.debug("res: ", res);
 };
 
