@@ -66,6 +66,8 @@ export class RouteManager implements IRouteManager {
    * @param {string} options.amount - The amount to swap.
    * @param {number} options.slippagePercentage - The slippage percentage.
    * @param {string} options.signerAddress - The address of the signer.
+   * @param {Providers} options.supportedProviders - List of supported providers
+   * which would be used in the finding best route data.
    * @return {Promise<BestRouteData>} A promise that resolves to the best route data for token swapping.
    * @throws {Error} Throws an error if there is no path for the specified tokens.
    */
@@ -75,12 +77,14 @@ export class RouteManager implements IRouteManager {
     amount,
     slippagePercentage,
     signerAddress,
+    supportedProviders,
   }: {
     tokenFrom: string;
     tokenTo: string;
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
+    supportedProviders?: Providers;
   }): Promise<BestRouteData> {
     if (tokenFromIsTokenTo(tokenFrom, tokenTo)) {
       throw new Error("[RouteManager] getBestRouteTransaction: tokenFrom is equal to tokenTo.");
@@ -99,6 +103,7 @@ export class RouteManager implements IRouteManager {
       tokenTo,
       coinsByProviderMap,
       poolProviders: this.poolProviders,
+      supportedProviders,
     });
     console.log(
       "filtredProviders:",
@@ -289,6 +294,73 @@ export class RouteManager implements IRouteManager {
     }
 
     return transaction;
+  }
+
+  /**
+   * @public
+   * @method getBestRouteTransactionForDCA
+   * @description Gets the best route transaction for token swapping for DCA.
+   * @param {Object} options - The options for getting the best route transaction.
+   * @param {string} options.tokenFrom - The token to swap from.
+   * @param {string} options.tokenTo - The token to swap to.
+   * @param {string} options.amount - The amount to swap.
+   * @param {number} options.slippagePercentage - The slippage percentage.
+   * @param {string} options.signerAddress - The address of the signer.
+   * @param {Providers} options.supportedProviders - List of supported providers
+   *
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @throws {Error} Throws an error if there is no path for the specified tokens.
+   */
+  public async getBestRouteTransactionForDCA({
+    tokenFrom,
+    tokenTo,
+    amount,
+    slippagePercentage,
+    signerAddress,
+    dcaObjectId,
+    dcaTradeGasCost,
+    supportedProviders,
+  }: {
+    tokenFrom: string;
+    tokenTo: string;
+    amount: string;
+    slippagePercentage: number;
+    signerAddress: string;
+    dcaObjectId: string;
+    dcaTradeGasCost: number;
+    supportedProviders?: Providers;
+  }): Promise<TransactionBlock> {
+    const { maxOutputProvider, route } = await this.getBestRouteData({
+      tokenFrom,
+      tokenTo,
+      amount,
+      slippagePercentage,
+      signerAddress,
+      supportedProviders,
+    });
+
+    const transaction = await maxOutputProvider.getSwapTransactionDoctored({
+      route,
+      publicKey: signerAddress,
+      slippagePercentage,
+    });
+
+    const doctoredForDCATransactionBlock = maxOutputProvider.buildDcaTxBlockAdapter(
+      transaction,
+      tokenFrom,
+      tokenTo,
+      dcaObjectId,
+      dcaTradeGasCost,
+    );
+
+    // TODO IMPORTANT: CHECK THAT ITS OK, COMMENTED FOR NOW (check that we do not need set gas budget for tx)
+
+    // This is the limitation because some of the providers
+    // doesn't set/calculate gas budger for their transactions properly.
+    // We can do the simulation on our side, but it will slowdown the swap
+    // transaction.setGasBudget(SWAP_GAS_BUDGET);
+
+    return doctoredForDCATransactionBlock;
   }
 
   /**
