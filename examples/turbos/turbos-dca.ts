@@ -3,11 +3,18 @@ import { DCAManagerSingleton, LONG_SUI_COIN_TYPE } from "../../src";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/turbosAdapter";
 import { TurbosSingleton } from "../../src/providers/turbos/turbos";
 import { USDC_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, provider, suiProviderUrl, user } from "../common";
-import { delegateeUser } from "../dca/common";
+import {
+  cacheOptions,
+  initAndGetRedisStorage,
+  provider,
+  signAndExecuteTransaction,
+  suiProviderUrl,
+  user,
+} from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
 
 // TODO: These are dummy values
-const GAS_PROVISION = DCAManagerSingleton.DCA_GAS_BUGET;
+const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS;
 const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // The transaction flow is the following when selling non-SUI token for X:
@@ -62,9 +69,10 @@ const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f28
   console.debug("\n\n\n\n\n");
   console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  const res = await provider.devInspectTransactionBlock({
-    transactionBlock: txBlockDca,
-    sender: delegateeUser,
-  });
+  // const res = await provider.devInspectTransactionBlock({
+  //   transactionBlock: txBlockDca,
+  //   sender: delegateeUser,
+  // });
+  const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
   console.debug("res: ", res);
 })();
