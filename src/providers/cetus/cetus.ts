@@ -2,6 +2,7 @@ import CetusClmmSDK, {
   AddLiquidityFixTokenParams,
   AggregatorResult,
   ClmmPoolUtil,
+  CoinAsset,
   PathLink,
   Pool,
   SdkOptions,
@@ -449,13 +450,49 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
   }) {
     const absoluteSlippage = convertSlippage(slippagePercentage);
     // If find the best swap router, then send transaction.
-    console.debug("txSignerPubkey: ", publicKey);
     const allCoinAsset = await this.cetusSdk.getOwnerCoinAssets(publicKey);
     // If recipient not set, transfer objects move call will use ctx sender.
     const payload = await TransactionUtil.buildAggregatorSwapTransaction(
       this.cetusSdk,
       route,
       allCoinAsset,
+      "",
+      absoluteSlippage,
+      publicKey,
+    );
+
+    return payload;
+  }
+
+  /**
+   * @public
+   * @method getSwapTransaction
+   * @description Retrieves the swap transaction for the given route and public key.
+   * @param {Object} params - Parameters for the swap transaction.
+   * @param {AggregatorResult} params.route - The route object.
+   * @param {string} params.publicKey - The public key.
+   * @param {number} params.slippagePercentage - The slippage percentage.
+   * @return {Promise<any>} A Promise that resolves to the swap transaction payload.
+   */
+  public async getSwapTransactionDoctored({
+    route,
+    publicKey,
+    slippagePercentage,
+    coinAssets,
+  }: {
+    route: AggregatorResult;
+    publicKey: string;
+    slippagePercentage: number;
+    coinAssets: CoinAsset[];
+  }) {
+    const absoluteSlippage = convertSlippage(slippagePercentage);
+    // If find the best swap router, then send transaction.
+    console.debug("txSignerPubkey: ", publicKey);
+    // If recipient not set, transfer objects move call will use ctx sender.
+    const payload = await TransactionUtil.buildAggregatorSwapTransaction(
+      this.cetusSdk,
+      route,
+      coinAssets,
       "",
       absoluteSlippage,
       publicKey,
