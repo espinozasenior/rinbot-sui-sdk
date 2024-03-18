@@ -75,12 +75,14 @@ export class RouteManager implements IRouteManager {
     amount,
     slippagePercentage,
     signerAddress,
+    useCetusOnChainFallback = false,
   }: {
     tokenFrom: string;
     tokenTo: string;
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
+    useCetusOnChainFallback?: boolean;
   }): Promise<BestRouteData> {
     if (tokenFromIsTokenTo(tokenFrom, tokenTo)) {
       throw new Error("[RouteManager] getBestRouteTransaction: tokenFrom is equal to tokenTo.");
@@ -136,7 +138,7 @@ export class RouteManager implements IRouteManager {
     if (eachOutputAmountIs0) {
       const cetus = filtredProviders.find((provider) => provider.providerName === "Cetus");
 
-      if (cetus === undefined) {
+      if (cetus === undefined || !useCetusOnChainFallback) {
         throw new NoRoutesError(
           `[RouteManager] There is no paths for coins "${tokenFrom}" and "${tokenTo}" (all outputAmounts = 0)`,
         );
