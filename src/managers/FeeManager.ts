@@ -35,6 +35,40 @@ export class FeeManager {
   }
 
   /**
+   * Calculates the net amount after deducting the fee.
+   * @param {Object} params - The parameters object.
+   * @param {string} params.feePercentage - The fee percentage as a string.
+   * @param {string} params.amount - The amount as a string.
+   * @param {number} params.tokenDecimals - The decimals of `coinType`.
+   * @return {string} The net amount after deducting the fee.
+   */
+  public static calculateNetAmount({
+    feePercentage,
+    amount,
+    tokenDecimals,
+  }: {
+    feePercentage: string;
+    amount: string;
+    tokenDecimals: number;
+  }): string {
+    const feeAmountIn = FeeManager.calculateFeeAmountIn({
+      feePercentage,
+      amount,
+      tokenDecimals,
+    });
+
+    const amountRespectingFee = new BigNumber(amount)
+      .multipliedBy(10 ** tokenDecimals)
+      .minus(feeAmountIn)
+      .dividedBy(10 ** tokenDecimals)
+      .toString();
+
+    return amountRespectingFee;
+  }
+
+  // public static async calculateNetAmount
+
+  /**
    * @public
    * @method getFeeInSuiTransaction
    * @description Gets the transaction for deducting fees in SUI coin
