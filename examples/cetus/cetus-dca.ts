@@ -1,11 +1,22 @@
 import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { CoinManagerSingleton, DCAManagerSingleton, feeAmount } from "../../src";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/cetusAdapter";
 import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
-import { CETUS_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, suiProviderUrl, user } from "../common";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { USDC_COIN_TYPE } from "../coin-types";
+import {
+  cacheOptions,
+  initAndGetRedisStorage,
+  provider,
+  signAndExecuteTransaction,
+  suiProviderUrl,
+  user,
+} from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
+import { FeeManager } from "../../src/managers/FeeManager";
+import BigNumber from "bignumber.js";
 
 // The transaction flow is the following when selling non-SUI OR SUI token for X:
 // 1. SplitCoins(input Coin)
@@ -15,9 +26,8 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 // 5. MergeCoins(Input coins)
 // 6. MergeCoins(Output coins)
 
-// TODO: These are dummy values
-const GAS_PROVISION = 505050505;
-const DCA_ID = "0x99999";
+const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE;
+const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // yarn ts-node examples/cetus/cetus-dca.ts
 export const cetusDca = async ({
@@ -42,18 +52,29 @@ export const cetusDca = async ({
     suiProviderUrl,
   });
 
+  const coinManager = CoinManagerSingleton.getInstance([cetus], suiProviderUrl);
+  const tokenFromData = await coinManager.getCoinByType2(tokenFrom);
+  const tokenFromDecimals = tokenFromData?.decimals;
+
+  if (!tokenFromDecimals) {
+    throw new Error(`No decimals found for ${tokenFrom}`);
+  }
+
+  const netAmount = FeeManager.calculateNetAmount({
+    feePercentage: DCAManagerSingleton.DCA_TRADE_FEE_PERCENTAGE,
+    amount,
+    tokenDecimals: tokenFromDecimals,
+  });
+
   const calculatedData = await cetus.getRouteData({
     coinTypeFrom: tokenFrom,
     coinTypeTo: tokenTo,
-    inputAmount: amount,
+    inputAmount: netAmount,
     slippagePercentage,
     publicKey: signerAddress,
   });
 
-  console.log(tokenFrom);
-  console.log(tokenTo);
-
-  const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
+  // const mockedAssets = getMockedAssets(tokenFrom, tokenTo);
 
   // Standard behaviour of `cetus.getSwapTransaction` is that it will fail if
   // the user does not have coins available for the trade. We therefore use a
@@ -62,7 +83,6 @@ export const cetusDca = async ({
     route: calculatedData.route,
     publicKey: signerAddress, // this MUST be the user address, not the delegatee
     slippagePercentage,
-    coinAssets: mockedAssets,
   });
 
   console.debug(`Original TxBlock: ${JSON.stringify(txBlock.blockData)}`);
@@ -73,18 +93,20 @@ export const cetusDca = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Doctored TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  // const res = await provider.devInspectTransactionBlock({
-  //   transactionBlock: txBlock,
-  //   sender: user,
-  // });
-  // console.debug("res: ", res);
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: txBlockDca,
+    sender: delegateeUser,
+  });
+
+  // const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
+  console.debug("res: ", res);
 };
 
 // Sui --> Cetus
 cetusDca({
-  tokenFrom: LONG_SUI_COIN_TYPE,
-  tokenTo: CETUS_COIN_TYPE,
-  amount: "0.0001",
+  tokenFrom: USDC_COIN_TYPE,
+  tokenTo: LONG_SUI_COIN_TYPE,
+  amount: "0.333333",
   slippagePercentage: 10,
   signerAddress: user,
 });
@@ -97,16 +119,3 @@ cetusDca({
 //   slippagePercentage: 10,
 //   signerAddress: user,
 // });
-
-const getMockedAssets = (tokenFrom: string, tokenTo: string): CoinAsset[] => [
-  {
-    coinAddress: tokenFrom,
-    coinObjectId: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    balance: BigInt("9999999999999999999"),
-  },
-  {
-    coinAddress: tokenTo,
-    coinObjectId: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    balance: BigInt("9999999999999999999"),
-  },
-];

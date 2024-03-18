@@ -1,12 +1,21 @@
+import { CoinManagerSingleton, DCAManagerSingleton } from "../../src";
+import { FeeManager } from "../../src/managers/FeeManager";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/flowxAdapter";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { FlowxSingleton } from "../../src/providers/flowx/flowx";
-import { FUD_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, provider, user } from "../common";
+import { USDC_COIN_TYPE } from "../coin-types";
+import {
+  cacheOptions,
+  initAndGetRedisStorage,
+  provider,
+  signAndExecuteTransaction,
+  suiProviderUrl,
+  user,
+} from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
 
-// TODO: These are dummy values
-const GAS_PROVISION = 505050505;
-const DCA_ID = "0x99999";
+const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE;
+const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // The transaction flow is the following when selling non-SUI OR SUI token for X:
 // 1. Swap(...)
@@ -32,10 +41,24 @@ export const flowx = async ({
     lazyLoading: false,
   });
 
+  const coinManager = CoinManagerSingleton.getInstance([flowx], suiProviderUrl);
+  const tokenFromData = await coinManager.getCoinByType2(tokenFrom);
+  const tokenFromDecimals = tokenFromData?.decimals;
+
+  if (!tokenFromDecimals) {
+    throw new Error(`No decimals found for ${tokenFrom}`);
+  }
+
+  const netAmount = FeeManager.calculateNetAmount({
+    feePercentage: DCAManagerSingleton.DCA_TRADE_FEE_PERCENTAGE,
+    amount,
+    tokenDecimals: tokenFromDecimals,
+  });
+
   const calculatedData = await flowx.getRouteData({
     coinTypeFrom: tokenFrom,
     coinTypeTo: tokenTo,
-    inputAmount: amount,
+    inputAmount: netAmount,
     publicKey: signerAddress,
     slippagePercentage,
   });
@@ -58,11 +81,13 @@ export const flowx = async ({
   console.debug("\n\n\n\n\n");
   console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  //   const res = await provider.devInspectTransactionBlock({
-  //     transactionBlock: txBlock,
-  //     sender: user,
-  //   });
-  //   console.debug("res: ", res);
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: txBlockDca,
+    sender: delegateeUser,
+  });
+
+  // const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
+  console.debug("res: ", res);
 };
 
 // SUI --> FUD
@@ -74,11 +99,11 @@ export const flowx = async ({
 //   signerAddress: user,
 // });
 
-// USDC --> FLX
+// USDC --> SUI
 flowx({
-  tokenFrom: "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
-  tokenTo: "0x6dae8ca14311574fdfe555524ea48558e3d1360d1607d1c7f98af867e3b7976c::flx::FLX",
-  amount: "0.001",
+  tokenFrom: USDC_COIN_TYPE,
+  tokenTo: LONG_SUI_COIN_TYPE,
+  amount: "0.333333",
   slippagePercentage: 10,
   signerAddress: user,
 });

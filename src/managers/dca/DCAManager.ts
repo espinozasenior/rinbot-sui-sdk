@@ -27,6 +27,7 @@ import {
 } from "./types";
 import { filterValidDCAObjects, getBaseQuoteCoinTypesFromDCAType, hasMinMaxPriceParams } from "./utils";
 import BigNumber from "bignumber.js";
+import { DCA_CONFIG } from "./config";
 
 /**
  * @class DCAManagerSingleton
@@ -36,12 +37,13 @@ import BigNumber from "bignumber.js";
  * amount of funds over time, regardless of the asset's current price.
  */
 export class DCAManagerSingleton {
-  // TODO: Change DCA_PACKAGE_ADDRESS & maybe move all that params to args for singleton
-  public static DCA_PACKAGE_ADDRESS = "0x9a6721b2b4f60c8db8d6e57fa226135f45cdbc8e5729c2b314205bcddcc9c8a2";
-  public static DCA_PACKAGE_ADDRESS_READ = "0x89b1372fa44ac2312a3876d83612d1dc9d298af332a42a153913558332a564d0";
+  public static DCA_PACKAGE_ADDRESS = DCA_CONFIG.DCA_CONTRACT;
+  public static DCA_PACKAGE_ADDRESS_READ = DCA_CONFIG.DCA_CONTRACT_READ;
   public static DCA_EVENT_TYPE = `${DCAManagerSingleton.DCA_PACKAGE_ADDRESS_READ}::dca::DCACreatedEvent`;
   public static DCA_GAS_BUGET = 50_000_000;
-  public static DCA_MINIMUM_GAS_FUNDS = 25_000_000;
+  public static DCA_MINIMUM_GAS_FUNDS_PER_TRADE = 25_000_000;
+  public static DCA_TRADE_FEE_BPS = DCA_CONFIG.DCA_TRADE_FEE_BPS;
+  public static DCA_TRADE_FEE_PERCENTAGE = new BigNumber(DCA_CONFIG.DCA_TRADE_FEE_BPS).dividedBy(100).toString();
   public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "0x42dbd0fea6fefd7689d566287581724151b5327c08b76bdb9df108ca3b48d1d5";
   private static _instance: DCAManagerSingleton;
   private provider: SuiClient;
@@ -251,7 +253,7 @@ export class DCAManagerSingleton {
     const tx = dcaParams.transaction ?? new TransactionBlock();
 
     const DCA_ALL_SWAPS_GAS_BUGET_BN = new BigNumber(dcaParams.totalOrders).multipliedBy(
-      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS),
+      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE),
     );
 
     // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN
@@ -380,7 +382,7 @@ export class DCAManagerSingleton {
     const tx = dcaParams.transaction ?? new TransactionBlock();
 
     const DCA_ALL_SWAPS_GAS_BUGET_BN = new BigNumber(dcaParams.addOrdersCount).multipliedBy(
-      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS),
+      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE),
     );
 
     // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN
@@ -526,7 +528,7 @@ export class DCAManagerSingleton {
     const tx = transaction ?? new TransactionBlock();
 
     const DCA_ALL_SWAPS_GAS_BUGET_BN = new BigNumber(addOrdersCount).multipliedBy(
-      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS),
+      new BigNumber(DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE),
     );
 
     // Note: We relay that there is enough SUI funds on user's wallets for covering DCA_ALL_SWAPS_GAS_BUGET_BN

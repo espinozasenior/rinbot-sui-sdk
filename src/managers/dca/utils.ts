@@ -4,9 +4,14 @@ import { MoveStruct, SuiParsedData, SuiObjectResponse } from "@mysten/sui.js/cli
 import { DCAContent, DCAContentFields, DCAResponse } from "./types";
 import { TOKEN_ADDRESS_BASE_REGEX } from "../../providers/common";
 import { Argument } from "./txBlock";
-import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
+import { DCA_CONFIG } from "./config";
 
-export const DCA_CONTRACT = "0xa74eb3567306ba569100dab765ed9bbbb83d581d912f742fd93ade2a1c4adb2f";
+// eslint-disable-next-line
+export function feeAmount(amount: number): number {
+  const scaledFee = Math.floor((amount * 1_000_000 * DCA_CONFIG.DCA_TRADE_FEE_BPS) / 10_000);
+
+  return scaledFee / 1_000_000;
+}
 
 export function isValidDCAFields(fields: MoveStruct): fields is DCAContentFields {
   const expectedKeys: (keyof DCAContentFields)[] = [
@@ -108,9 +113,13 @@ export function hasMinMaxPriceParams(params: {
   return params.minPrice !== undefined && params.maxPrice !== undefined;
 }
 
-export const fromArgument = (arg: Argument, idx: number) => ({
-  kind: arg.kind,
-  value: arg.value,
-  type: arg.type,
-  index: idx,
-});
+export const fromArgument = (arg: Argument, idx: number) => {
+  // console.log(`Processing argument at index ${idx}:`, arg);
+
+  return {
+    kind: arg.kind,
+    value: arg.value,
+    type: arg.type,
+    index: idx,
+  };
+};

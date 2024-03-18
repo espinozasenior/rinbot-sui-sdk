@@ -1,13 +1,22 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
+import { CoinManagerSingleton, DCAManagerSingleton, LONG_SUI_COIN_TYPE, feeAmount } from "../../src";
+import { buildDcaTxBlock } from "../../src/managers/dca/adapters/turbosAdapter";
 import { TurbosSingleton } from "../../src/providers/turbos/turbos";
 import { USDC_COIN_TYPE } from "../coin-types";
-import { cacheOptions, initAndGetRedisStorage, provider, suiProviderUrl, user } from "../common";
-import { buildDcaTxBlock } from "../../src/managers/dca/adapters/turbosAdapter";
+import {
+  cacheOptions,
+  initAndGetRedisStorage,
+  provider,
+  signAndExecuteTransaction,
+  suiProviderUrl,
+  user,
+} from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
+import { FeeManager } from "../../src/managers/FeeManager";
 
 // TODO: These are dummy values
-const GAS_PROVISION = 505050505;
-const DCA_ID = "0x99999";
+const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE;
+const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // The transaction flow is the following when selling non-SUI token for X:
 // 1. MakeMoveVec( no inputs )
@@ -28,16 +37,28 @@ const DCA_ID = "0x99999";
     lazyLoading: false,
   });
 
-  const coinTypeFrom: string = LONG_SUI_COIN_TYPE;
-  const coinTypeTo: string = USDC_COIN_TYPE;
-  // const coinTypeFrom = "0x5d1f47ea69bb0de31c313d7acf89b890dbb8991ea8e03c6c355171f84bb1ba4a::turbos::TURBOS";
-  // const coinTypeTo: string = LONG_SUI_COIN_TYPE;
-  const inputAmount = "0.001";
+  const coinTypeFrom: string = USDC_COIN_TYPE;
+  const coinTypeTo: string = LONG_SUI_COIN_TYPE;
+  const inputAmount = "0.333333";
+
+  const coinManager = CoinManagerSingleton.getInstance([turbos], suiProviderUrl);
+  const tokenFromData = await coinManager.getCoinByType2(coinTypeFrom);
+  const tokenFromDecimals = tokenFromData?.decimals;
+
+  if (!tokenFromDecimals) {
+    throw new Error(`No decimals found for ${coinTypeFrom}`);
+  }
+
+  const netAmount = FeeManager.calculateNetAmount({
+    feePercentage: DCAManagerSingleton.DCA_TRADE_FEE_PERCENTAGE,
+    amount: inputAmount,
+    tokenDecimals: tokenFromDecimals,
+  });
 
   const routeData = await turbos.getRouteData({
     coinTypeFrom,
     coinTypeTo,
-    inputAmount,
+    inputAmount: netAmount,
     publicKey: user,
     slippagePercentage: 10,
   });
@@ -63,9 +84,10 @@ const DCA_ID = "0x99999";
   console.debug("\n\n\n\n\n");
   console.debug(`Final TxBlock: ${JSON.stringify(txBlockDca.blockData)}`);
 
-  //   const res = await provider.devInspectTransactionBlock({
-  //     transactionBlock: transaction,
-  //     sender: user,
-  //   });
-  //   console.debug("res: ", res);
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: txBlockDca,
+    sender: delegateeUser,
+  });
+  // const res = await signAndExecuteTransaction(txBlockDca, delegateeKeypair);
+  console.debug("res: ", res);
 })();
