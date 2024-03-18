@@ -1,6 +1,6 @@
 import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { DCAManagerSingleton, feeAmount } from "../../src";
+import { CoinManagerSingleton, DCAManagerSingleton, feeAmount } from "../../src";
 import { buildDcaTxBlock } from "../../src/managers/dca/adapters/cetusAdapter";
 import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";
@@ -15,6 +15,8 @@ import {
   user,
 } from "../common";
 import { delegateeKeypair, delegateeUser } from "../dca/common";
+import { FeeManager } from "../../src/managers/FeeManager";
+import BigNumber from "bignumber.js";
 
 // The transaction flow is the following when selling non-SUI OR SUI token for X:
 // 1. SplitCoins(input Coin)
@@ -41,8 +43,6 @@ export const cetusDca = async ({
   slippagePercentage: number;
   signerAddress: string;
 }) => {
-  const netAmount = parseFloat(amount) - feeAmount(parseFloat(amount));
-
   const storage = await initAndGetRedisStorage();
 
   const cetus: CetusSingleton = await CetusSingleton.getInstance({
@@ -52,10 +52,24 @@ export const cetusDca = async ({
     suiProviderUrl,
   });
 
+  const coinManager = CoinManagerSingleton.getInstance([cetus], suiProviderUrl);
+  const tokenFromData = await coinManager.getCoinByType2(tokenFrom);
+  const tokenFromDecimals = tokenFromData?.decimals;
+
+  if (!tokenFromDecimals) {
+    throw new Error(`No decimals found for ${tokenFrom}`);
+  }
+
+  const netAmount = FeeManager.calculateNetAmount({
+    feePercentage: DCAManagerSingleton.DCA_TRADE_FEE_PERCENTAGE,
+    amount,
+    tokenDecimals: tokenFromDecimals,
+  });
+
   const calculatedData = await cetus.getRouteData({
     coinTypeFrom: tokenFrom,
     coinTypeTo: tokenTo,
-    inputAmount: netAmount.toString(),
+    inputAmount: netAmount,
     slippagePercentage,
     publicKey: signerAddress,
   });
