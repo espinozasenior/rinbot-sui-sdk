@@ -4,14 +4,11 @@ import { MoveStruct, SuiParsedData, SuiObjectResponse } from "@mysten/sui.js/cli
 import { DCAContent, DCAContentFields, DCAResponse } from "./types";
 import { TOKEN_ADDRESS_BASE_REGEX } from "../../providers/common";
 import { Argument } from "./txBlock";
-import { CoinAsset } from "@cetusprotocol/cetus-sui-clmm-sdk";
-
-export const DCA_CONTRACT = "0x3ed0a2079006bdc14688b0b99129dd5fcf9ebda3042db1a58b5347b8bf542c40";
-export const BASE_FEES_BPS = 5;
+import { DCA_CONFIG } from "./config";
 
 // eslint-disable-next-line
 export function feeAmount(amount: number): number {
-  const scaledFee = Math.floor((amount * 1_000_000 * BASE_FEES_BPS) / 10_000);
+  const scaledFee = Math.floor((amount * 1_000_000 * DCA_CONFIG.DCA_TRADE_FEE_BPS) / 10_000);
 
   return scaledFee / 1_000_000;
 }
