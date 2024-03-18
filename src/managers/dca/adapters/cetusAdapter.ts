@@ -28,9 +28,10 @@ type SwapParams = {
   a2b?: Argument;
   byAmountIn: Argument;
   amount0: Argument;
-  amount1: Argument;
+  amount1?: Argument;
   sqrtPriceLimit0: Argument;
   sqrtPriceLimit1?: Argument;
+  arg8?: Argument; // TODO: Find out naming
   clock: Argument;
   outputThreshold: Argument;
   dca: Argument;
@@ -117,8 +118,8 @@ export function buildDcaTxBlock(
               a2b: fromArgument(transaction.arguments[4] as Argument, inputIdx()),
               byAmountIn: fromArgument(transaction.arguments[5] as Argument, inputIdx()),
               amount0: fromArgument(transaction.arguments[6] as Argument, inputIdx()),
-              amount1: fromArgument(transaction.arguments[7] as Argument, inputIdx()),
-              sqrtPriceLimit0: fromArgument(transaction.arguments[8] as Argument, inputIdx()),
+              sqrtPriceLimit0: fromArgument(transaction.arguments[7] as Argument, inputIdx()),
+              arg8: fromArgument(transaction.arguments[8] as Argument, inputIdx()),
               clock: fromArgument(transaction.arguments[9] as Argument, inputIdx()),
               outputThreshold: { kind: "Input", value: minOutput, index: inputIdx(), type: "pure" },
               dca: { kind: "Input", value: dcaId, index: inputIdx(), type: "object" },
@@ -148,8 +149,8 @@ export function buildDcaTxBlock(
               swapParams.a2b as Input,
               swapParams.byAmountIn as Input,
               swapParams.amount0 as Input,
-              swapParams.amount1 as Input,
               swapParams.sqrtPriceLimit0 as Input,
+              swapParams.arg8 as Input,
               swapParams.clock as Input,
               swapParams.outputThreshold as Input,
               swapParams.dca as Input,
@@ -178,11 +179,11 @@ export function buildDcaTxBlock(
               swapParams.outputFunds,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               swapParams.a2b!,
-              swapParams.outputFunds,
               swapParams.byAmountIn,
               swapParams.amount0,
-              swapParams.amount1,
               swapParams.sqrtPriceLimit0,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              swapParams.arg8!,
               swapParams.clock,
               swapParams.outputThreshold,
               swapParams.dca,
@@ -197,7 +198,8 @@ export function buildDcaTxBlock(
               swapParams.outputFunds,
               swapParams.byAmountIn,
               swapParams.amount0,
-              swapParams.amount1,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              swapParams.amount1!,
               swapParams.sqrtPriceLimit0,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               swapParams.sqrtPriceLimit1!,
@@ -246,17 +248,8 @@ function findMinOutput(txBlock: TransactionBlock): number {
           value: any;
         };
 
-        // const minOutputArg = {
-        //   kind: "Input",
-        //   value: arg1.value,
-        //   index: dcaBlock.inputs.length, // Ensure `dcaBlock` is accessible or passed as a parameter
-        //   type: "pure",
-        // };
         const minOutputArg = arg1.value;
 
-        // Push minOutputArg to dcaBlock.inputs (make sure dcaBlock is defined and accessible)
-        // dcaBlock.inputs.push(minOutputArg as Input);
-        // Assuming the purpose is just to return the minOutputArg
         return minOutputArg;
       }
     }
