@@ -43,6 +43,7 @@ export class DCAManagerSingleton {
   public static DCA_GAS_BUGET = 50_000_000;
   public static DCA_MINIMUM_GAS_FUNDS_PER_TRADE = 25_000_000;
   public static DCA_TRADE_FEE_BPS = DCA_CONFIG.DCA_TRADE_FEE_BPS;
+  public static DCA_TRADE_FEE_PERCENTAGE = new BigNumber(DCA_CONFIG.DCA_TRADE_FEE_BPS).dividedBy(100).toString();
   public static DCA_DELEGETEE_ACCOUNT_ADDRESS = "0x42dbd0fea6fefd7689d566287581724151b5327c08b76bdb9df108ca3b48d1d5";
   private static _instance: DCAManagerSingleton;
   private provider: SuiClient;
