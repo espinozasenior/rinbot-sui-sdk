@@ -5,14 +5,14 @@ import BigNumber from "bignumber.js";
 
 /**
  * @class FeeManager
- * @implements {IFeeManager}
  * @description Utility class for managing fees
  */
 export class FeeManager {
   /**
    * Calculates the fee amount based on the fee percentage and amount.
    * @param {Object} params - The parameters object.
-   * @param {string} params.feePercentage - The fee percentage as a string.
+   * @param {string} params.feePercentage - The fee percentage should be provided as a percentage value
+   * (e.g., "5%" for a 5% fee).
    * @param {string} params.amount - The amount as a string.
    * @param {number} params.tokenDecimals - The decimals of `coinType`.
    * @return {string} The calculated fee amount as a string.
@@ -37,7 +37,8 @@ export class FeeManager {
   /**
    * Calculates the net amount after deducting the fee.
    * @param {Object} params - The parameters object.
-   * @param {string} params.feePercentage - The fee percentage as a string.
+   * @param {string} params.feePercentage - The fee percentage should be provided as a percentage value
+   * (e.g., "5%" for a 5% fee).
    * @param {string} params.amount - The amount as a string.
    * @param {number} params.tokenDecimals - The decimals of `coinType`.
    * @return {string} The net amount after deducting the fee.
@@ -65,8 +66,6 @@ export class FeeManager {
 
     return amountRespectingFee;
   }
-
-  // public static async calculateNetAmount
 
   /**
    * @public
