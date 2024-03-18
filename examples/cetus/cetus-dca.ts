@@ -24,7 +24,7 @@ import { delegateeKeypair, delegateeUser } from "../dca/common";
 // 5. MergeCoins(Input coins)
 // 6. MergeCoins(Output coins)
 
-const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS;
+const GAS_PROVISION = DCAManagerSingleton.DCA_MINIMUM_GAS_FUNDS_PER_TRADE;
 const DCA_ID = "0x4d0316c3a32221e175ab2bb9abe360ed1d4498806dc50984ab67ce0ba90f2842";
 
 // yarn ts-node examples/cetus/cetus-dca.ts
