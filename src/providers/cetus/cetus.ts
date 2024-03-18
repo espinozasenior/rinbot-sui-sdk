@@ -40,6 +40,7 @@ import {
   isApiResponseValid,
   isCetusCreatePoolEventParsedJson,
 } from "./utils";
+import { fetchBestRoute } from "./forked";
 
 /**
  * @class CetusSingleton
@@ -382,12 +383,14 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     tokenTo,
     slippagePercentage,
     cetusSdk = this.cetusSdk,
+    useOnChainFallback = false,
   }: {
     amountIn: string;
     tokenFrom: CommonCoinData;
     tokenTo: CommonCoinData;
     slippagePercentage: number;
     cetusSdk?: CetusClmmSDK;
+    useOnChainFallback?: boolean;
   }) {
     const absoluteSlippage = convertSlippage(slippagePercentage);
 
@@ -398,17 +401,29 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
     // BigNumber to BigInt fails with error ("Cannot convert 183763562.1 to a BigInt")
     const inputAmountWithoutExceededDecimalPart = removeDecimalPart(amountInWithDecimalsBigNumber);
     const amountInt = inputAmountWithoutExceededDecimalPart.toNumber();
+    const byAmountIn = true;
 
-    const rawRouterResult = await cetusSdk.RouterV2.getBestRouter(
-      tokenFrom.type,
-      tokenTo.type,
-      amountInt,
-      true,
-      absoluteSlippage,
-      "",
-    );
+    let routerResult;
+    if (useOnChainFallback) {
+      const rawRouterResult = await cetusSdk.RouterV2.getBestRouter(
+        tokenFrom.type,
+        tokenTo.type,
+        amountInt,
+        byAmountIn,
+        absoluteSlippage,
+        "",
+      );
 
-    const routerResult = rawRouterResult.result;
+      routerResult = rawRouterResult.result;
+    } else {
+      routerResult = await fetchBestRoute({
+        amount: amountInt.toString(),
+        byAmountIn,
+        coinTypeFrom: tokenFrom.type,
+        coinTypeTo: tokenTo.type,
+        config: { apiUrl: this.cetusSDKConfig.aggregatorUrl },
+      });
+    }
 
     return { outputAmount: BigInt(routerResult.outputAmount), route: routerResult };
   }
@@ -961,6 +976,7 @@ export class CetusSingleton extends EventEmitter implements IPoolProvider<CetusS
         tokenTo: coinTo,
         slippagePercentage,
         cetusSdk: sdk,
+        useOnChainFallback: true,
       });
     } catch (error) {
       if (error instanceof Error) {
