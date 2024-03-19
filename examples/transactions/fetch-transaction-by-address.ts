@@ -268,7 +268,7 @@ export const fetchTransactions = async ({
 }) => {
   let hasNextPage = true;
   const senderAndAmountObj: {
-    [sender: string]: { sender: string; digest: string; amount: string; timestampMs: string };
+    [sender: string]: { sender: string; digest: string; amount: string; amountFormatted: string; timestampMs: string };
   } = {};
 
   while (hasNextPage) {
@@ -366,8 +366,9 @@ export const fetchTransactions = async ({
       const sender = transaction.transaction.data.sender;
       const amount = valueAmount;
       const timestampMs = transaction.timestampMs;
+      const amountFormatted = new BigNumber(amount).div(SUI_DENOMINATOR).toString();
 
-      senderAndAmountObj[digest] = { sender, digest, amount, timestampMs };
+      senderAndAmountObj[digest] = { sender, digest, amount, amountFormatted, timestampMs };
     }
 
     hasNextPage = data.result.hasNextPage;
