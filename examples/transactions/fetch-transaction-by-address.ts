@@ -64,7 +64,7 @@ function sortByAmount(obj: TransactionDataByDigest): TransactionDataByDigest {
   keys.sort((a, b) => {
     const amountA = new BigNumber(obj[a].amount);
     const amountB = new BigNumber(obj[b].amount);
-    return amountA.comparedTo(amountB);
+    return amountB.comparedTo(amountA);
   });
 
   keys.forEach((key) => {
