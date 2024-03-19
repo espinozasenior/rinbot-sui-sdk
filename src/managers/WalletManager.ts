@@ -13,7 +13,7 @@ import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
 import { CoinAssetData, IWalletManager } from "./types";
-import { getCoinsAssetsFromCoinObjects } from "./utils";
+import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
 
 /**
  * @class WalletManagerSingleton
@@ -67,10 +67,9 @@ export class WalletManagerSingleton implements IWalletManager {
   public static generateWallet() {
     const keypair = Ed25519Keypair.generate();
     const publicKey = keypair.getPublicKey().toSuiAddress();
-    const privateKeyBase64 = keypair.export();
-    const privateKeyHex = Buffer.from(privateKeyBase64.privateKey, "base64").toString("hex");
+    const privateKey = WalletManagerSingleton.getPrivateKeyFromKeyPair(keypair);
 
-    return { publicKey, privateKey: privateKeyHex };
+    return { publicKey, privateKey };
   }
 
   /**
@@ -80,6 +79,31 @@ export class WalletManagerSingleton implements IWalletManager {
    */
   public static getKeyPairFromPrivateKey(privateKeyHex: string): Ed25519Keypair {
     const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKeyHex, "hex"));
+
+    return keypair;
+  }
+
+  /**
+   * Retrieves the private key from the provided key pair.
+   *
+   * @param {Ed25519Keypair} keypair - The key pair containing the private key.
+   * @return {string} The private key in hexadecimal format.
+   */
+  public static getPrivateKeyFromKeyPair(keypair: Ed25519Keypair): string {
+    const privateKeyBase64 = keypair.export();
+    const privateKeyHex = Buffer.from(privateKeyBase64.privateKey, "base64").toString("hex");
+
+    return privateKeyHex;
+  }
+
+  /**
+   * Generates an Ed25519 key pair from a provided mnemonic.
+   * @param {string} mnemonic - Seed phrase of the wallet.
+   * @return {Ed25519Keypair} An Ed25519 key pair.
+   */
+  public static getKeyPairFromMnemonic(mnemonic: string): Ed25519Keypair {
+    const normalized = normalizeMnemonic(mnemonic);
+    const keypair = Ed25519Keypair.deriveKeypair(normalized);
 
     return keypair;
   }
