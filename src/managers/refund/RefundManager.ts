@@ -1,5 +1,8 @@
 /* eslint-disable require-jsdoc */
 import { SuiClient } from "@mysten/sui.js/client";
+import { ObjectArg } from "../../transactions/types";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { obj } from "../../transactions/utils";
 
 /**
  * @class RefundManagerSingleton
@@ -7,9 +10,9 @@ import { SuiClient } from "@mysten/sui.js/client";
  * This class encapsulates the business logic for a Refund smart contract.
  */
 export class RefundManagerSingleton {
-  public static DCA_PACKAGE_ADDRESS = "";
-  public static DCA_PACKAGE_ADDRESS_READ = "";
-  public static DCA_GAS_BUGET = 50_000_000;
+  public static REFUND_PACKAGE_ADDRESS = "";
+  public static REFUND_PACKAGE_ADDRESS_READ = "";
+  public static REFUND_GAS_BUGET = 50_000_000;
 
   private static _instance: RefundManagerSingleton;
   private provider: SuiClient;
@@ -43,5 +46,81 @@ export class RefundManagerSingleton {
     }
 
     return RefundManagerSingleton._instance;
+  }
+
+  public static getAddAddressesTransaction({
+    publisherObjectId,
+    poolObjectId,
+    addressesList,
+    amountsList,
+
+    transaction,
+  }: {
+    publisherObjectId: ObjectArg;
+    poolObjectId: ObjectArg;
+    addressesList: string[];
+    amountsList: string[];
+
+    transaction: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::add_addresses`,
+      typeArguments: [],
+      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(addressesList), tx.pure(amountsList)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static getClaimRefundTransaction({
+    poolObjectId,
+    transaction,
+  }: {
+    poolObjectId: ObjectArg;
+    transaction: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static getClaimRefundBoosted({
+    publisherObjectId,
+    poolObjectId,
+    affectedAddress,
+    newAddress,
+
+    transaction,
+  }: {
+    publisherObjectId: ObjectArg;
+    poolObjectId: ObjectArg;
+    affectedAddress: string;
+    newAddress: string;
+
+    transaction: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund_boosted`,
+      typeArguments: [],
+      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(affectedAddress), tx.pure(newAddress)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
   }
 }
