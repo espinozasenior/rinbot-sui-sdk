@@ -33,6 +33,37 @@ interface TransactionDataByDigest {
 }
 
 /**
+ * Filters transactions that fall within the specified time range.
+ * @param {TransactionDataByDigest} obj The object containing transactions.
+ * @param {number} startTime The start time of the time range in milliseconds.
+ * @param {number} endTime The end time of the time range in milliseconds.
+ * @return {TransactionDataByDigest}
+ * Returns the filtered object containing transactions within the specified time range.
+ */
+function filterTransactionsByTimeRange(
+  obj: TransactionDataByDigest,
+  startTime?: number,
+  endTime?: number,
+): TransactionDataByDigest {
+  const filteredObj: TransactionDataByDigest = {};
+
+  const keys = Object.keys(obj);
+  for (const key of keys) {
+    const transaction = obj[key];
+    const transactionTime = parseInt(transaction.timestampMs);
+
+    if (
+      (startTime === undefined || transactionTime >= startTime) &&
+      (endTime === undefined || transactionTime <= endTime)
+    ) {
+      filteredObj[key] = transaction;
+    }
+  }
+
+  return filteredObj;
+}
+
+/**
  * Sorts the given object by timestampMs.
  * @param {TransactionDataByDigest} obj The object to sort.
  * @return {TransactionDataByDigest} Returns the sorted object by timestampMs.
@@ -379,15 +410,18 @@ export const fetchTransactions = async ({
     }
   }
 
-  checkSenderUniqueness(senderAndAmountObj);
+  // const filtredOutTransactionData = filterTransactionsByTimeRange(senderAndAmountObj, 1710759792941, 1710833073914);
+  const filtredOutTransactionData = filterTransactionsByTimeRange(senderAndAmountObj);
 
-  const totalFunds = calculateTotalFunds(senderAndAmountObj);
+  checkSenderUniqueness(filtredOutTransactionData);
+
+  const totalFunds = calculateTotalFunds(filtredOutTransactionData);
   console.log("Total funds collected (raw, in MIST): ", totalFunds.toString());
   console.log("Total funds collected (in SUI): ", totalFunds.div(SUI_DENOMINATOR).toString());
 
-  saveDataToJsonFile(senderAndAmountObj, "fetched-txs-to-romas-address");
-  saveDataToJsonFile(sortByTimestamp(senderAndAmountObj), "fetched-txs-to-romas-address-order-by-timestamp");
-  saveDataToJsonFile(sortByAmount(senderAndAmountObj), "fetched-txs-to-romas-address-order-by-amount");
+  saveDataToJsonFile(filtredOutTransactionData, "fetched-txs-to-romas-address");
+  saveDataToJsonFile(sortByTimestamp(filtredOutTransactionData), "fetched-txs-to-romas-address-order-by-timestamp");
+  saveDataToJsonFile(sortByAmount(filtredOutTransactionData), "fetched-txs-to-romas-address-order-by-amount");
 
   return "Finished retrieving transactions.";
 };
