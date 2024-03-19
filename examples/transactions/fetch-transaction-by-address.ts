@@ -23,6 +23,57 @@ interface TransactionDetail {
   TransferObjects?: [{ Result: number }[], { Input: number }];
 }
 
+interface TransactionDataByDigest {
+  [key: string]: {
+    sender: string;
+    digest: string;
+    amount: string;
+    timestampMs: string;
+  };
+}
+
+/**
+ * Sorts the given object by timestampMs.
+ * @param {TransactionDataByDigest} obj The object to sort.
+ * @return {TransactionDataByDigest} Returns the sorted object by timestampMs.
+ */
+function sortByTimestamp(obj: TransactionDataByDigest): TransactionDataByDigest {
+  const sortedObj: TransactionDataByDigest = {};
+  const keys = Object.keys(obj);
+
+  keys.sort((a, b) => {
+    return parseInt(obj[a].timestampMs) - parseInt(obj[b].timestampMs);
+  });
+
+  keys.forEach((key) => {
+    sortedObj[key] = obj[key];
+  });
+
+  return sortedObj;
+}
+
+/**
+ * Sorts the given object by amount using BigNumber.
+ * @param {TransactionDataByDigest} obj The object to sort.
+ * @return {TransactionDataByDigest} Returns the sorted object by amount.
+ */
+function sortByAmount(obj: TransactionDataByDigest): TransactionDataByDigest {
+  const sortedObj: TransactionDataByDigest = {};
+  const keys = Object.keys(obj);
+
+  keys.sort((a, b) => {
+    const amountA = new BigNumber(obj[a].amount);
+    const amountB = new BigNumber(obj[b].amount);
+    return amountA.comparedTo(amountB);
+  });
+
+  keys.forEach((key) => {
+    sortedObj[key] = obj[key];
+  });
+
+  return sortedObj;
+}
+
 /**
  * Validates the structure of a transaction.
  * @param {unknown} data The transaction data to validate.
@@ -334,6 +385,8 @@ export const fetchTransactions = async ({
   console.log("Total funds collected (in SUI): ", totalFunds.div(SUI_DENOMINATOR).toString());
 
   saveDataToJsonFile(senderAndAmountObj, "fetched-txs-to-romas-address");
+  saveDataToJsonFile(sortByTimestamp(senderAndAmountObj), "fetched-txs-to-romas-address-order-by-timestamp");
+  saveDataToJsonFile(sortByAmount(senderAndAmountObj), "fetched-txs-to-romas-address-order-by-amount");
 
   return "Finished retrieving transactions.";
 };
