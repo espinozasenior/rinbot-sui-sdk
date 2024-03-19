@@ -1,7 +1,8 @@
 import "dotenv/config";
 
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { hexStringToUint8Array, normalizeMnemonic } from "../utils";
+import { normalizeMnemonic } from "../../src/managers/utils";
+import { hexStringToUint8Array } from "../utils";
 
 if (
   !process.env.SUI_DELEGATEE_WALLET_SEED_PHRASE?.length &&

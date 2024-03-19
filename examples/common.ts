@@ -5,6 +5,7 @@ import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { createClient } from "redis";
 import { Providers } from "../src/managers/types";
+import { normalizeMnemonic } from "../src/managers/utils";
 import { AftermathSingleton } from "../src/providers/aftermath/aftermath";
 import { CetusSingleton } from "../src/providers/cetus/cetus";
 import { clmmMainnet } from "../src/providers/cetus/config";
@@ -14,7 +15,7 @@ import { TurbosSingleton } from "../src/providers/turbos/turbos";
 import { CacheOptions } from "../src/providers/types";
 import { RedisStorageSingleton } from "../src/storages/RedisStorage";
 import { Storage } from "../src/storages/types";
-import { hexStringToUint8Array, normalizeMnemonic } from "./utils";
+import { hexStringToUint8Array } from "./utils";
 
 if (!process.env.SUI_WALLET_SEED_PHRASE?.length && !process.env.SUI_WALLET_PRIVATE_KEY_ARRAY?.length) {
   throw new Error("Empty mnemonic or private key");

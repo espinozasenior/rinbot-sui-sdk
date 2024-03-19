@@ -1,4 +1,5 @@
 import { CoinStruct } from "@mysten/sui.js/client";
+import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { normalizeSuiAddress } from "@mysten/sui.js/utils";
 import {
   CoinAssetData,
@@ -13,6 +14,7 @@ import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
 import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
 import { CoinManagerSingleton } from "./CoinManager";
+import { WalletManagerSingleton } from "./WalletManager";
 
 export const getFiltredProviders = ({
   poolProviders,
@@ -223,3 +225,36 @@ export function isValidResForCreateCoin(res: unknown): res is CreateCoinExternal
     res.digest.every((n: unknown) => typeof n === "number")
   );
 }
+
+/**
+ * @param {string} mnemonic Seed phrase of the wallet.
+ * @return {string} Normilized mnemonic (trimmed & etc.).
+ */
+export function normalizeMnemonic(mnemonic: string): string {
+  return mnemonic
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.toLowerCase())
+    .join(" ");
+}
+
+export const isValidPrivateKey = (string: string): boolean => {
+  try {
+    const keypair = WalletManagerSingleton.getKeyPairFromPrivateKey(string);
+
+    return keypair instanceof Ed25519Keypair;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const isValidSeedPhrase = (string: string): boolean => {
+  try {
+    const normalized = normalizeMnemonic(string);
+    const keypair = Ed25519Keypair.deriveKeypair(normalized);
+
+    return keypair instanceof Ed25519Keypair;
+  } catch (error) {
+    return false;
+  }
+};
