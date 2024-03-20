@@ -4,7 +4,7 @@ import { ObjectArg } from "../../transactions/types";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { obj } from "../../transactions/utils";
 import { Keypair, SignatureWithBytes } from "@mysten/sui.js/cryptography";
-import { verifyPersonalMessage, verifySignature, publicKeyFromRawBytes } from "@mysten/sui.js/verify";
+import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 
 /**
  * @class RefundManagerSingleton
@@ -147,9 +147,9 @@ export class RefundManagerSingleton {
     newAddress: string;
   }) {
     // Convert string values to hexadecimal buffers inline
-    const poolObjectIdBuffer = Buffer.from(poolObjectId, "hex");
-    const affectedAddressBuffer = Buffer.from(affectedAddress, "hex");
-    const newAddressBuffer = Buffer.from(newAddress, "hex");
+    const poolObjectIdBuffer = Buffer.from(poolObjectId);
+    const affectedAddressBuffer = Buffer.from(affectedAddress);
+    const newAddressBuffer = Buffer.from(newAddress);
 
     // Concatenate the buffers
     const concatenatedBuffer = Buffer.concat([poolObjectIdBuffer, affectedAddressBuffer, newAddressBuffer]);
@@ -186,6 +186,7 @@ export class RefundManagerSingleton {
     newAddress: string;
     affectedAddress: string;
 
+    // TODO: Instead of `signedMessage` we need to have a string?
     signedMessage: SignatureWithBytes;
   }) {
     const signedPublicKey = await verifyPersonalMessage(Buffer.from(signedMessage.bytes), signedMessage.signature);
