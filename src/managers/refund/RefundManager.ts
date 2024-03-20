@@ -3,7 +3,8 @@ import { SuiClient } from "@mysten/sui.js/client";
 import { ObjectArg } from "../../transactions/types";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { obj } from "../../transactions/utils";
-import { Keypair } from "@mysten/sui.js/cryptography";
+import { Keypair, SignatureWithBytes } from "@mysten/sui.js/cryptography";
+import { verifyPersonalMessage, verifySignature, publicKeyFromRawBytes } from "@mysten/sui.js/verify";
 
 /**
  * @class RefundManagerSingleton
@@ -136,13 +137,11 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
-  public static signMessageForBoostedRefund({
-    keypair,
+  public static getMessageForBoostedRefund({
     poolObjectId,
     affectedAddress,
     newAddress,
   }: {
-    keypair: Keypair;
     poolObjectId: string;
     affectedAddress: string;
     newAddress: string;
@@ -155,8 +154,51 @@ export class RefundManagerSingleton {
     // Concatenate the buffers
     const concatenatedBuffer = Buffer.concat([poolObjectIdBuffer, affectedAddressBuffer, newAddressBuffer]);
 
-    const message = keypair.signPersonalMessage(concatenatedBuffer);
+    return { buffer: concatenatedBuffer, hex: concatenatedBuffer.toString("hex") };
+  }
 
-    return message;
+  public static async signMessageSignatureForBoostedRefund({
+    keypair,
+    poolObjectId,
+    affectedAddress,
+    newAddress,
+  }: {
+    keypair: Keypair;
+    poolObjectId: string;
+    affectedAddress: string;
+    newAddress: string;
+  }): Promise<SignatureWithBytes> {
+    const message = RefundManagerSingleton.getMessageForBoostedRefund({ poolObjectId, affectedAddress, newAddress });
+    const signedMessage = await keypair.signPersonalMessage(message.buffer);
+
+    return signedMessage;
+  }
+
+  /*
+  @throws an error in case signature is not valid
+  */
+  public static async verifySignedMessageForBoostedRefund({
+    affectedAddress,
+    newAddress,
+
+    signedMessage,
+  }: {
+    newAddress: string;
+    affectedAddress: string;
+
+    signedMessage: SignatureWithBytes;
+  }) {
+    const signedPublicKey = await verifyPersonalMessage(Buffer.from(signedMessage.bytes), signedMessage.signature);
+
+    if (affectedAddress !== signedPublicKey.toSuiAddress()) {
+      throw new Error("Affected address is different from the signer of the message");
+    }
+
+    const signedMessageString = Buffer.from(signedMessage.bytes).toString();
+
+    console.debug("signedMessageString: ", signedMessageString);
+
+    // TODO: verify that newAddress is related to the newAddress in the message
+    // TODO: & same pool objecct id
   }
 }
