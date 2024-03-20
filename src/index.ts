@@ -7,6 +7,7 @@ export * from "./managers/utils";
 export * from "./managers/dca/DCAManager";
 export * from "./managers/dca/types";
 export * from "./managers/dca/utils";
+export * from "./managers/refund/RefundManager";
 
 // Providers (common & utils)
 export * from "./providers/common";
