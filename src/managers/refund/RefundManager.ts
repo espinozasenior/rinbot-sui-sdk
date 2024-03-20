@@ -178,11 +178,13 @@ export class RefundManagerSingleton {
   @throws an error in case signature is not valid
   */
   public static async verifySignedMessageForBoostedRefund({
+    poolObjectId,
     affectedAddress,
     newAddress,
 
     signedMessage,
   }: {
+    poolObjectId: string;
     newAddress: string;
     affectedAddress: string;
 
@@ -195,12 +197,16 @@ export class RefundManagerSingleton {
       throw new Error("Affected address is different from the signer of the message");
     }
 
-    const signedMessageString = Buffer.from(signedMessage.bytes).toString();
+    const signedMessageHex = Buffer.from(signedMessage.bytes, "base64").toString("hex");
+    const targetMessage = RefundManagerSingleton.getMessageForBoostedRefund({
+      poolObjectId,
+      affectedAddress,
+      newAddress,
+    });
 
-    console.debug("signedMessageString: ", signedMessageString);
-
-    // TODO: verify that newAddress is related to the newAddress in the message
-    // TODO: & same pool objecct id
+    if (signedMessageHex !== targetMessage.hex) {
+      throw new Error("Signed message is not equal to the target message");
+    }
 
     return true;
   }
