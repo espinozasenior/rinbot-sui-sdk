@@ -101,6 +101,7 @@ export class RefundManagerSingleton {
     poolObjectId,
     affectedAddress,
     newAddress,
+    signature,
 
     transaction,
   }: {
@@ -108,15 +109,22 @@ export class RefundManagerSingleton {
     poolObjectId: ObjectArg;
     affectedAddress: string;
     newAddress: string;
+    signature: string;
 
     transaction: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund_boosted`,
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::claim_refund_boosted`,
       typeArguments: [],
-      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(affectedAddress), tx.pure(newAddress)],
+      arguments: [
+        obj(tx, publisherObjectId),
+        obj(tx, poolObjectId),
+        tx.pure(affectedAddress),
+        tx.pure(newAddress),
+        tx.pure(signature),
+      ],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
