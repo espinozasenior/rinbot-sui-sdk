@@ -169,7 +169,7 @@ export class RefundManagerSingleton {
     newAddress: string;
   }): Promise<SignatureWithBytes> {
     const message = RefundManagerSingleton.getMessageForBoostedRefund({ poolObjectId, affectedAddress, newAddress });
-    const signedMessage = await keypair.signPersonalMessage(message.buffer);
+    const signedMessage = await keypair.signWithIntent(message.buffer, 3);
 
     return signedMessage;
   }
