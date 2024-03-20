@@ -1,10 +1,11 @@
 /* eslint-disable require-jsdoc */
 import { SuiClient } from "@mysten/sui.js/client";
-import { ObjectArg } from "../../transactions/types";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { obj } from "../../transactions/utils";
 import { Keypair, SignatureWithBytes } from "@mysten/sui.js/cryptography";
+import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { verifyPersonalMessage } from "@mysten/sui.js/verify";
+import { ObjectArg } from "../../transactions/types";
+import { obj } from "../../transactions/utils";
+import { hexStringToByteArray } from "./utils";
 
 /**
  * @class RefundManagerSingleton
@@ -147,14 +148,17 @@ export class RefundManagerSingleton {
     newAddress: string;
   }) {
     // Convert string values to hexadecimal buffers inline
-    const poolObjectIdBuffer = Buffer.from(poolObjectId);
-    const affectedAddressBuffer = Buffer.from(affectedAddress);
-    const newAddressBuffer = Buffer.from(newAddress);
+    const affectedAddressBytes = hexStringToByteArray(affectedAddress);
+    const newAddressBytes = hexStringToByteArray(newAddress);
+    const poolIdBytes = hexStringToByteArray(poolObjectId);
 
-    // Concatenate the buffers
-    const concatenatedBuffer = Buffer.concat([poolObjectIdBuffer, affectedAddressBuffer, newAddressBuffer]);
+    // Construct the message by concatenating the byte arrays
+    const msg = new Uint8Array(affectedAddressBytes.length + newAddressBytes.length + poolIdBytes.length);
+    msg.set(affectedAddressBytes, 0);
+    msg.set(newAddressBytes, affectedAddressBytes.length);
+    msg.set(poolIdBytes, affectedAddressBytes.length + newAddressBytes.length);
 
-    return { buffer: concatenatedBuffer, hex: concatenatedBuffer.toString("hex") };
+    return { bytes: msg, hex: Buffer.from(msg).toString("hex") };
   }
 
   public static async signMessageSignatureForBoostedRefund({
@@ -169,7 +173,7 @@ export class RefundManagerSingleton {
     newAddress: string;
   }): Promise<SignatureWithBytes> {
     const message = RefundManagerSingleton.getMessageForBoostedRefund({ poolObjectId, affectedAddress, newAddress });
-    const signedMessage = await keypair.signWithIntent(message.buffer, 3);
+    const signedMessage = await keypair.signPersonalMessage(message.bytes);
 
     return signedMessage;
   }
@@ -182,30 +186,24 @@ export class RefundManagerSingleton {
     affectedAddress,
     newAddress,
 
-    signedMessage,
+    signedMessageSignature,
   }: {
     poolObjectId: string;
     newAddress: string;
     affectedAddress: string;
 
-    // TODO: Instead of `signedMessage` we need to have a string?
-    signedMessage: SignatureWithBytes;
+    signedMessageSignature: string;
   }) {
-    const signedPublicKey = await verifyPersonalMessage(Buffer.from(signedMessage.bytes), signedMessage.signature);
-
-    if (affectedAddress !== signedPublicKey.toSuiAddress()) {
-      throw new Error("Affected address is different from the signer of the message");
-    }
-
-    const signedMessageHex = Buffer.from(signedMessage.bytes, "base64").toString("hex");
     const targetMessage = RefundManagerSingleton.getMessageForBoostedRefund({
       poolObjectId,
       affectedAddress,
       newAddress,
     });
 
-    if (signedMessageHex !== targetMessage.hex) {
-      throw new Error("Signed message is not equal to the target message");
+    const signedPublicKey = await verifyPersonalMessage(targetMessage.bytes, signedMessageSignature);
+
+    if (affectedAddress !== signedPublicKey.toSuiAddress()) {
+      throw new Error("Affected address is different from the signer of the message");
     }
 
     return true;
