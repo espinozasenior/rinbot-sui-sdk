@@ -102,20 +102,42 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
-  public static getClaimRefundBoosted({
+  public static getAllowBoostedClaim({
     publisherObjectId,
     poolObjectId,
     affectedAddress,
     newAddress,
-    signature,
 
     transaction,
   }: {
-    publisherObjectId: ObjectArg;
-    poolObjectId: ObjectArg;
+    publisherObjectId: string;
+    poolObjectId: string;
     affectedAddress: string;
     newAddress: string;
-    signature: string;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::allow_boosted_claim`,
+      typeArguments: [],
+      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(affectedAddress), tx.pure(newAddress)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static getClaimRefundBoosted({
+    boostedClaimCap,
+    poolObjectId,
+
+    transaction,
+  }: {
+    boostedClaimCap: ObjectArg;
+    poolObjectId: ObjectArg;
 
     transaction?: TransactionBlock;
   }) {
@@ -124,13 +146,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::claim_refund_boosted`,
       typeArguments: [],
-      arguments: [
-        obj(tx, publisherObjectId),
-        obj(tx, poolObjectId),
-        tx.pure(affectedAddress),
-        tx.pure(newAddress),
-        tx.pure(signature),
-      ],
+      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
