@@ -3,6 +3,7 @@ import { SuiClient } from "@mysten/sui.js/client";
 import { ObjectArg } from "../../transactions/types";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { obj } from "../../transactions/utils";
+import { Keypair } from "@mysten/sui.js/cryptography";
 
 /**
  * @class RefundManagerSingleton
@@ -12,6 +13,9 @@ import { obj } from "../../transactions/utils";
 export class RefundManagerSingleton {
   public static REFUND_PACKAGE_ADDRESS = "";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
+  public static REFUND_POOL_OBJECT_ID = "";
+  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "";
+
   public static REFUND_GAS_BUGET = 50_000_000;
 
   private static _instance: RefundManagerSingleton;
@@ -61,7 +65,7 @@ export class RefundManagerSingleton {
     addressesList: string[];
     amountsList: string[];
 
-    transaction: TransactionBlock;
+    transaction?: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
 
@@ -81,7 +85,7 @@ export class RefundManagerSingleton {
     transaction,
   }: {
     poolObjectId: ObjectArg;
-    transaction: TransactionBlock;
+    transaction?: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
 
@@ -111,7 +115,7 @@ export class RefundManagerSingleton {
     newAddress: string;
     signature: string;
 
-    transaction: TransactionBlock;
+    transaction?: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
 
@@ -130,5 +134,29 @@ export class RefundManagerSingleton {
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
 
     return { tx, txRes };
+  }
+
+  public static signMessageForBoostedRefund({
+    keypair,
+    poolObjectId,
+    affectedAddress,
+    newAddress,
+  }: {
+    keypair: Keypair;
+    poolObjectId: string;
+    affectedAddress: string;
+    newAddress: string;
+  }) {
+    // Convert string values to hexadecimal buffers inline
+    const poolObjectIdBuffer = Buffer.from(poolObjectId, "hex");
+    const affectedAddressBuffer = Buffer.from(affectedAddress, "hex");
+    const newAddressBuffer = Buffer.from(newAddress, "hex");
+
+    // Concatenate the buffers
+    const concatenatedBuffer = Buffer.concat([poolObjectIdBuffer, affectedAddressBuffer, newAddressBuffer]);
+
+    const message = keypair.signPersonalMessage(concatenatedBuffer);
+
+    return message;
   }
 }
