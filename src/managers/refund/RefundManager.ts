@@ -200,5 +200,7 @@ export class RefundManagerSingleton {
 
     // TODO: verify that newAddress is related to the newAddress in the message
     // TODO: & same pool objecct id
+
+    return true;
   }
 }
