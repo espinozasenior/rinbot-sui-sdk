@@ -3,9 +3,11 @@ export * from "./managers/CoinManager";
 export * from "./managers/RouteManager";
 export * from "./managers/WalletManager";
 export * from "./managers/types";
+export * from "./managers/utils";
 export * from "./managers/dca/DCAManager";
 export * from "./managers/dca/types";
 export * from "./managers/dca/utils";
+export * from "./managers/refund/RefundManager";
 
 // Providers (common & utils)
 export * from "./providers/common";
@@ -45,6 +47,7 @@ export * from "./storages/utils/typeguards";
 // Misc
 export { SUI_DECIMALS, isValidSuiAddress } from "@mysten/sui.js/utils";
 export { TransactionBlock, isTransactionBlock } from "@mysten/sui.js/transactions";
+export { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 
 // Launchpad
 export * from "./launchpad/surfdog/surfdog";

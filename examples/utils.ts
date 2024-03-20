@@ -2,19 +2,6 @@ import * as fs from "fs";
 
 /**
  * Add two numbers.
- * @param {string} mnemonic Seed phrase of the wallet.
- * @return {string} Normilized mnemonic (trimmed & etc.).
- */
-export function normalizeMnemonic(mnemonic: string): string {
-  return mnemonic
-    .trim()
-    .split(/\s+/)
-    .map((part) => part.toLowerCase())
-    .join(" ");
-}
-
-/**
- * Add two numbers.
  * @param {string} hexStr String as an input.
  * @return {Uint8Array} Encoded string into Uint8Array type.
  */
