@@ -8,6 +8,7 @@ import { obj } from "../../transactions/utils";
 import { hexStringToByteArray } from "./utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
+import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
 
 /**
  * @class RefundManagerSingleton
@@ -20,6 +21,7 @@ export class RefundManagerSingleton {
   public static REFUND_PACKAGE_ADDRESS_READ = "";
   public static REFUND_POOL_OBJECT_ID = "0xf8f7e8e3c4a4c08e5a334c45ed0b3c669b3b86098e7fc1ff9cfe062105c1f74e";
   public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x492ef3058c292d1d343545001c65ff42baef932a4fb06be79968137ec381a4fc";
+  public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
 
   public static REFUND_GAS_BUGET = 50_000_000;
 
@@ -263,9 +265,23 @@ export class RefundManagerSingleton {
   }
 
   public async getBoostedClaimCap({ ownerAddress }: { ownerAddress: string }) {
-    const objectId = "";
+    // Assuming we have only 1 allowed per user by design
+    const allBoostedClaimCapObjects = await getAllOwnedObjects({
+      provider: this.provider,
+      options: {
+        owner: ownerAddress,
+        // TODO: Check for correctness
+        filter: { StructType: RefundManagerSingleton.REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME },
+      },
+    });
 
-    return objectId;
+    const boostedClaimCapObject = allBoostedClaimCapObjects[0];
+
+    if (!boostedClaimCapObject.data) {
+      throw new Error("No boosted claim cap object found");
+    }
+
+    return boostedClaimCapObject.data.objectId;
   }
 
   public static getAllowBoostedClaim({
