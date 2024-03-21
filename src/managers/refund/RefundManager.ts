@@ -162,6 +162,30 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
+  public static startReclaimPhase({
+    poolObjectId,
+    clock,
+
+    transaction,
+  }: {
+    poolObjectId: ObjectArg;
+    clock: ObjectArg;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_reclaim_phase`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId), obj(tx, clock)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
   public async getCurrentRefundPhase({
     poolObjectId,
     transaction,
@@ -365,6 +389,20 @@ export class RefundManagerSingleton {
     }
 
     return boostedClaimCapObject.data.objectId;
+  }
+
+  public static getReclaimFundsTransaction({ poolObjectId }: { poolObjectId: ObjectArg }) {
+    const tx = new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::reclaim_funds`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
   }
 
   public static getAllowBoostedClaim({
