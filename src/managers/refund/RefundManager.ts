@@ -389,7 +389,7 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
-  public static getClaimRefundBoosted({
+  public static getClaimRefundBoostedTransaction({
     boostedClaimCap,
     poolObjectId,
 
