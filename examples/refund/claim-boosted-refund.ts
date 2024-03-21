@@ -1,5 +1,5 @@
 import { RefundManagerSingleton } from "../../src";
-import { provider, suiProviderUrl, user } from "../common";
+import { keypair, provider, signAndExecuteTransaction, suiProviderUrl, user } from "../common";
 
 // yarn ts-node examples/refund/claim-boosted-refund.ts
 (async () => {
@@ -19,12 +19,12 @@ import { provider, suiProviderUrl, user } from "../common";
     boostedClaimCap: boostedClaimCap,
   });
 
-  const res = await provider.devInspectTransactionBlock({
-    sender: user,
-    transactionBlock: txData.tx,
-  });
+  // const res = await provider.devInspectTransactionBlock({
+  //   sender: user,
+  //   transactionBlock: txData.tx,
+  // });
 
-  // const res = await signAndExecuteTransaction(fundingPhaseTxAndRes.tx, keypair);
+  const res = await signAndExecuteTransaction(txData.tx, keypair);
 
   console.debug("res: ", res);
 })();
