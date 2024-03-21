@@ -5,10 +5,11 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 import { ObjectArg } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
-import { hexStringToByteArray } from "./utils";
+import { DecodedAmount, hexStringToByteArray } from "./utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
+import { bcs } from "@mysten/sui.js/bcs";
 
 /**
  * @class RefundManagerSingleton
@@ -263,9 +264,22 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = Buffer.from(returnValues[0][0]).readBigUInt64LE();
+    const rawAmountBytes = returnValues[0][0];
+    const decoded: DecodedAmount = bcs.de("Option<u64>", new Uint8Array(rawAmountBytes));
+    let amount: string;
 
-    return { mist: amount.toString(), sui: new BigNumber(amount.toString()).div(SUI_DENOMINATOR).toString() };
+    if ("Some" in decoded && decoded.Some) {
+      amount = decoded.Some;
+    } else if ("None" in decoded && decoded.None === true) {
+      amount = "0"; // Use "0" if decoded.None is true
+    } else {
+      throw new Error("Decoded amount has an invalid shape");
+    }
+
+    const amountInMist = amount.toString();
+    const amountInSui = new BigNumber(amount).div(SUI_DENOMINATOR).toString();
+
+    return { mist: amountInMist, sui: amountInSui };
   }
 
   public async getClaimAmountBoosted({
@@ -300,9 +314,22 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = Buffer.from(returnValues[0][0]).readBigUInt64LE();
+    const rawAmountBytes = returnValues[0][0];
+    const decoded: DecodedAmount = bcs.de("Option<u64>", new Uint8Array(rawAmountBytes));
+    let amount: string;
 
-    return { mist: amount.toString(), sui: new BigNumber(amount.toString()).div(SUI_DENOMINATOR).toString() };
+    if ("Some" in decoded && decoded.Some) {
+      amount = decoded.Some;
+    } else if ("None" in decoded && decoded.None === true) {
+      amount = "0"; // Use "0" if decoded.None is true
+    } else {
+      throw new Error("Decoded amount has an invalid shape");
+    }
+
+    const amountInMist = amount.toString();
+    const amountInSui = new BigNumber(amount).div(SUI_DENOMINATOR).toString();
+
+    return { mist: amountInMist, sui: amountInSui };
   }
 
   public async getClaimAmount({ poolObjectId, affectedAddress }: { poolObjectId: string; affectedAddress: string }) {
