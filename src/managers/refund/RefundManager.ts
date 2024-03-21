@@ -107,6 +107,56 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
+  public static startFundingPhase({
+    publisherObjectId,
+    poolObjectId,
+    timeoutMilliseconds,
+    clock,
+
+    transaction,
+  }: {
+    publisherObjectId: ObjectArg;
+    poolObjectId: ObjectArg;
+    timeoutMilliseconds: number;
+    clock: ObjectArg;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_funding_phase`,
+      typeArguments: [],
+      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(timeoutMilliseconds), obj(tx, clock)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static startClaimPhase({
+    poolObjectId,
+
+    transaction,
+  }: {
+    poolObjectId: ObjectArg;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_claim_phase`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
   public async getCurrentRefundPhase({
     poolObjectId,
     transaction,

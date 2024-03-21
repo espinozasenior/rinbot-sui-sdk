@@ -14,3 +14,10 @@ export function hexStringToByteArray(hexString: string): Uint8Array {
   }
   return byteArray;
 }
+
+export enum RefundPoolPhase {
+  AddressAddition = 1, // Phase for adding addresses
+  Funding = 2, // Phase for funding
+  Claim = 3, // Phase for claiming refunds
+  Reclaim = 4, // Phase for reclaiming refunds
+}
