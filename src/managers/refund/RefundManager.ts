@@ -13,10 +13,11 @@ import { hexStringToByteArray } from "./utils";
  * This class encapsulates the business logic for a Refund smart contract.
  */
 export class RefundManagerSingleton {
-  public static REFUND_PACKAGE_ADDRESS = "";
+  public static SIMLATION_ACCOUNT_ADDRESS = "0xca9711c3de3ef474209ebd920b894e4d374ff09e210bc31cbd2d266f7bff90ca";
+  public static REFUND_PACKAGE_ADDRESS = "0xba5e4e9f24b0d7c329667e847c2173052fe2b21705bdb7f178b9ee5c063a0d13";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
-  public static REFUND_POOL_OBJECT_ID = "";
-  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "";
+  public static REFUND_POOL_OBJECT_ID = "0x8ef9b807343db13b7659b443b2f687f2125b91e346893d94c3437b2121eac3b3";
+  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x283c2f73647488150f294601a6fd36d2fec39773ce2060b052a7eccaf3ac448b";
 
   public static REFUND_GAS_BUGET = 50_000_000;
 
@@ -100,6 +101,43 @@ export class RefundManagerSingleton {
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
 
     return { tx, txRes };
+  }
+
+  public async getCurrentRefundPhase({
+    poolObjectId,
+    transaction,
+  }: {
+    poolObjectId: string;
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::phase`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    const res = await this.provider.devInspectTransactionBlock({
+      sender: RefundManagerSingleton.SIMLATION_ACCOUNT_ADDRESS,
+      transactionBlock: tx,
+    });
+
+    if (!res.results) {
+      throw new Error("No results found for the request phase request");
+    }
+
+    const returnValues = res.results[0].returnValues;
+
+    if (!returnValues) {
+      throw new Error("Return values are undefined");
+    }
+
+    const phase = returnValues[0][0][0];
+
+    return phase;
   }
 
   public static getAllowBoostedClaim({
