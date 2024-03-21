@@ -263,9 +263,9 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = returnValues[0][0][0];
+    const amount = Buffer.from(returnValues[0][0]).readBigUInt64LE();
 
-    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+    return { mist: amount.toString(), sui: new BigNumber(amount.toString()).div(SUI_DENOMINATOR).toString() };
   }
 
   public async getClaimAmountBoosted({
@@ -300,9 +300,9 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = returnValues[0][0][0];
+    const amount = Buffer.from(returnValues[0][0]).readBigUInt64LE();
 
-    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+    return { mist: amount.toString(), sui: new BigNumber(amount.toString()).div(SUI_DENOMINATOR).toString() };
   }
 
   public async getClaimAmount({ poolObjectId, affectedAddress }: { poolObjectId: string; affectedAddress: string }) {
