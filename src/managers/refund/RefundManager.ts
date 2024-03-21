@@ -262,6 +262,12 @@ export class RefundManagerSingleton {
     return { normalRefund, boosedRefund };
   }
 
+  public async getBoostedClaimCap({ ownerAddress }: { ownerAddress: string }) {
+    const objectId = "";
+
+    return objectId;
+  }
+
   public static getAllowBoostedClaim({
     publisherObjectId,
     poolObjectId,
