@@ -5,10 +5,11 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 import { ObjectArg } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
-import { hexStringToByteArray } from "./utils";
+import { DecodedAmount, hexStringToByteArray } from "./utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
+import { bcs } from "@mysten/sui.js/bcs";
 
 /**
  * @class RefundManagerSingleton
@@ -22,6 +23,10 @@ export class RefundManagerSingleton {
   public static REFUND_POOL_OBJECT_ID = "0xf8f7e8e3c4a4c08e5a334c45ed0b3c669b3b86098e7fc1ff9cfe062105c1f74e";
   public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x492ef3058c292d1d343545001c65ff42baef932a4fb06be79968137ec381a4fc";
   public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
+  public static REFUND_MODULE_NAME = "refund";
+  public static REFUND_BOOSTED_MODULE_NAME = "booster";
+  // eslint-disable-next-line max-len
+  public static BOOSTER_OBJECT_TYPE = `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::${RefundManagerSingleton.REFUND_BOOSTED_MODULE_NAME}::${this.REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME}`;
 
   public static REFUND_GAS_BUGET = 50_000_000;
 
@@ -98,6 +103,56 @@ export class RefundManagerSingleton {
 
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static startFundingPhase({
+    publisherObjectId,
+    poolObjectId,
+    timeoutMilliseconds,
+    clock,
+
+    transaction,
+  }: {
+    publisherObjectId: ObjectArg;
+    poolObjectId: ObjectArg;
+    timeoutMilliseconds: number;
+    clock: ObjectArg;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_funding_phase`,
+      typeArguments: [],
+      arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(timeoutMilliseconds), obj(tx, clock)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
+  }
+
+  public static startClaimPhase({
+    poolObjectId,
+
+    transaction,
+  }: {
+    poolObjectId: ObjectArg;
+
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_claim_phase`,
       typeArguments: [],
       arguments: [obj(tx, poolObjectId)],
     });
@@ -213,9 +268,22 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = returnValues[0][0][0];
+    const rawAmountBytes = returnValues[0][0];
+    const decoded: DecodedAmount = bcs.de("Option<u64>", new Uint8Array(rawAmountBytes));
+    let amount: string;
 
-    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+    if ("Some" in decoded && decoded.Some) {
+      amount = decoded.Some;
+    } else if ("None" in decoded && decoded.None === true) {
+      amount = "0"; // Use "0" if decoded.None is true
+    } else {
+      throw new Error("Decoded amount has an invalid shape");
+    }
+
+    const amountInMist = amount.toString();
+    const amountInSui = new BigNumber(amount).div(SUI_DENOMINATOR).toString();
+
+    return { mist: amountInMist, sui: amountInSui };
   }
 
   public async getClaimAmountBoosted({
@@ -250,9 +318,22 @@ export class RefundManagerSingleton {
       throw new Error("Return values are undefined");
     }
 
-    const amount = returnValues[0][0][0];
+    const rawAmountBytes = returnValues[0][0];
+    const decoded: DecodedAmount = bcs.de("Option<u64>", new Uint8Array(rawAmountBytes));
+    let amount: string;
 
-    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+    if ("Some" in decoded && decoded.Some) {
+      amount = decoded.Some;
+    } else if ("None" in decoded && decoded.None === true) {
+      amount = "0"; // Use "0" if decoded.None is true
+    } else {
+      throw new Error("Decoded amount has an invalid shape");
+    }
+
+    const amountInMist = amount.toString();
+    const amountInSui = new BigNumber(amount).div(SUI_DENOMINATOR).toString();
+
+    return { mist: amountInMist, sui: amountInSui };
   }
 
   public async getClaimAmount({ poolObjectId, affectedAddress }: { poolObjectId: string; affectedAddress: string }) {
@@ -271,7 +352,9 @@ export class RefundManagerSingleton {
       options: {
         owner: ownerAddress,
         // TODO: Check for correctness
-        filter: { StructType: RefundManagerSingleton.REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME },
+        // Because this might not work in case of upgraded package id, so as a solution,
+        // we need to use another filter, which would allow to fetch `BoostedClaimCap` for multiple package addresses
+        filter: { StructType: RefundManagerSingleton.BOOSTER_OBJECT_TYPE },
       },
     });
 
@@ -312,7 +395,7 @@ export class RefundManagerSingleton {
     return { tx, txRes };
   }
 
-  public static getClaimRefundBoosted({
+  public static getClaimRefundBoostedTransaction({
     boostedClaimCap,
     poolObjectId,
 
