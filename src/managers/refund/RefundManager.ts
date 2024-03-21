@@ -18,10 +18,10 @@ import { bcs } from "@mysten/sui.js/bcs";
  */
 export class RefundManagerSingleton {
   public static SIMLATION_ACCOUNT_ADDRESS = "0xca9711c3de3ef474209ebd920b894e4d374ff09e210bc31cbd2d266f7bff90ca";
-  public static REFUND_PACKAGE_ADDRESS = "0xd5bf5b4dda39f394a82590d23259c26dd4b570a2b0584d6d73b0599a9f525fac";
+  public static REFUND_PACKAGE_ADDRESS = "0xafd378e8ba84b5dbb209985e23aa37e1538b5203bc1d56f3a341ed88c16aee84";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
-  public static REFUND_POOL_OBJECT_ID = "0xf8f7e8e3c4a4c08e5a334c45ed0b3c669b3b86098e7fc1ff9cfe062105c1f74e";
-  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x492ef3058c292d1d343545001c65ff42baef932a4fb06be79968137ec381a4fc";
+  public static REFUND_POOL_OBJECT_ID = "0x01f6eb124626137f1e0524460491eba7725507f62b21de0368d481ff13f4fbe4";
+  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0xb101b6dd797875c6d037d534d4131ad9989ba36bb65e70dd677d0e3006857c16";
   public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
   public static REFUND_MODULE_NAME = "refund";
   public static REFUND_BOOSTED_MODULE_NAME = "booster";
