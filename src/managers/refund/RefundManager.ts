@@ -6,6 +6,8 @@ import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 import { ObjectArg } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
 import { hexStringToByteArray } from "./utils";
+import BigNumber from "bignumber.js";
+import { SUI_DENOMINATOR } from "../..";
 
 /**
  * @class RefundManagerSingleton
@@ -138,6 +140,126 @@ export class RefundManagerSingleton {
     const phase = returnValues[0][0][0];
 
     return phase;
+  }
+
+  public async getUnclaimedAddressesList({
+    poolObjectId,
+    transaction,
+  }: {
+    poolObjectId: string;
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::unclaimed`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    const res = await this.provider.devInspectTransactionBlock({
+      sender: RefundManagerSingleton.SIMLATION_ACCOUNT_ADDRESS,
+      transactionBlock: tx,
+    });
+
+    if (!res.results) {
+      throw new Error("No results found for the request phase request");
+    }
+
+    const returnValues = res.results[0].returnValues;
+
+    if (!returnValues) {
+      throw new Error("Return values are undefined");
+    }
+
+    const table = returnValues[0][0];
+
+    return table;
+  }
+
+  public async getClaimAmountNormal({
+    poolObjectId,
+    affectedAddress,
+  }: {
+    poolObjectId: string;
+    affectedAddress: string;
+  }) {
+    const tx = new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::amount_to_claim`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId), tx.pure(affectedAddress)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    const res = await this.provider.devInspectTransactionBlock({
+      sender: RefundManagerSingleton.SIMLATION_ACCOUNT_ADDRESS,
+      transactionBlock: tx,
+    });
+
+    if (!res.results) {
+      throw new Error("No results found for the request phase request");
+    }
+
+    const returnValues = res.results[0].returnValues;
+
+    if (!returnValues) {
+      throw new Error("Return values are undefined");
+    }
+
+    const amount = returnValues[0][0][0];
+
+    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+  }
+
+  public async getClaimAmountBoosted({
+    poolObjectId,
+    affectedAddress,
+  }: {
+    poolObjectId: string;
+    affectedAddress: string;
+  }) {
+    const tx = new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::amount_to_claim_boosted`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId), tx.pure(affectedAddress)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    const res = await this.provider.devInspectTransactionBlock({
+      sender: RefundManagerSingleton.SIMLATION_ACCOUNT_ADDRESS,
+      transactionBlock: tx,
+    });
+
+    if (!res.results) {
+      throw new Error("No results found for the request phase request");
+    }
+
+    const returnValues = res.results[0].returnValues;
+
+    if (!returnValues) {
+      throw new Error("Return values are undefined");
+    }
+
+    const amount = returnValues[0][0][0];
+
+    return { mist: amount, sui: new BigNumber(amount).div(SUI_DENOMINATOR).toString() };
+  }
+
+  public async getClaimAmount({ poolObjectId, affectedAddress }: { poolObjectId: string; affectedAddress: string }) {
+    const [normalRefund, boosedRefund] = await Promise.all([
+      this.getClaimAmountNormal({ poolObjectId, affectedAddress }),
+      this.getClaimAmountBoosted({ poolObjectId, affectedAddress }),
+    ]);
+
+    return { normalRefund, boosedRefund };
   }
 
   public static getAllowBoostedClaim({
