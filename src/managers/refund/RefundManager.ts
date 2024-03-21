@@ -352,6 +352,8 @@ export class RefundManagerSingleton {
       options: {
         owner: ownerAddress,
         // TODO: Check for correctness
+        // Because this might not work in case of upgraded package id, so as a solution,
+        // we need to use another filter, which would allow to fetch `BoostedClaimCap` for multiple package addresses
         filter: { StructType: RefundManagerSingleton.BOOSTER_OBJECT_TYPE },
       },
     });
