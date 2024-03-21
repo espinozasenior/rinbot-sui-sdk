@@ -1,7 +1,7 @@
 import { RefundManagerSingleton } from "../../src";
 import { provider, suiProviderUrl, user } from "../common";
 
-// yarn ts-node examples/refund/claim-normal-refund.ts
+// yarn ts-node examples/refund/claim-boosted-refund.ts
 (async () => {
   const refundManager = RefundManagerSingleton.getInstance(suiProviderUrl);
 
