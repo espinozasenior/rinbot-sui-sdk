@@ -254,12 +254,12 @@ export class RefundManagerSingleton {
   }
 
   public async getClaimAmount({ poolObjectId, affectedAddress }: { poolObjectId: string; affectedAddress: string }) {
-    const [normalRefund, boosedRefund] = await Promise.all([
+    const [normalRefund, boostedRefund] = await Promise.all([
       this.getClaimAmountNormal({ poolObjectId, affectedAddress }),
       this.getClaimAmountBoosted({ poolObjectId, affectedAddress }),
     ]);
 
-    return { normalRefund, boosedRefund };
+    return { normalRefund, boostedRefund };
   }
 
   public static getAllowBoostedClaim({
