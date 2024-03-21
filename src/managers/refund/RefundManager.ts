@@ -384,7 +384,7 @@ export class RefundManagerSingleton {
 
     const boostedClaimCapObject = allBoostedClaimCapObjects[0];
 
-    if (!boostedClaimCapObject.data) {
+    if (!boostedClaimCapObject || !boostedClaimCapObject?.data || boostedClaimCapObject.data.objectId) {
       throw new Error("No boosted claim cap object found");
     }
 
