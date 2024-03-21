@@ -140,6 +140,43 @@ export class RefundManagerSingleton {
     return phase;
   }
 
+  public async getUnclaimedAddressesList({
+    poolObjectId,
+    transaction,
+  }: {
+    poolObjectId: string;
+    transaction?: TransactionBlock;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::unclaimed`,
+      typeArguments: [],
+      arguments: [obj(tx, poolObjectId)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    const res = await this.provider.devInspectTransactionBlock({
+      sender: RefundManagerSingleton.SIMLATION_ACCOUNT_ADDRESS,
+      transactionBlock: tx,
+    });
+
+    if (!res.results) {
+      throw new Error("No results found for the request phase request");
+    }
+
+    const returnValues = res.results[0].returnValues;
+
+    if (!returnValues) {
+      throw new Error("Return values are undefined");
+    }
+
+    const table = returnValues[0][0];
+
+    return table;
+  }
+
   public static getAllowBoostedClaim({
     publisherObjectId,
     poolObjectId,
