@@ -15,4 +15,8 @@ import { WalletManagerSingleton } from "../../src";
 
   const privateKeyFromKeypair = WalletManagerSingleton.getPrivateKeyFromKeyPair(keypair);
   console.debug("privateKeyFromKeypair: ", privateKeyFromKeypair);
+
+  const keypairFromPrivateKey = WalletManagerSingleton.getKeyPairFromPrivateKeyHex(privateKeyFromKeypair);
+  console.debug("keypairFromPrivateKey pubkey: ", keypairFromPrivateKey.toSuiAddress());
+  console.debug("keypairFromPrivateKey privateKey: ", keypairFromPrivateKey.export());
 })();
