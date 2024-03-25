@@ -1,5 +1,6 @@
 import { RefundManagerSingleton, TransactionBlock } from "../../src";
 import { keypair, signAndExecuteTransaction } from "../common";
+import { delegateeKeypair } from "../dca/common";
 
 // yarn ts-node examples/refund/fund.ts
 (async () => {
@@ -8,7 +9,7 @@ import { keypair, signAndExecuteTransaction } from "../common";
 
   const txb = new TransactionBlock();
 
-  const [coinA, coinB] = txb.splitCoins(txb.gas, [txb.pure(75655690, "u64"), txb.pure(37827845, "u64")]);
+  const [coinA, coinB] = txb.splitCoins(txb.gas, [txb.pure(108572810, "u64"), txb.pure(54286405, "u64")]);
 
   txb.moveCall({
     target: `${packageId}::refund::fund`,
@@ -20,7 +21,7 @@ import { keypair, signAndExecuteTransaction } from "../common";
     arguments: [txb.object(poolObjectId), coinB],
   });
 
-  const res = await signAndExecuteTransaction(txb, keypair);
+  const res = await signAndExecuteTransaction(txb, delegateeKeypair);
 
   // const res = await provider.devInspectTransactionBlock({
   //   sender: "0x935fd79d69b98dc87cd43d4112e621fe92967c7f33fa232ddf4f6351bb1b9a19",
