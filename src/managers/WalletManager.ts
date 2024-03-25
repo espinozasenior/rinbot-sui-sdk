@@ -14,6 +14,7 @@ import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { CoinManagerSingleton } from "./CoinManager";
 import { CoinAssetData, IWalletManager } from "./types";
 import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
+import { bech32 } from "bech32";
 
 /**
  * @class WalletManagerSingleton
@@ -81,6 +82,47 @@ export class WalletManagerSingleton implements IWalletManager {
     const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKeyHex, "hex"));
 
     return keypair;
+  }
+
+  /**
+   * Generates an Ed25519 key pair from a provided private key in bech32 format.
+   * @param {string} privateKeyBech32 - The private key in bech32 format.
+   * @return {Ed25519Keypair} An Ed25519 key pair.
+   */
+  public static getKeyPairFromPrivateKeyBech32(privateKeyBech32: string): Ed25519Keypair {
+    const privateKeyConvertedFromBech32ToHex = WalletManagerSingleton.bech32ToHex(privateKeyBech32);
+    const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKeyConvertedFromBech32ToHex, "hex"));
+
+    return keypair;
+  }
+
+  /**
+   * Converts a Bech32 encoded address to its hexadecimal representation.
+   * @param {string} bech32Address - The Bech32 encoded address to convert.
+   * @return {string} The hexadecimal representation of the given Bech32 address.
+   */
+  public static bech32ToHex(bech32Address: string): string {
+    try {
+      // Decode the Bech32 address to obtain the words (data part)
+      const decoded = bech32.decode(bech32Address);
+
+      // Convert the words to a Buffer
+      const buffer = Buffer.from(bech32.fromWords(decoded.words));
+
+      // Convert to hexadecimal
+      let hex = buffer.toString("hex");
+
+      // Remove the first two '00's from the prefix if present
+      if (hex.startsWith("00")) {
+        hex = hex.substring(2);
+      }
+
+      // Convert the Buffer to a hex string
+      return hex;
+    } catch (error) {
+      console.error("Error converting Bech32 address to hex:", error);
+      return "";
+    }
   }
 
   /**
