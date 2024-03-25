@@ -15,6 +15,7 @@ import { CoinManagerSingleton } from "./CoinManager";
 import { CoinAssetData, IWalletManager } from "./types";
 import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
 import { bech32 } from "bech32";
+import { determineFormat } from "./WalletManager.utils";
 
 /**
  * @class WalletManagerSingleton
@@ -74,14 +75,22 @@ export class WalletManagerSingleton implements IWalletManager {
   }
 
   /**
-   * Generates an Ed25519 key pair from a provided private key in hexadecimal format.
-   * @param {string} privateKeyHex - The private key in hexadecimal format.
+   * Generates an Ed25519 key pair from a provided private key in hex or Bech32 format.
+   * @param {string} privateKey - The private key in hex or Bech32 format.
+   * @throws {Error} Throws an error if the provided privateKey is not in hex or Bech32 format.
    * @return {Ed25519Keypair} An Ed25519 key pair.
    */
-  public static getKeyPairFromPrivateKey(privateKeyHex: string): Ed25519Keypair {
-    const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKeyHex, "hex"));
+  public static getKeyPairFromPrivateKey(privateKey: string): Ed25519Keypair {
+    const format = determineFormat(privateKey);
 
-    return keypair;
+    switch (format) {
+      case "hex":
+        return WalletManagerSingleton.getKeyPairFromPrivateKeyHex(privateKey);
+      case "bech32":
+        return WalletManagerSingleton.getKeyPairFromPrivateKeyBech32(privateKey);
+      default:
+        throw new Error("[WalletManagerSingleton] Unsupported keypair format");
+    }
   }
 
   /**
