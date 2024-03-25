@@ -25,7 +25,7 @@ import { FlowxSingleton } from "../../src/providers/flowx/flowx";
   // const flowx: FlowxSingleton = await FlowxSingleton.getInstance({ cacheOptions, lazyLoading: false });
   // const providers: Providers = [turbos, cetus, aftermath, flowx];
   const providers: Providers = [turbos, cetus, aftermath];
-  const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers);
+  const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
   const walletManager: WalletManagerSingleton = WalletManagerSingleton.getInstance(provider, coinManager);
 
   const mySuiBalance: string = await walletManager.getSuiBalance(user);
