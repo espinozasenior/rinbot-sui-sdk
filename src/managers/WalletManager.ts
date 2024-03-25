@@ -85,6 +85,17 @@ export class WalletManagerSingleton implements IWalletManager {
   }
 
   /**
+   * Generates an Ed25519 key pair from a provided private key in hexadecimal format.
+   * @param {string} privateKeyHex - The private key in hexadecimal format.
+   * @return {Ed25519Keypair} An Ed25519 key pair.
+   */
+  public static getKeyPairFromPrivateKeyHex(privateKeyHex: string): Ed25519Keypair {
+    const keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKeyHex, "hex"));
+
+    return keypair;
+  }
+
+  /**
    * Generates an Ed25519 key pair from a provided private key in bech32 format.
    * @param {string} privateKeyBech32 - The private key in bech32 format.
    * @return {Ed25519Keypair} An Ed25519 key pair.
