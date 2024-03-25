@@ -1,6 +1,8 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { RefundManagerSingleton } from "../../src";
-import { keypair, signAndExecuteTransaction } from "../common";
+import { keypair, provider, signAndExecuteTransaction } from "../common";
+import { delegateeKeypair, delegateeUser } from "../dca/common";
+import BigNumber from "bignumber.js";
 
 const ADDRESSES = [
   "0x3131b76cbf2283bc232fc48b2ddcac0a43d3ee644ce1291bcb01ff8e2af490d5",
@@ -17,6 +19,10 @@ const ADDRESSES = [
   "0x61a8024d31a41307f64f0950e890f862305433e8757aa73dd16b269502db54ec",
   "0xda0373eb535c9e1a8abb31264263db5599581589c76525ea14d8cb181936203b",
   "0x86e3289eada655152a41cb1045c0b26b3ed981eee9529fcdebda70f2c511595a",
+  "0x7b079ce7ae8331d5b7af1ddb77fe1c460630cf6288e17024554be8ab13c56ca4",
+  "0x681bc015e6319e8d60cb519128e5a90fb3cd7c5e78d0e40f5863b394fe2c2754",
+  "0x29e4201c6a45eb7d1850fd770ccae4b588305810f7cd17c0ad7dffe32147c9ef",
+  "0x5996427d9aadbc3758c90eef146d12beee93cf0e49537d5b67a25bb08f176e7b",
 ];
 
 const AMOUNTS = [
@@ -34,7 +40,17 @@ const AMOUNTS = [
   "1888999",
   "2333111",
   "3444555",
+  "7230811",
+  "9283211",
+  "6423122",
+  "2313311",
 ];
+
+console.log(
+  "amount in total: ",
+  AMOUNTS.reduce((acc: BigNumber, el) => acc.plus(new BigNumber(el)), new BigNumber(0)).toString(),
+);
+
 // yarn ts-node examples/refund/add-addresses.ts
 export const addAddresses = async ({ addresses, amounts }: { addresses: string[]; amounts: string[] }) => {
   const poolID = RefundManagerSingleton.REFUND_POOL_OBJECT_ID;
@@ -48,12 +64,12 @@ export const addAddresses = async ({ addresses, amounts }: { addresses: string[]
     transaction: new TransactionBlock(),
   });
 
-  // const res = await provider.devInspectTransactionBlock({
-  //   transactionBlock: tx,
-  //   sender: "0x935fd79d69b98dc87cd43d4112e621fe92967c7f33fa232ddf4f6351bb1b9a19",
-  // });
+  const res = await provider.devInspectTransactionBlock({
+    transactionBlock: tx,
+    sender: delegateeUser,
+  });
 
-  const res = await signAndExecuteTransaction(tx, keypair);
+  // const res = await signAndExecuteTransaction(tx, delegateeKeypair);
 
   // Assuming you want to do something with the result or just log it for now
   console.log(res);
