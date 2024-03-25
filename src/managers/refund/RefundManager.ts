@@ -20,7 +20,7 @@ export class RefundManagerSingleton {
   public static SIMLATION_ACCOUNT_ADDRESS = "0xca9711c3de3ef474209ebd920b894e4d374ff09e210bc31cbd2d266f7bff90ca";
   public static REFUND_PACKAGE_ADDRESS = "0xf5cb872b2fea1881128e5a9435cefb176b728cac8477b27d259ed3f3ccb50197";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
-  public static REFUND_POOL_OBJECT_ID = "0x98f6ed600ca8e653824c157ec99628eea8356324327da1526d757ca44a031472";
+  public static REFUND_POOL_OBJECT_ID = "0xe5f9fb0a0f04116d97ac15e15bf3e3b24a4511a6cbc8f1538086f7557d7bf3d6";
   public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x16c2fc18be4e8fbe66272c9516e773d414cc5b5bb95c2a18fae2120dbfc7b760";
   public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
   public static REFUND_MODULE_NAME = "refund";
