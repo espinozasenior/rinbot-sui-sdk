@@ -10,6 +10,7 @@ import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
 import { bcs } from "@mysten/sui.js/bcs";
+import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js/utils";
 
 /**
  * @class RefundManagerSingleton
@@ -94,9 +95,11 @@ export class RefundManagerSingleton {
 
   public static getClaimRefundTransaction({
     poolObjectId,
+    clock = SUI_CLOCK_OBJECT_ID,
     transaction,
   }: {
     poolObjectId: ObjectArg;
+    clock?: ObjectArg;
     transaction?: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
@@ -104,7 +107,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund`,
       typeArguments: [],
-      arguments: [obj(tx, poolObjectId)],
+      arguments: [obj(tx, poolObjectId), obj(tx, clock)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
@@ -436,11 +439,13 @@ export class RefundManagerSingleton {
   public static getClaimRefundBoostedTransaction({
     boostedClaimCap,
     poolObjectId,
+    clock = SUI_CLOCK_OBJECT_ID,
 
     transaction,
   }: {
     boostedClaimCap: ObjectArg;
     poolObjectId: ObjectArg;
+    clock?: ObjectArg;
 
     transaction?: TransactionBlock;
   }) {
@@ -449,7 +454,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::claim_refund_boosted`,
       typeArguments: [],
-      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId)],
+      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId), obj(tx, clock)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
