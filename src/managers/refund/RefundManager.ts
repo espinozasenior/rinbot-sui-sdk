@@ -10,7 +10,7 @@ import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
 import { bcs } from "@mysten/sui.js/bcs";
-import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js/utils";
+import { SUI_CLOCK_OBJECT_ID, SUI_FRAMEWORK_ADDRESS, SUI_SYSTEM_ADDRESS } from "@mysten/sui.js/utils";
 
 /**
  * @class RefundManagerSingleton
@@ -429,6 +429,26 @@ export class RefundManagerSingleton {
       boostedClaimCapNotAssociatedWithNewAddressObjectId:
         boostedClaimCapNotAssociatedWithNewAddress?.data?.objectId ?? null,
     };
+  }
+
+  public static getBurnBoostedClaimCapTransaction({
+    transaction,
+    boostedClaimCap,
+  }: {
+    transaction?: TransactionBlock;
+    boostedClaimCap: ObjectArg;
+  }) {
+    const tx = transaction ?? new TransactionBlock();
+
+    const txRes = tx.moveCall({
+      target: `${SUI_FRAMEWORK_ADDRESS}::object::delete`,
+      typeArguments: [],
+      arguments: [obj(tx, boostedClaimCap)],
+    });
+
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+
+    return { tx, txRes };
   }
 
   public static getReclaimFundsTransaction({ poolObjectId }: { poolObjectId: ObjectArg }) {
