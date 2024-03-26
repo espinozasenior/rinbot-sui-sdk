@@ -11,7 +11,7 @@ import { keypair, provider, signAndExecuteTransaction, suiProviderUrl, user } fr
   });
   console.debug("amount: ", amount);
 
-  const boostedClaimCap = await refundManager.getBoostedClaimCap({ ownerAddress: user });
+  const boostedClaimCap = await refundManager.getBoostedClaimCap({ ownerAddress: user, newAddress: "" });
   console.debug("boostedClaimCap: ", boostedClaimCap);
 
   const txData = RefundManagerSingleton.getClaimRefundBoostedTransaction({

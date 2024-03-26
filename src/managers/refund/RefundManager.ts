@@ -5,7 +5,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { verifyPersonalMessage } from "@mysten/sui.js/verify";
 import { ObjectArg } from "../../transactions/types";
 import { obj } from "../../transactions/utils";
-import { DecodedAmount, hexStringToByteArray } from "./utils";
+import { BoostedClaimCapType, DecodedAmount, hexStringToByteArray, isBoostedClaimCap } from "./utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
@@ -372,8 +372,7 @@ export class RefundManagerSingleton {
     return { normalRefund, boostedRefund };
   }
 
-  public async getBoostedClaimCap({ ownerAddress }: { ownerAddress: string }) {
-    // Assuming we have only 1 allowed per user by design
+  public async getBoostedClaimCap({ ownerAddress, newAddress }: { ownerAddress: string; newAddress: string }) {
     const allBoostedClaimCapObjects = await getAllOwnedObjects({
       provider: this.provider,
       options: {
@@ -382,10 +381,32 @@ export class RefundManagerSingleton {
         // Because this might not work in case of upgraded package id, so as a solution,
         // we need to use another filter, which would allow to fetch `BoostedClaimCap` for multiple package addresses
         filter: { StructType: RefundManagerSingleton.BOOSTER_OBJECT_TYPE },
+        options: {
+          showContent: true,
+          showType: true,
+        },
       },
     });
 
-    const boostedClaimCapObject = allBoostedClaimCapObjects[0];
+    const allBoostedClaimCapListRaw = allBoostedClaimCapObjects as unknown;
+
+    if (!Array.isArray(allBoostedClaimCapListRaw) || allBoostedClaimCapListRaw.length === 0) {
+      throw new Error("No boosted claim cap object found");
+    }
+
+    const listOfObjectClaimCaps = allBoostedClaimCapListRaw.filter((el): el is BoostedClaimCapType =>
+      isBoostedClaimCap(el),
+    );
+
+    // We should make sure that boosted claim cap is related to the new address that was provided
+    // Otherwise, ignoring the new address, we'll return the boosted claim cap
+    // which might not be related to the client
+    const boostedClaimCapsAssociatedWithNewAddress = listOfObjectClaimCaps.filter(
+      (el) => el.data.content.fields.new_address === newAddress,
+    );
+
+    // We can pick any of the associated with the user and new address boosted claim cap
+    const boostedClaimCapObject = boostedClaimCapsAssociatedWithNewAddress[0];
 
     if (!boostedClaimCapObject || !boostedClaimCapObject?.data) {
       throw new Error("No boosted claim cap object found");
