@@ -10,6 +10,7 @@ import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
 import { bcs } from "@mysten/sui.js/bcs";
+import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js/utils";
 
 /**
  * @class RefundManagerSingleton
@@ -18,10 +19,10 @@ import { bcs } from "@mysten/sui.js/bcs";
  */
 export class RefundManagerSingleton {
   public static SIMLATION_ACCOUNT_ADDRESS = "0xca9711c3de3ef474209ebd920b894e4d374ff09e210bc31cbd2d266f7bff90ca";
-  public static REFUND_PACKAGE_ADDRESS = "0xf5cb872b2fea1881128e5a9435cefb176b728cac8477b27d259ed3f3ccb50197";
+  public static REFUND_PACKAGE_ADDRESS = "0x7aae18bb4046e280f969d78fda0d9b1a99c0428c8cba063bf6acf35a9559a460";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
-  public static REFUND_POOL_OBJECT_ID = "0xe5f9fb0a0f04116d97ac15e15bf3e3b24a4511a6cbc8f1538086f7557d7bf3d6";
-  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x16c2fc18be4e8fbe66272c9516e773d414cc5b5bb95c2a18fae2120dbfc7b760";
+  public static REFUND_POOL_OBJECT_ID = "0x106219d32f6def1a68394327f031a52563c110c3ad26c82e109b0a30a162aa58";
+  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0xab986f449b450c49871434dfd2f2bbd0eb59a15a806f3b61e821968c7ac850df";
   public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
   public static REFUND_MODULE_NAME = "refund";
   public static REFUND_BOOSTED_MODULE_NAME = "booster";
@@ -94,9 +95,11 @@ export class RefundManagerSingleton {
 
   public static getClaimRefundTransaction({
     poolObjectId,
+    clock = SUI_CLOCK_OBJECT_ID,
     transaction,
   }: {
     poolObjectId: ObjectArg;
+    clock?: ObjectArg;
     transaction?: TransactionBlock;
   }) {
     const tx = transaction ?? new TransactionBlock();
@@ -104,7 +107,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::claim_refund`,
       typeArguments: [],
-      arguments: [obj(tx, poolObjectId)],
+      arguments: [obj(tx, poolObjectId), obj(tx, clock)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
@@ -436,11 +439,13 @@ export class RefundManagerSingleton {
   public static getClaimRefundBoostedTransaction({
     boostedClaimCap,
     poolObjectId,
+    clock = SUI_CLOCK_OBJECT_ID,
 
     transaction,
   }: {
     boostedClaimCap: ObjectArg;
     poolObjectId: ObjectArg;
+    clock?: ObjectArg;
 
     transaction?: TransactionBlock;
   }) {
@@ -449,7 +454,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::claim_refund_boosted`,
       typeArguments: [],
-      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId)],
+      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId), obj(tx, clock)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
