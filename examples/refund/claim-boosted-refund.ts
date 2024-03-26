@@ -11,12 +11,12 @@ import { keypair, provider, signAndExecuteTransaction, suiProviderUrl, user } fr
   });
   console.debug("amount: ", amount);
 
-  const boostedClaimCap = await refundManager.getBoostedClaimCap({ ownerAddress: user, newAddress: "" });
-  console.debug("boostedClaimCap: ", boostedClaimCap);
+  const { boostedClaimCapObjectId } = await refundManager.getBoostedClaimCap({ ownerAddress: user, newAddress: "" });
+  console.debug("boostedClaimCapObjectId: ", boostedClaimCapObjectId);
 
   const txData = RefundManagerSingleton.getClaimRefundBoostedTransaction({
     poolObjectId: RefundManagerSingleton.REFUND_POOL_OBJECT_ID,
-    boostedClaimCap: boostedClaimCap,
+    boostedClaimCap: boostedClaimCapObjectId,
   });
 
   // const res = await provider.devInspectTransactionBlock({
