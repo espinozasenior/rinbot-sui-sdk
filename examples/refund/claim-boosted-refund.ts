@@ -14,6 +14,10 @@ import { keypair, provider, signAndExecuteTransaction, suiProviderUrl, user } fr
   const { boostedClaimCapObjectId } = await refundManager.getBoostedClaimCap({ ownerAddress: user, newAddress: "" });
   console.debug("boostedClaimCapObjectId: ", boostedClaimCapObjectId);
 
+  if (!boostedClaimCapObjectId) {
+    throw new Error("Boosted claim cap obj is null");
+  }
+
   const txData = RefundManagerSingleton.getClaimRefundBoostedTransaction({
     poolObjectId: RefundManagerSingleton.REFUND_POOL_OBJECT_ID,
     boostedClaimCap: boostedClaimCapObjectId,
