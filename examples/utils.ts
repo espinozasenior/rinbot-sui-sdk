@@ -83,3 +83,19 @@ export function convertMyMapTypeToRecord<T>(data: MyMapType<T>): Record<string, 
   });
   return result;
 }
+
+/**
+ * Reads data from a JSON file asynchronously.
+ * @param {string} filename - The name of the JSON file to read.
+ * @return {Promise<object | object[]>} A promise that resolves with the parsed JSON data.
+ */
+export async function readDataFromJsonFile(filename: string): Promise<object | object[] | null> {
+  try {
+    const filePath = `${__dirname}/${filename}.json`;
+    const jsonData: string = await fs.promises.readFile(filePath, "utf-8");
+    return JSON.parse(jsonData);
+  } catch (error) {
+    console.error("Error reading data from file:", error);
+    return null;
+  }
+}
