@@ -8,7 +8,7 @@ import { delegateeKeypair } from "../dca/common";
   const fundingPhaseTxAndRes = RefundManagerSingleton.startFundingPhase({
     publisherObjectId: RefundManagerSingleton.REFUND_POOL_PUBLISHER_OBJECT_ID,
     poolObjectId: RefundManagerSingleton.REFUND_POOL_OBJECT_ID,
-    timeoutMilliseconds: 1711305382000, // Needs to be timestamp in milliseconds
+    timeoutMilliseconds: 1711401468000, // Needs to be timestamp in milliseconds
     clock: SUI_CLOCK_OBJECT_ID,
   });
 
