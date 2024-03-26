@@ -17,9 +17,64 @@ export function hexStringToByteArray(hexString: string): Uint8Array {
 
 export type DecodedAmount = { Some?: string } | { None?: boolean };
 
+export type BoostedClaimCapType = {
+  data: {
+    objectId: string;
+    content: {
+      dataType: string;
+      type: string;
+      hasPublicTransfer: boolean;
+      fields: {
+        id: { id: string };
+        new_address: string;
+      };
+    };
+  };
+};
+
 export enum RefundPoolPhase {
   AddressAddition = 1, // Phase for adding addresses
   Funding = 2, // Phase for funding
   Claim = 3, // Phase for claiming refunds
   Reclaim = 4, // Phase for reclaiming refunds
+}
+
+// eslint-disable-next-line require-jsdoc
+export function isBoostedClaimCap(obj: unknown): obj is BoostedClaimCapType {
+  if (typeof obj !== "object" || obj === null) {
+    return false;
+  }
+
+  if (!("data" in obj) || !obj.data || typeof obj.data !== "object") {
+    return false;
+  }
+
+  const objectData = obj.data;
+
+  if (!("objectId" in objectData) || typeof objectData.objectId !== "string") {
+    return false;
+  }
+
+  if (!("content" in objectData) || objectData.content === null || typeof objectData.content !== "object") {
+    return false;
+  }
+
+  const content = objectData.content;
+
+  return (
+    "dataType" in content &&
+    "type" in content &&
+    "fields" in content &&
+    typeof content.fields === "object" &&
+    content.fields !== null &&
+    "id" in content.fields &&
+    typeof content.dataType === "string" &&
+    typeof content.type === "string" &&
+    typeof content.fields.id === "object" &&
+    content.fields.id !== null &&
+    "id" in content.fields.id &&
+    typeof content.fields.id.id === "string" &&
+    "new_address" in content.fields &&
+    typeof content.fields.new_address === "string"
+  );
 }
