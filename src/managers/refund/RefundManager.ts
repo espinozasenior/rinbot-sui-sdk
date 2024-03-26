@@ -405,14 +405,25 @@ export class RefundManagerSingleton {
       (el) => el.data.content.fields.new_address === newAddress,
     );
 
+    //
+    const boostedClaimCapsNotAssociatedWithNewAddress = listOfObjectClaimCaps.filter(
+      (el) => el.data.content.fields.new_address !== newAddress,
+    );
+
     const isAnyBoostedClaimCapExists =
       listOfObjectClaimCaps.length > 0 || boostedClaimCapsAssociatedWithNewAddress.length > 0;
 
     // We can pick any of the associated with the user and new address boosted claim cap
     const boostedClaimCapObject = boostedClaimCapsAssociatedWithNewAddress[0];
 
+    const boostedClaimCapNotAssociatedWithNewAddress = boostedClaimCapsNotAssociatedWithNewAddress[0];
+
     // We should return related to new address
-    return { boostedClaimCapObjectId: boostedClaimCapObject?.data?.objectId ?? null, isAnyBoostedClaimCapExists };
+    return {
+      boostedClaimCapObjectId: boostedClaimCapObject?.data?.objectId ?? null,
+      isAnyBoostedClaimCapExists,
+      boostedClaimCapNotAssociatedWithNewAddress,
+    };
   }
 
   public static getReclaimFundsTransaction({ poolObjectId }: { poolObjectId: ObjectArg }) {
