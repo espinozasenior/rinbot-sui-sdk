@@ -9,7 +9,7 @@ import { delegateeKeypair } from "../dca/common";
 
   const txb = new TransactionBlock();
 
-  const [coinA, coinB] = txb.splitCoins(txb.gas, [txb.pure(108572810, "u64"), txb.pure(54286405, "u64")]);
+  const [coinA, coinB] = txb.splitCoins(txb.gas, [txb.pure(9967272167, "u64"), txb.pure(4983636083, "u64")]);
 
   txb.moveCall({
     target: `${packageId}::refund::fund`,
