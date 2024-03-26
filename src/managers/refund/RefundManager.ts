@@ -405,6 +405,7 @@ export class RefundManagerSingleton {
       (el) => el.data.content.fields.new_address === newAddress,
     );
 
+    // We can pick any of the associated with the user and new address boosted claim cap
     const boostedClaimCapObject = boostedClaimCapsAssociatedWithNewAddress[0];
 
     if (!boostedClaimCapObject || !boostedClaimCapObject?.data) {
