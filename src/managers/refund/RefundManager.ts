@@ -431,6 +431,7 @@ export class RefundManagerSingleton {
     };
   }
 
+  // WIP, NOT WORKING
   public static getBurnBoostedClaimCapTransaction({
     transaction,
     boostedClaimCap,
