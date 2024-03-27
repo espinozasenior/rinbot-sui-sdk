@@ -431,20 +431,21 @@ export class RefundManagerSingleton {
     };
   }
 
-  // WIP, NOT WORKING
-  public static getBurnBoostedClaimCapTransaction({
+  public static getReturnBoosterCapTransaction({
     transaction,
     boostedClaimCap,
+    poolObjectId,
   }: {
     transaction?: TransactionBlock;
     boostedClaimCap: ObjectArg;
+    poolObjectId: ObjectArg;
   }) {
     const tx = transaction ?? new TransactionBlock();
 
     const txRes = tx.moveCall({
-      target: `${SUI_FRAMEWORK_ADDRESS}::object::delete`,
+      target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::return_booster_cap`,
       typeArguments: [],
-      arguments: [obj(tx, boostedClaimCap)],
+      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
