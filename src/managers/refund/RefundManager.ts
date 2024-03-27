@@ -499,12 +499,14 @@ export class RefundManagerSingleton {
     boostedClaimCap,
     poolObjectId,
     clock = SUI_CLOCK_OBJECT_ID,
+    userRinbotRefundDestinationAddress,
 
     transaction,
   }: {
     boostedClaimCap: ObjectArg;
     poolObjectId: ObjectArg;
     clock?: ObjectArg;
+    userRinbotRefundDestinationAddress: ObjectArg;
 
     transaction?: TransactionBlock;
   }) {
@@ -513,7 +515,12 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::booster::claim_refund_boosted`,
       typeArguments: [],
-      arguments: [obj(tx, boostedClaimCap), obj(tx, poolObjectId), obj(tx, clock)],
+      arguments: [
+        obj(tx, boostedClaimCap),
+        obj(tx, poolObjectId),
+        tx.pure(userRinbotRefundDestinationAddress),
+        obj(tx, clock),
+      ],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
