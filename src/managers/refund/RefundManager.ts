@@ -145,10 +145,12 @@ export class RefundManagerSingleton {
 
   public static startClaimPhase({
     poolObjectId,
+    clock = SUI_CLOCK_OBJECT_ID,
 
     transaction,
   }: {
     poolObjectId: ObjectArg;
+    clock?: ObjectArg;
 
     transaction?: TransactionBlock;
   }) {
@@ -157,7 +159,7 @@ export class RefundManagerSingleton {
     const txRes = tx.moveCall({
       target: `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::refund::start_claim_phase`,
       typeArguments: [],
-      arguments: [obj(tx, poolObjectId)],
+      arguments: [obj(tx, poolObjectId), obj(tx, clock)],
     });
 
     tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
