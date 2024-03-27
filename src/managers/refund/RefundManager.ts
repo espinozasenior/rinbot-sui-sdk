@@ -10,7 +10,7 @@ import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR } from "../..";
 import { getAllOwnedObjects } from "../../providers/utils/getAllOwnedObjects";
 import { bcs } from "@mysten/sui.js/bcs";
-import { SUI_CLOCK_OBJECT_ID, SUI_FRAMEWORK_ADDRESS, SUI_SYSTEM_ADDRESS } from "@mysten/sui.js/utils";
+import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js/utils";
 
 /**
  * @class RefundManagerSingleton
@@ -19,10 +19,10 @@ import { SUI_CLOCK_OBJECT_ID, SUI_FRAMEWORK_ADDRESS, SUI_SYSTEM_ADDRESS } from "
  */
 export class RefundManagerSingleton {
   public static SIMLATION_ACCOUNT_ADDRESS = "0xca9711c3de3ef474209ebd920b894e4d374ff09e210bc31cbd2d266f7bff90ca";
-  public static REFUND_PACKAGE_ADDRESS = "0xd4a00758cecbdb1e68e75d246fe79406ff5390874fa7a3e207fd2b27497d3f4e";
+  public static REFUND_PACKAGE_ADDRESS = "0x1f35a31caf1b36cfff36ced9097d302b39ecb0996d90662616144dd152d65b2c";
   public static REFUND_PACKAGE_ADDRESS_READ = "";
-  public static REFUND_POOL_OBJECT_ID = "0xa6f54da63deade56868dabcc43174ce5b97f0d94bc4035162a047cd4e6340b6b";
-  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x1e7cefc3144b75823d9c7e9d048e81fe742139b95c136e4209f3f8cc2692358a";
+  public static REFUND_POOL_OBJECT_ID = "0xcc34a4f454f81c977b55d177574a52fcd025b549491c08f431357f000e246af6";
+  public static REFUND_POOL_PUBLISHER_OBJECT_ID = "0x4f629301c22cc99c767b52515ffe8a3049dfff548fae6fb259ad48173d2fe989";
   public static REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME = "BoostedClaimCap";
   public static REFUND_MODULE_NAME = "refund";
   public static REFUND_BOOSTED_MODULE_NAME = "booster";
