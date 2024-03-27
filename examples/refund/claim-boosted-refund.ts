@@ -21,6 +21,8 @@ import { keypair, provider, signAndExecuteTransaction, suiProviderUrl, user } fr
   const txData = RefundManagerSingleton.getClaimRefundBoostedTransaction({
     poolObjectId: RefundManagerSingleton.REFUND_POOL_OBJECT_ID,
     boostedClaimCap: boostedClaimCapObjectId,
+    // TODO:
+    userRinbotRefundDestinationAddress: "",
   });
 
   // const res = await provider.devInspectTransactionBlock({
