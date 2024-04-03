@@ -36,8 +36,9 @@ export const signAndExecuteTransaction = async (
   transactionBlock: TransactionBlock,
   signer: Ed25519Keypair,
   input: Omit<ExecuteTransactionBlockParams, "transactionBlock" | "signature"> = { options: { showEffects: true } },
+  gasBudget: number = SWAP_GAS_BUDGET,
 ): Promise<SuiTransactionBlockResponse> => {
-  transactionBlock.setGasBudget(SWAP_GAS_BUDGET);
+  transactionBlock.setGasBudget(gasBudget);
 
   const transactionResponse: SuiTransactionBlockResponse = await provider.signAndExecuteTransactionBlock({
     transactionBlock,
