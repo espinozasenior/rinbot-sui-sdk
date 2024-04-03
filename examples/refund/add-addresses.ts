@@ -22,6 +22,9 @@ export const addAddresses = async ({
     const addresses: string[] = affectedAddressesAndAmuntsChunk.map((el) => el.affectedAddress);
     const amounts: string[] = affectedAddressesAndAmuntsChunk.map((el) => el.amount);
 
+    // console.debug("addresses[0], amounts[0]", addresses[0], amounts[0]);
+    // console.debug("addresses[124], amounts[124]", addresses[124], amounts[124]);
+
     const { tx, txRes } = RefundManagerSingleton.getAddAddressesTransaction({
       publisherObjectId: publisherID,
       poolObjectId: poolID,
@@ -30,19 +33,21 @@ export const addAddresses = async ({
       transaction: new TransactionBlock(),
     });
 
-    const res = await provider.devInspectTransactionBlock({
-      transactionBlock: tx,
-      sender: delegateeUser,
-    });
+    // const res = await provider.devInspectTransactionBlock({
+    //   transactionBlock: tx,
+    //   sender: delegateeUser,
+    // });
 
-    // const res = await signAndExecuteTransaction(tx, delegateeKeypair);
+    const res = await signAndExecuteTransaction(
+      tx,
+      delegateeKeypair,
+      { options: { showEffects: true } },
+      RefundManagerSingleton.REFUND_GAS_BUDGET_ADDRESS_ADDITION,
+    );
 
     // Assuming you want to do something with the result or just log it for now
     console.log("tx sending result: ", res);
   }
-
-  // console.debug("addresses[0], amounts[0]", addresses[0], amounts[0]);
-  // console.debug("addresses[124], amounts[124]", addresses[124], amounts[124]);
 };
 
 (async () => {
