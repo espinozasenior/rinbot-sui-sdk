@@ -30,6 +30,7 @@ export class RefundManagerSingleton {
   public static BOOSTER_OBJECT_TYPE = `${RefundManagerSingleton.REFUND_PACKAGE_ADDRESS}::${RefundManagerSingleton.REFUND_BOOSTED_MODULE_NAME}::${this.REFUND_BOOSTED_CLAIM_CAP_STRUCT_TYPE_NAME}`;
 
   public static REFUND_GAS_BUGET = 50_000_000;
+  public static REFUND_GAS_BUDGET_ADDRESS_ADDITION = 1_000_000_000;
 
   private static _instance: RefundManagerSingleton;
   private provider: SuiClient;
@@ -88,7 +89,7 @@ export class RefundManagerSingleton {
       arguments: [obj(tx, publisherObjectId), obj(tx, poolObjectId), tx.pure(addressesList), tx.pure(amountsList)],
     });
 
-    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUGET);
+    tx.setGasBudget(RefundManagerSingleton.REFUND_GAS_BUDGET_ADDRESS_ADDITION);
 
     return { tx, txRes };
   }
