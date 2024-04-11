@@ -1,23 +1,23 @@
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
-import { Network, TurbosSdk } from "turbos-clmm-sdk";
+import { Contract, Network, TurbosSdk } from "turbos-clmm-sdk";
 import { EventEmitter } from "../../emitters/EventEmitter";
+import { swapDoctored } from "../../managers/dca/adapterUtils/turbosUtils";
+import { buildDcaTxBlock } from "../../managers/dca/adapters/turbosAdapter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
 import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";
+import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
+import { getPoolsCache } from "../../storages/utils/getPoolsCache";
+import { storeCaches } from "../../storages/utils/storeCaches";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE, exitHandlerWrapper } from "../common";
 import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
-import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
-import { getPoolsCache } from "../../storages/utils/getPoolsCache";
-import { storeCaches } from "../../storages/utils/storeCaches";
 import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions } from "./types";
 import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
-import { swapDoctored } from "../../managers/dca/adapterUtils/turbosUtils";
-import { buildDcaTxBlock } from "../../managers/dca/adapters/turbosAdapter";
 
 // TODO: Need a fallback in case when API doesn't work
 // sdk.pool.getPools() doesn't work
@@ -47,6 +47,8 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   private intervalId: NodeJS.Timeout | undefined;
   private proxy: string | undefined;
   private storage: Storage;
+
+  public static CREATE_POOL_GAS_BUDGET = 100_000_000;
 
   /**
    * @constructor
@@ -239,9 +241,11 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @return {Promise<PoolData[]>} A Promise that resolves to an array of PoolData.
    */
   private async fetchPoolsFromApi(): Promise<PoolData[]> {
+    const fetchPoolsCount = 1_000_000;
+
     const url: string = this.proxy
-      ? `${this.proxy}/${TurbosSingleton.TURBOS_API_URL}/pools`
-      : `${TurbosSingleton.TURBOS_API_URL}/pools`;
+      ? `${this.proxy}/${TurbosSingleton.TURBOS_API_URL}/pools?pageSize=${fetchPoolsCount}`
+      : `${TurbosSingleton.TURBOS_API_URL}/pools?pageSize=${fetchPoolsCount}`;
 
     const response: Response = await fetch(url);
     const responseJson: { code: number; message: string; data: PoolData[] } = await response.json();
@@ -480,6 +484,139 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     });
 
     return transaction;
+  }
+
+  /**
+   * Generates a transaction for creating a new liquidity pool.
+   *
+   * @param {Object} params - Parameters for creating the pool transaction.
+   * @param {number} params.tickSpacing - The tick spacing of the pool.
+   * @param {string} params.coinTypeA - The type of the first coin in the pool.
+   * @param {string} params.coinTypeB - The type of the second coin in the pool.
+   * @param {number} params.coinDecimalsA - The number of decimals for the first coin.
+   * @param {number} params.coinDecimalsB - The number of decimals for the second coin.
+   * @param {string} params.amountA - The amount of the first coin to deposit into the pool. Example: 10000.1286 RINCEL
+   * @param {string} params.amountB - The amount of the second coin to deposit into the pool. Example: 12.472 SUI
+   * @param {number} params.slippage - The acceptable slippage percentage for the transaction. Example: 10 (means 10%)
+   * @param {string} params.publicKey - The public key of the transaction sender.
+   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for creating the pool.
+   */
+  public async getCreatePoolTransaction({
+    tickSpacing,
+    coinDecimalsA,
+    coinDecimalsB,
+    coinTypeA,
+    coinTypeB,
+    amountA,
+    amountB,
+    slippage,
+    publicKey,
+  }: {
+    tickSpacing: number;
+    coinTypeA: string;
+    coinTypeB: string;
+    coinDecimalsA: number;
+    coinDecimalsB: number;
+    amountA: string;
+    amountB: string;
+    slippage: number;
+    publicKey: string;
+  }): Promise<TransactionBlock> {
+    const fee = await this.getFeeObject(tickSpacing);
+
+    const rawAmountA = new BigNumber(amountA).multipliedBy(10 ** coinDecimalsA).toFixed();
+    const rawAmountB = new BigNumber(amountB).multipliedBy(10 ** coinDecimalsB).toFixed();
+
+    const price = new BigNumber(rawAmountB).div(rawAmountA).toString();
+    const sqrtPrice = this.turbosSdk.math.priceToSqrtPriceX64(price, coinDecimalsA, coinDecimalsB).toString();
+    const { tickLower, tickUpper } = this.getGlobalLiquidityTicks(tickSpacing);
+
+    const createPoolTransaction = await this.turbosSdk.pool.createPool({
+      address: publicKey,
+      coinTypeA,
+      coinTypeB,
+      fee,
+      amountA: rawAmountA,
+      amountB: rawAmountB,
+      slippage,
+      sqrtPrice,
+      tickLower,
+      tickUpper,
+    });
+
+    createPoolTransaction.setGasBudget(TurbosSingleton.CREATE_POOL_GAS_BUDGET);
+
+    return createPoolTransaction;
+  }
+
+  /**
+   * Retrieves the fee object for the specified tick spacing.
+   *
+   * @param {number} tickSpacing - The tick spacing value.
+   * @return {Promise<Contract.Fee>} A promise that resolves to the fee object.
+   * @throws {Error} If the fee for the specified tick spacing is undefined.
+   */
+  public async getFeeObject(tickSpacing: number): Promise<Contract.Fee> {
+    const fees = await this.turbosSdk.contract.getFees();
+    const fee = fees.find((feeObject) => feeObject.tickSpacing === tickSpacing);
+
+    if (fee === undefined) {
+      throw new Error(`[TurbosSingleton.getFeeObject] Fee for tick spacing ${tickSpacing} is undefined.`);
+    }
+
+    return fee;
+  }
+
+  /**
+   * Retrieves the global liquidity tick range for the specified tick spacing.
+   *
+   * @param {number} tickSpacing - The tick spacing value.
+   * @return {{ tickLower: number, tickUpper: number }} An object containing the lower and upper bounds
+   * of the tick range.
+   */
+  public getGlobalLiquidityTicks(tickSpacing: number): { tickLower: number; tickUpper: number } {
+    /**
+     * This is a constant, derived from the maximum range representable by the Q32.62 fixed-point number format.
+     * It is used to set the global liquidity on all the price range.
+     * Ref: https://cetus-1.gitbook.io/cetus-developer-docs/developer/via-sdk/features-available/add-liquidity
+     */
+    const maxTickIndex = 443636;
+
+    const tickLower = -maxTickIndex + (maxTickIndex % tickSpacing);
+    const tickUpper = maxTickIndex - (maxTickIndex % tickSpacing);
+
+    return { tickLower, tickUpper };
+  }
+
+  /**
+   * Retrieves all the pools and finds specified one by its parameters.
+   *
+   * @param {Object} params - Parameters for finding the pool.
+   * @param {string} params.coinTypeA - The type of the first coin in the pool.
+   * @param {string} params.coinTypeB - The type of the second coin in the pool.
+   * @param {string} params.tickSpacing - The tick spacing of the pool.
+   * @return {Promise<PoolData | undefined>} A promise that resolves to the pool data matching
+   * the specified parameters, or `undefined` if no matching pool is found.
+   */
+  public async getPoolByParams({
+    coinTypeA,
+    coinTypeB,
+    tickSpacing,
+  }: {
+    coinTypeA: string;
+    coinTypeB: string;
+    tickSpacing: string;
+  }): Promise<PoolData | undefined> {
+    const fetchedPools = await this.fetchPoolsFromApi();
+
+    const foundPool = fetchedPools.find(
+      (pool) =>
+        pool.tick_spacing === tickSpacing &&
+        ((pool.coin_type_a === coinTypeA && pool.coin_type_b === coinTypeB) ||
+          (pool.coin_type_a === coinTypeB && pool.coin_type_b === coinTypeA)),
+    );
+
+    return foundPool;
   }
 
   /**
