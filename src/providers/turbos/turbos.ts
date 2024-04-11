@@ -1,8 +1,9 @@
-import { SuiClient } from "@mysten/sui.js/client";
+import { SuiClient, SuiEvent } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
 import { Contract, Network, TurbosSdk } from "turbos-clmm-sdk";
 import { EventEmitter } from "../../emitters/EventEmitter";
+import { CoinManagerSingleton } from "../../managers/CoinManager";
 import { swapDoctored } from "../../managers/dca/adapterUtils/turbosUtils";
 import { buildDcaTxBlock } from "../../managers/dca/adapters/turbosAdapter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
@@ -11,13 +12,20 @@ import { Storage } from "../../storages/types";
 import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
 import { getPoolsCache } from "../../storages/utils/getPoolsCache";
 import { storeCaches } from "../../storages/utils/storeCaches";
-import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE, exitHandlerWrapper } from "../common";
+import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE, exitHandlerWrapper, getAllUserEvents } from "../common";
 import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
-import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions } from "./types";
-import { getCoinsMap, getPathsMap, getPoolByCoins, isCoinsApiResponseValid, isPoolsApiResponseValid } from "./utils";
+import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions, TurbosOwnedPool } from "./types";
+import {
+  getCoinsMap,
+  getPathsMap,
+  getPoolByCoins,
+  isCoinsApiResponseValid,
+  isPoolsApiResponseValid,
+  isTurbosCreatePoolEventParsedJson,
+} from "./utils";
 
 // TODO: Need a fallback in case when API doesn't work
 // sdk.pool.getPools() doesn't work
@@ -49,6 +57,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
   private storage: Storage;
 
   public static CREATE_POOL_GAS_BUDGET = 100_000_000;
+  public static FEE_DIVIDER = 10_000;
 
   /**
    * @constructor
@@ -627,6 +636,136 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     );
 
     return foundPool;
+  }
+
+  /**
+   * Retrieves the create pool events from the provided user events.
+   *
+   * @param {SuiEvent[]} userEvents - An array of user events.
+   * @return {Promise<SuiEvent[]>} A promise that resolves to an array of create pool events.
+   */
+  public async getCreatePoolEventsFromUserEvents(userEvents: SuiEvent[]): Promise<SuiEvent[]> {
+    const contract = await this.turbosSdk.contract.getConfig();
+    const cetusCreatePoolEvent = `${contract.PackageIdOriginal}::pool_factory::PoolCreatedEvent`;
+
+    return userEvents.filter((event) => event.type === cetusCreatePoolEvent);
+  }
+
+  /**
+   * Retrieves the pools owned by a specific user.
+   *
+   * @description
+   * This method returns information about pools owned by a user, including the amounts of two
+   * different coins (`amountA` and `amountB`).
+   * The decimal precision of these amounts may vary depending on the availability of coin information.
+   * - If `getCoinByType2` returns valid decimal information for both coins, the amounts are adjusted accordingly.
+   * - If `getCoinByType2` returns null for either coin, the amounts are provided without decimal adjustment.
+   *
+   * To handle the potential discrepancy in decimal precision from the client-side,
+   * two additional parameters are introduced:
+   * - `amountAIsRaw`: A boolean indicating whether the returned `amountA` respects decimals (false) or is raw (true).
+   * - `amountBIsRaw`: A boolean indicating whether the returned `amountB` respects decimals (false) or is raw (true).
+   *
+   * It is recommended for the client to check these flags and adjust their processing logic accordingly.
+   *
+   * If either `amountAIsRaw` or `amountBIsRaw` is true, the corresponding
+   * amount should be used as-is without further decimal adjustments.
+   * If both flags are false, the amounts can be safely used after decimal adjustments.
+   *
+   * @public
+   * @param {SuiClient} options.provider - The provider for accessing the SUI client.
+   * @param {string} options.publicKey - The public key of the user whose pools are to be retrieved.
+   * @param {CoinManagerSingleton} options.coinManager - The CoinManagerSingleton instance for managing
+   * coin-related operations.
+   * @return {Promise<CetusOwnedPool[]>} A promise that resolves to an array of owned pools.
+   */
+  public async getOwnedPools({
+    provider,
+    publicKey,
+    coinManager,
+  }: {
+    provider: SuiClient;
+    publicKey: string;
+    coinManager: CoinManagerSingleton;
+  }): Promise<TurbosOwnedPool[]> {
+    const allEvents = await getAllUserEvents(provider, publicKey);
+
+    const createTurbosPoolEvents = await this.getCreatePoolEventsFromUserEvents(allEvents);
+    const poolIds: string[] = createTurbosPoolEvents
+      .filter((event) => isTurbosCreatePoolEventParsedJson(event.parsedJson))
+      // The false case must not occur since events not meeting the criteria have been filtered out above.
+      // This conditional statement primarily serves TypeScript type-checking purposes.
+      .map((event) => (isTurbosCreatePoolEventParsedJson(event.parsedJson) ? event.parsedJson.pool : ""));
+
+    if (poolIds.length === 0) {
+      return [];
+    }
+
+    const userPools = await Promise.all(poolIds.map((poolId) => this.turbosSdk.pool.getPool(poolId)));
+
+    // We need `Promise.all` here to fetch coin metadata to calculate `amountA` and `amountB` respecting decimals
+    return await Promise.all(
+      userPools.map(async (poolData) => {
+        // `poolData.types` is an array with 3 elements: first 2 — coin types, 3rd — fee type.
+        const [coinTypeA, coinTypeB] = poolData.types;
+        const { coin_a: rawCoinAmountA, coin_b: rawCoinAmountB, fee, tick_spacing: tickSpacing } = poolData;
+
+        const coinDataA = await coinManager.getCoinByType2(coinTypeA);
+        const coinDataB = await coinManager.getCoinByType2(coinTypeB);
+
+        let coinSymbolA: string = coinTypeA;
+        let coinSymbolB: string = coinTypeB;
+
+        let coinDecimalsA = 0;
+        let coinDecimalsB = 0;
+
+        let amountAIsRaw = true;
+        let amountBIsRaw = true;
+
+        if (coinDataA !== null) {
+          coinSymbolA = coinDataA.symbol ?? coinDataA.type;
+          coinDecimalsA = coinDataA.decimals;
+          amountAIsRaw = false;
+        }
+
+        if (coinDataB !== null) {
+          coinSymbolB = coinDataB.symbol ?? coinDataB.type;
+          coinDecimalsB = coinDataB.decimals;
+          amountBIsRaw = false;
+        }
+
+        const amountA = new BigNumber(rawCoinAmountA).dividedBy(10 ** coinDecimalsA).toString();
+        const amountB = new BigNumber(rawCoinAmountB).dividedBy(10 ** coinDecimalsB).toString();
+
+        const poolName = `${coinSymbolA}-${coinSymbolB}`;
+
+        const feePercentage = new BigNumber(fee).div(TurbosSingleton.FEE_DIVIDER).toString();
+
+        return {
+          poolName,
+          poolId: poolData.id.id,
+          coinTypeA,
+          coinTypeB,
+          coinSymbolA,
+          coinSymbolB,
+          amountA,
+          amountB,
+          tickSpacing,
+          feePercentage,
+          amountAIsRaw,
+          amountBIsRaw,
+        };
+      }),
+    );
+  }
+
+  // TODO: Complete this method implementation.
+  // eslint-disable-next-line require-jsdoc
+  public async getDetailedPoolsInfo(poolIds: string[]) {
+    const allPools = await this.fetchPoolsFromApi();
+    const userPools = allPools.filter((pool) => poolIds.includes(pool.pool_id));
+
+    return userPools;
   }
 
   /**
