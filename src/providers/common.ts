@@ -1,3 +1,4 @@
+import { EventId, PaginatedEvents, SuiClient, SuiEvent } from "@mysten/sui.js/client";
 import { SUI_DECIMALS } from "@mysten/sui.js/utils";
 import { ExitHandlerOptions } from "./types";
 
@@ -43,4 +44,40 @@ if (typeof process !== "undefined" && typeof process === "object") {
     console.error("Uncaught exception:", err.stack);
     exitHandler({ exit: true });
   });
+}
+
+/**
+ * Retrieves all user events associated with the specified public key.
+ *
+ * @param {SuiClient} provider - The SuiClient provider.
+ * @param {string} publicKey - The public key for which to retrieve user events.
+ * @return {Promise<SuiEvent[]>} A promise that resolves to an array of user events.
+ */
+export async function getAllUserEvents(provider: SuiClient, publicKey: string): Promise<SuiEvent[]> {
+  const pageCapacity = MAX_BATCH_EVENTS_PER_QUERY_EVENTS_REQUEST;
+  const allEvents: SuiEvent[] = [];
+  let nextCursor: EventId | undefined | null = null;
+  let events: PaginatedEvents = await provider.queryEvents({
+    query: { Sender: publicKey },
+    limit: pageCapacity,
+    cursor: nextCursor,
+  });
+
+  // Fetching and combining part
+  while (events.hasNextPage) {
+    const userEvents: SuiEvent[] = events.data;
+    allEvents.push(...userEvents);
+
+    nextCursor = events.nextCursor;
+    events = await provider.queryEvents({
+      query: { Sender: publicKey },
+      limit: pageCapacity,
+      cursor: nextCursor,
+    });
+  }
+
+  const userEvents: SuiEvent[] = events.data;
+  allEvents.push(...userEvents);
+
+  return allEvents;
 }
