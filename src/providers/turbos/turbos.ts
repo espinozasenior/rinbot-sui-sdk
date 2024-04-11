@@ -558,7 +558,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @throws {Error} If the fee for the specified tick spacing is undefined.
    */
   public async getFeeObject(tickSpacing: number): Promise<Contract.Fee> {
-    const fees = await this.turbosSdk.contract.getFees();
+    const fees = await this.getFees();
     const fee = fees.find((feeObject) => feeObject.tickSpacing === tickSpacing);
 
     if (fee === undefined) {
@@ -566,6 +566,15 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     }
 
     return fee;
+  }
+
+  /**
+   * Retrieves the fees associated with the contract.
+   *
+   * @return {Promise<Contract.Fee[]>} A promise that resolves to an array of fee objects.
+   */
+  public async getFees(): Promise<Contract.Fee[]> {
+    return await this.turbosSdk.contract.getFees();
   }
 
   /**
