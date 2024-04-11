@@ -241,6 +241,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * @return {Promise<PoolData[]>} A Promise that resolves to an array of PoolData.
    */
   private async fetchPoolsFromApi(): Promise<PoolData[]> {
+    // By default Turbos API returns not all the pools, so we need to explicitly set count of pools we want to fetch.
     const fetchPoolsCount = 1_000_000;
 
     const url: string = this.proxy
