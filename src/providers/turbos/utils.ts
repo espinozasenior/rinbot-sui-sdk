@@ -1,7 +1,14 @@
 import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
 import { CoinsCache, CommonPoolData, PathsCache } from "../types";
-import { CoinData, CoinsAPIResponse, PoolData, PoolsAPIResponse, ShortPoolData } from "./types";
+import {
+  CoinData,
+  CoinsAPIResponse,
+  PoolData,
+  PoolsAPIResponse,
+  ShortPoolData,
+  TurbosCreatePoolEventParsedJson,
+} from "./types";
 
 /* eslint-disable require-jsdoc */
 export function isPoolsApiResponseValid(
@@ -151,3 +158,7 @@ export const getPoolByCoins = (
       : poolHasBothTokens;
   });
 };
+
+export function isTurbosCreatePoolEventParsedJson(data: unknown): data is TurbosCreatePoolEventParsedJson {
+  return typeof data === "object" && data !== null && "pool" in data && typeof data.pool === "string";
+}
