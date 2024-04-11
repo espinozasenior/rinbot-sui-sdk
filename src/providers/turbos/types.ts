@@ -98,3 +98,22 @@ export interface CoinsAPIResponse {
 }
 
 export type TurbosOptions = ProviderOptions & { suiProviderUrl: string; proxy?: string };
+
+export type TurbosCreatePoolEventParsedJson = {
+  pool: string;
+};
+
+export type TurbosOwnedPool = {
+  poolName: string;
+  poolId: string;
+  coinTypeA: string;
+  coinTypeB: string;
+  coinSymbolA: string;
+  coinSymbolB: string;
+  amountA: string;
+  amountB: string;
+  tickSpacing: number;
+  feePercentage: string;
+  amountAIsRaw: boolean;
+  amountBIsRaw: boolean;
+};
