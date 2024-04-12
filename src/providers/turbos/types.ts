@@ -119,7 +119,6 @@ export type TurbosOwnedPool = {
 };
 
 export type DetailedTurbosOwnedPoolInfo = TurbosOwnedPool & {
-  poolId: string;
   apr: number;
   aprPercent: number;
   feeApr: number;
