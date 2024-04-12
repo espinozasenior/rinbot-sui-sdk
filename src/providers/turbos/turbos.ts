@@ -17,8 +17,17 @@ import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } f
 import { convertSlippage } from "../utils/convertSlippage";
 import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
-import { CoinData, PoolData, ShortPoolData, SwapRequiredData, TurbosOptions, TurbosOwnedPool } from "./types";
 import {
+  CoinData,
+  DetailedPoolInfo,
+  PoolData,
+  ShortPoolData,
+  SwapRequiredData,
+  TurbosOptions,
+  TurbosOwnedPool,
+} from "./types";
+import {
+  getCoinsDataForPool,
   getCoinsMap,
   getPathsMap,
   getPoolByCoins,
@@ -688,14 +697,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     publicKey: string;
     coinManager: CoinManagerSingleton;
   }): Promise<TurbosOwnedPool[]> {
-    const allEvents = await getAllUserEvents(provider, publicKey);
-
-    const createTurbosPoolEvents = await this.getCreatePoolEventsFromUserEvents(allEvents);
-    const poolIds: string[] = createTurbosPoolEvents
-      .filter((event) => isTurbosCreatePoolEventParsedJson(event.parsedJson))
-      // The false case must not occur since events not meeting the criteria have been filtered out above.
-      // This conditional statement primarily serves TypeScript type-checking purposes.
-      .map((event) => (isTurbosCreatePoolEventParsedJson(event.parsedJson) ? event.parsedJson.pool : ""));
+    const poolIds = await this.getUserPoolIds(publicKey, provider);
 
     if (poolIds.length === 0) {
       return [];
@@ -704,42 +706,15 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     const userPools = await Promise.all(poolIds.map((poolId) => this.turbosSdk.pool.getPool(poolId)));
 
     // We need `Promise.all` here to fetch coin metadata to calculate `amountA` and `amountB` respecting decimals
+    // in `getCoinsDataForPool()`
     return await Promise.all(
       userPools.map(async (poolData) => {
         // `poolData.types` is an array with 3 elements: first 2 — coin types, 3rd — fee type.
         const [coinTypeA, coinTypeB] = poolData.types;
         const { coin_a: rawCoinAmountA, coin_b: rawCoinAmountB, fee, tick_spacing: tickSpacing } = poolData;
 
-        const coinDataA = await coinManager.getCoinByType2(coinTypeA);
-        const coinDataB = await coinManager.getCoinByType2(coinTypeB);
-
-        let coinSymbolA: string = coinTypeA;
-        let coinSymbolB: string = coinTypeB;
-
-        let coinDecimalsA = 0;
-        let coinDecimalsB = 0;
-
-        let amountAIsRaw = true;
-        let amountBIsRaw = true;
-
-        if (coinDataA !== null) {
-          coinSymbolA = coinDataA.symbol ?? coinDataA.type;
-          coinDecimalsA = coinDataA.decimals;
-          amountAIsRaw = false;
-        }
-
-        if (coinDataB !== null) {
-          coinSymbolB = coinDataB.symbol ?? coinDataB.type;
-          coinDecimalsB = coinDataB.decimals;
-          amountBIsRaw = false;
-        }
-
-        const amountA = new BigNumber(rawCoinAmountA).dividedBy(10 ** coinDecimalsA).toString();
-        const amountB = new BigNumber(rawCoinAmountB).dividedBy(10 ** coinDecimalsB).toString();
-
-        const poolName = `${coinSymbolA}-${coinSymbolB}`;
-
-        const feePercentage = new BigNumber(fee).div(TurbosSingleton.FEE_DIVIDER).toString();
+        const { amountA, amountAIsRaw, amountB, amountBIsRaw, coinSymbolA, coinSymbolB, poolName, feePercentage } =
+          await getCoinsDataForPool({ coinManager, coinTypeA, coinTypeB, rawCoinAmountA, rawCoinAmountB, fee });
 
         return {
           poolName,
@@ -759,13 +734,99 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     );
   }
 
-  // TODO: Complete this method implementation.
-  // eslint-disable-next-line require-jsdoc
-  public async getDetailedPoolsInfo(poolIds: string[]) {
+  /**
+   * Retrieves detailed information about pools based on their IDs.
+   *
+   * @param {string[]} poolIds - An array of pool IDs.
+   * @return {Promise<DetailedPoolInfo[]>} A promise that resolves to an array of detailed pool information.
+   */
+  public async getDetailedPoolsInfo({
+    provider,
+    publicKey,
+    coinManager,
+  }: {
+    provider: SuiClient;
+    publicKey: string;
+    coinManager: CoinManagerSingleton;
+  }): Promise<DetailedPoolInfo[]> {
+    const poolIds = await this.getUserPoolIds(publicKey, provider);
+
+    if (poolIds.length === 0) {
+      return [];
+    }
+
     const allPools = await this.fetchPoolsFromApi();
     const userPools = allPools.filter((pool) => poolIds.includes(pool.pool_id));
 
-    return userPools;
+    // We need `Promise.all` here to fetch coin metadata to calculate `amountA` and `amountB` respecting decimals
+    // in `getCoinsDataForPool()`
+    return await Promise.all(
+      userPools.map(async (poolData) => {
+        const {
+          coin_type_a: coinTypeA,
+          coin_type_b: coinTypeB,
+          coin_symbol_a: coinSymbolA,
+          coin_symbol_b: coinSymbolB,
+          coin_a: rawCoinAmountA,
+          coin_b: rawCoinAmountB,
+          fee,
+          tick_spacing: tickSpacing,
+        } = poolData;
+
+        const { amountA, amountAIsRaw, amountB, amountBIsRaw, poolName, feePercentage } = await getCoinsDataForPool({
+          coinManager,
+          coinTypeA,
+          coinTypeB,
+          rawCoinAmountA,
+          rawCoinAmountB,
+          fee: +fee,
+        });
+
+        return {
+          poolName,
+          poolId: poolData.pool_id,
+          coinTypeA,
+          coinTypeB,
+          coinSymbolA,
+          coinSymbolB,
+          amountA,
+          amountB,
+          tickSpacing: +tickSpacing,
+          feePercentage,
+          amountAIsRaw,
+          amountBIsRaw,
+          apr: poolData.apr,
+          aprPercent: poolData.apr_percent,
+          feeApr: poolData.fee_apr,
+          rewardApr: poolData.reward_apr,
+          volumeFor24hUsd: poolData.volume_24h_usd,
+          liquidityUsd: poolData.liquidity_usd,
+          coinLiquidityUsdA: poolData.coin_a_liquidity_usd,
+          coinLiquidityUsdB: poolData.coin_b_liquidity_usd,
+          feeFor24hUsd: poolData.fee_24h_usd,
+        };
+      }),
+    );
+  }
+
+  /**
+   * Retrieves pool IDs associated with a specific user.
+   *
+   * @param {string} publicKey - The public key of the user.
+   * @param {SuiClient} provider - The SuiClient provider.
+   * @return {Promise<string[]>} A promise that resolves to an array of pool IDs.
+   */
+  public async getUserPoolIds(publicKey: string, provider: SuiClient): Promise<string[]> {
+    const allEvents = await getAllUserEvents(provider, publicKey);
+
+    const createTurbosPoolEvents = await this.getCreatePoolEventsFromUserEvents(allEvents);
+    const poolIds: string[] = createTurbosPoolEvents
+      .filter((event) => isTurbosCreatePoolEventParsedJson(event.parsedJson))
+      // The false case must not occur since events not meeting the criteria have been filtered out above.
+      // This conditional statement primarily serves TypeScript type-checking purposes.
+      .map((event) => (isTurbosCreatePoolEventParsedJson(event.parsedJson) ? event.parsedJson.pool : ""));
+
+    return poolIds;
   }
 
   /**
