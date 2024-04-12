@@ -19,7 +19,7 @@ import { getCoinInfoFromCache } from "../utils/getCoinInfoFromCache";
 import { removeDecimalPart } from "../utils/removeDecimalPart";
 import {
   CoinData,
-  DetailedPoolInfo,
+  DetailedTurbosOwnedPoolInfo,
   PoolData,
   ShortPoolData,
   SwapRequiredData,
@@ -738,7 +738,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
    * Retrieves detailed information about pools based on their IDs.
    *
    * @param {string[]} poolIds - An array of pool IDs.
-   * @return {Promise<DetailedPoolInfo[]>} A promise that resolves to an array of detailed pool information.
+   * @return {Promise<DetailedTurbosOwnedPoolInfo[]>} A promise that resolves to an array of detailed pool information.
    */
   public async getDetailedPoolsInfo({
     provider,
@@ -748,7 +748,7 @@ export class TurbosSingleton extends EventEmitter implements IPoolProvider<Turbo
     provider: SuiClient;
     publicKey: string;
     coinManager: CoinManagerSingleton;
-  }): Promise<DetailedPoolInfo[]> {
+  }): Promise<DetailedTurbosOwnedPoolInfo[]> {
     const poolIds = await this.getUserPoolIds(publicKey, provider);
 
     if (poolIds.length === 0) {

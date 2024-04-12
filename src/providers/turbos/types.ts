@@ -118,7 +118,7 @@ export type TurbosOwnedPool = {
   amountBIsRaw: boolean;
 };
 
-export type DetailedPoolInfo = TurbosOwnedPool & {
+export type DetailedTurbosOwnedPoolInfo = TurbosOwnedPool & {
   poolId: string;
   apr: number;
   aprPercent: number;
