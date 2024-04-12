@@ -117,3 +117,16 @@ export type TurbosOwnedPool = {
   amountAIsRaw: boolean;
   amountBIsRaw: boolean;
 };
+
+export type DetailedPoolInfo = TurbosOwnedPool & {
+  poolId: string;
+  apr: number;
+  aprPercent: number;
+  feeApr: number;
+  rewardApr: number;
+  volumeFor24hUsd: number;
+  liquidityUsd: number;
+  coinLiquidityUsdA: number;
+  coinLiquidityUsdB: number;
+  feeFor24hUsd: number;
+};
