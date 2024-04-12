@@ -1,6 +1,9 @@
+import BigNumber from "bignumber.js";
+import { CoinManagerSingleton } from "../../managers/CoinManager";
 import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
 import { CoinsCache, CommonPoolData, PathsCache } from "../types";
+import { TurbosSingleton } from "./turbos";
 import {
   CoinData,
   CoinsAPIResponse,
@@ -161,4 +164,61 @@ export const getPoolByCoins = (
 
 export function isTurbosCreatePoolEventParsedJson(data: unknown): data is TurbosCreatePoolEventParsedJson {
   return typeof data === "object" && data !== null && "pool" in data && typeof data.pool === "string";
+}
+
+export async function getCoinsDataForPool({
+  coinManager,
+  coinTypeA,
+  coinTypeB,
+  rawCoinAmountA,
+  rawCoinAmountB,
+  fee,
+}: {
+  coinTypeA: string;
+  coinTypeB: string;
+  rawCoinAmountA: string;
+  rawCoinAmountB: string;
+  fee: number;
+  coinManager: CoinManagerSingleton;
+}) {
+  const coinDataA = await coinManager.getCoinByType2(coinTypeA);
+  const coinDataB = await coinManager.getCoinByType2(coinTypeB);
+
+  let coinSymbolA: string = coinTypeA;
+  let coinSymbolB: string = coinTypeB;
+
+  let coinDecimalsA = 0;
+  let coinDecimalsB = 0;
+
+  let amountAIsRaw = true;
+  let amountBIsRaw = true;
+
+  if (coinDataA !== null) {
+    coinSymbolA = coinDataA.symbol ?? coinDataA.type;
+    coinDecimalsA = coinDataA.decimals;
+    amountAIsRaw = false;
+  }
+
+  if (coinDataB !== null) {
+    coinSymbolB = coinDataB.symbol ?? coinDataB.type;
+    coinDecimalsB = coinDataB.decimals;
+    amountBIsRaw = false;
+  }
+
+  const amountA = new BigNumber(rawCoinAmountA).dividedBy(10 ** coinDecimalsA).toString();
+  const amountB = new BigNumber(rawCoinAmountB).dividedBy(10 ** coinDecimalsB).toString();
+
+  const poolName = `${coinSymbolA}-${coinSymbolB}`;
+  const feePercentage = new BigNumber(fee).div(TurbosSingleton.FEE_DIVIDER).toString();
+
+  return {
+    poolName,
+    amountA,
+    amountB,
+    coinSymbolA,
+    coinSymbolB,
+    amountAIsRaw,
+    amountBIsRaw,
+    feePercentage,
+  };
 }
