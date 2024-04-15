@@ -60,7 +60,7 @@ export interface IRouteManager {
     amount: string;
     slippagePercentage: number;
     signerAddress: string;
-  }): Promise<TransactionBlock>;
+  }): Promise<{ tx: TransactionBlock; outputAmount: bigint; providerName: string }>;
 }
 
 export type CreateCoinTransactionParams = {
