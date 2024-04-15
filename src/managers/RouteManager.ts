@@ -215,7 +215,9 @@ export class RouteManager implements IRouteManager {
    * @param {number} options.slippagePercentage - The slippage percentage.
    * @param {string} options.signerAddress - The address of the signer.
    * @param {object} options.fee - The fee in SUI that would be deducted from user's account
-   * @return {Promise<TransactionBlock>} A promise that resolves to the transaction block for the swap.
+   * @return {Promise<{ tx: TransactionBlock, outputAmount: bigint, providerName: string }>} A promise that resolves
+   * to the object with transaction block for the swap, calculated output amount and the name of the provider, making
+   * the swap.
    * @throws {Error} Throws an error if there is no path for the specified tokens.
    */
   public async getBestRouteTransaction({
@@ -237,14 +239,14 @@ export class RouteManager implements IRouteManager {
       tokenFromCoinObjects?: CoinStruct[];
       tokenFromDecimals?: number;
     };
-  }): Promise<TransactionBlock> {
+  }): Promise<{ tx: TransactionBlock; outputAmount: bigint; providerName: string }> {
     // Note: this works only for sui
     const amountInCludingFees =
       fee && isSuiCoinType(tokenFrom)
         ? new BigNumber(amount).minus(new BigNumber(fee.feeAmount).dividedBy(SUI_DENOMINATOR)).toString()
         : amount;
 
-    const { maxOutputProvider, route } = await this.getBestRouteData({
+    const { maxOutputProvider, route, maxOutputAmount } = await this.getBestRouteData({
       tokenFrom,
       tokenTo,
       amount: amountInCludingFees,
@@ -275,7 +277,7 @@ export class RouteManager implements IRouteManager {
             feeCollectorAddress,
           },
         });
-        return tx;
+        return { tx, outputAmount: maxOutputAmount, providerName: maxOutputProvider.providerName };
         // This else is not expected to work since it's impossible to split and merge the same coin
       } else if (!isSuiCoinType(tokenFrom) && tokenFromCoinObjects?.length && typeof tokenFromDecimals === "number") {
         const { tx } = await FeeManager.getFeeInCoinTransaction({
@@ -286,7 +288,7 @@ export class RouteManager implements IRouteManager {
             allCoinObjectsList: tokenFromCoinObjects,
           },
         });
-        return tx;
+        return { tx, outputAmount: maxOutputAmount, providerName: maxOutputProvider.providerName };
       } else {
         console.warn(
           "[getBestRouteTransaction] unexpected behaviour: params for fees object is not correctly provided",
@@ -296,7 +298,7 @@ export class RouteManager implements IRouteManager {
       }
     }
 
-    return transaction;
+    return { tx: transaction, outputAmount: maxOutputAmount, providerName: maxOutputProvider.providerName };
   }
 
   /**
