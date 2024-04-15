@@ -46,7 +46,7 @@ describe("WalletManager", () => {
 
   describe("getBestRouteTransaction", () => {
     it("should return best swap transaction", async () => {
-      const tx = await routeManager.getBestRouteTransaction({
+      const { tx } = await routeManager.getBestRouteTransaction({
         tokenFrom: SUI_COIN_TYPE,
         tokenTo: USDC_COIN_TYPE,
         amount: INPUT_AMOUNT,

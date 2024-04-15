@@ -27,7 +27,7 @@ export const router = async ({
   console.timeEnd("All init");
 
   console.time("getBestRouteTransaction");
-  const tx = await routerManager.getBestRouteTransaction({
+  const { tx } = await routerManager.getBestRouteTransaction({
     tokenFrom,
     tokenTo,
     amount,
