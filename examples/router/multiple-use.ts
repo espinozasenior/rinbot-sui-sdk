@@ -34,7 +34,7 @@ export const router = async ({
     isUpdatingCurrently = true;
 
     console.time("getBestRouteTransaction");
-    const trx = await routerManager.getBestRouteTransaction({
+    const { tx: trx } = await routerManager.getBestRouteTransaction({
       tokenFrom,
       tokenTo,
       amount,
