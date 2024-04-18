@@ -17,12 +17,6 @@ export class CoinManagerSingleton implements ICoinManager {
   private coinsByProviderNameCache: Map<string, Map<string, CommonCoinData>> = new Map();
   private provider: SuiClient;
   private static COIN_CREATION_BYTECODE_TEMPLATE_URL = "https://www.suicoins.com/move_bytecode_template_bg.wasm";
-  private static COIN_CREATION_HEADERS = {
-    "Content-Type": "application/json",
-    Host: "www.api.interestprotocol.com",
-    Origin: "https://www.suicoins.com",
-    Referer: "https://www.suicoins.com/",
-  };
 
   /**
    * Constructs a new instance of the SuiProvider class with the provided SUI provider URL.
