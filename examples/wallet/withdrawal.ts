@@ -1,4 +1,4 @@
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { AftermathSingleton } from "../../src/providers/aftermath/aftermath";
 import { CetusSingleton } from "../../src/providers/cetus/cetus";
 import { clmmMainnet } from "../../src/providers/cetus/config";

@@ -1,5 +1,5 @@
 import { DCAManagerSingleton, TurbosSingleton } from "../../src";
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { RouteManager } from "../../src/managers/RouteManager";
 import { LONG_SUI_COIN_TYPE } from "../../src/providers/common";
 import { USDC_COIN_TYPE } from "../coin-types";

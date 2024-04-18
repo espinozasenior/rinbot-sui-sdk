@@ -3,7 +3,7 @@
 import { CoinMetadata } from "@mysten/sui.js/client";
 import { CoinMetadaWithInfo, Pool, PoolCoin, PoolCoins, PoolObject, PoolStats, SuiNetwork } from "aftermath-ts-sdk";
 import BigNumber from "bignumber.js";
-import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinManagerSingleton } from "../../managers/coin/CoinManager";
 import { CommonPoolData } from "../types";
 import { OwnedPoolCoinInfo, OwnedPoolInfo } from "./types";
 

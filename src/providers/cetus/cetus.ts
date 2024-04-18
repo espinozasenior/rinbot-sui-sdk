@@ -17,7 +17,7 @@ import BigNumber from "bignumber.js";
 import BN from "bn.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
 import { NoRoutesError } from "../../errors/NoRoutesError";
-import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinManagerSingleton } from "../../managers/coin/CoinManager";
 import { CommonCoinData, ProvidersToRouteDataMap, UpdatedCoinsCache } from "../../managers/types";
 import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";

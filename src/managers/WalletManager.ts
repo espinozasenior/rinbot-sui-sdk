@@ -11,7 +11,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { SUI_DECIMALS } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
-import { CoinManagerSingleton } from "./CoinManager";
+import { CoinManagerSingleton } from "./coin/CoinManager";
 import { CoinAssetData, IWalletManager } from "./types";
 import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
 import { bech32 } from "bech32";

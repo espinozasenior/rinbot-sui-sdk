@@ -4,7 +4,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Aftermath, CoinMetadaWithInfo, Pool, RouterCompleteTradeRoute } from "aftermath-ts-sdk";
 import BigNumber from "bignumber.js";
 import { EventEmitter } from "../../emitters/EventEmitter";
-import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinManagerSingleton } from "../../managers/coin/CoinManager";
 import { CoinAssetData, CommonCoinData, UpdatedCoinsCache } from "../../managers/types";
 import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";

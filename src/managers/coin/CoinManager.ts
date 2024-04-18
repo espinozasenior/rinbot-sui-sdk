@@ -1,5 +1,5 @@
 import { CoinMetadata, SuiClient } from "@mysten/sui.js/client";
-import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
+import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../../providers/common";
 import {
   CommonCoinData,
   CreateCoinExternalApiResType,
@@ -7,9 +7,9 @@ import {
   ICoinManager,
   Providers,
   UpdatedCoinsCache,
-} from "./types";
+} from "../types";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { isValidResForCreateCoin } from "./utils";
+import { isValidResForCreateCoin } from "../utils";
 import BigNumber from "bignumber.js";
 
 /**
