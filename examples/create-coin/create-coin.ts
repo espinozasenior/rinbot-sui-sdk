@@ -20,7 +20,7 @@ createCoin({
   description: "test-token-321",
   fixedSupply: true,
   mintAmount: "9000000",
-  name: "test-token-321",
+  name: "test token 321",
   signerAddress: user,
   symbol: "TEST_TOKEN_THR",
   url: "",
