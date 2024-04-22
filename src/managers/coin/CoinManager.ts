@@ -1,6 +1,17 @@
 import { CoinMetadata, SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { isValidSuiAddress, normalizeSuiAddress } from "@mysten/sui.js/utils";
+import {
+  InvalidCoinDecimalsError,
+  InvalidCoinDescriptionError,
+  InvalidCoinImageError,
+  InvalidCoinNameError,
+  InvalidCoinSymbolError,
+  InvalidCoinTotalSupplyError,
+  InvalidSignerAddressError,
+  NameEqualsToDescriptionError,
+  SymbolEqualsToDescriptionError,
+} from "../../errors/create-coin/invalid-param-errors";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../../providers/common";
 import { CommonCoinData, CreateCoinTransactionParams, ICoinManager, Providers, UpdatedCoinsCache } from "../types";
 import initMoveByteCodeTemplate from "./create-coin/utils/move-bytecode-template";
@@ -281,31 +292,43 @@ export class CoinManagerSingleton implements ICoinManager {
     signerAddress,
   }: CreateCoinTransactionParams): void {
     if (!validateCoinName(name)) {
-      throw new Error(`[validateCreateCoinParams] Coin name ${name} is invalid`);
+      throw new InvalidCoinNameError(`[validateCreateCoinParams] Coin name ${name} is invalid`);
     }
 
     if (!validateCoinSymbol(symbol)) {
-      throw new Error(`[validateCreateCoinParams] Coin symbol ${symbol} is invalid`);
+      throw new InvalidCoinSymbolError(`[validateCreateCoinParams] Coin symbol ${symbol} is invalid`);
     }
 
     if (!validateCoinDecimals(decimals)) {
-      throw new Error(`[validateCreateCoinParams] Coin decimals ${decimals} are invalid`);
+      throw new InvalidCoinDecimalsError(`[validateCreateCoinParams] Coin decimals ${decimals} are invalid`);
     }
 
     if (!validateTotalSupply(mintAmount, decimals)) {
-      throw new Error(`[validateCreateCoinParams] Total supply ${mintAmount} is invalid`);
+      throw new InvalidCoinTotalSupplyError(`[validateCreateCoinParams] Total supply ${mintAmount} is invalid`);
     }
 
     if (!validateCoinDescription(description)) {
-      throw new Error(`[validateCreateCoinParams] Coin description ${description} is invalid`);
+      throw new InvalidCoinDescriptionError(`[validateCreateCoinParams] Coin description ${description} is invalid`);
     }
 
     if (!validateCoinImage(url)) {
-      throw new Error(`[validateCreateCoinParams] Coin image ${url} is invalid`);
+      throw new InvalidCoinImageError(`[validateCreateCoinParams] Coin image ${url} is invalid`);
     }
 
     if (!isValidSuiAddress(signerAddress)) {
-      throw new Error(`[validateCreateCoinParams] Signer address ${signerAddress} is invalid`);
+      throw new InvalidSignerAddressError(`[validateCreateCoinParams] Signer address ${signerAddress} is invalid`);
+    }
+
+    if (name.trim() === description.trim()) {
+      throw new NameEqualsToDescriptionError(
+        `[validateCreateCoinParams] Coin name ${name} and coin description ${description} are equal`,
+      );
+    }
+
+    if (symbol.trim() === description.trim()) {
+      throw new SymbolEqualsToDescriptionError(
+        `[validateCreateCoinParams] Coin symbol ${symbol} and coin description ${description} are equal`,
+      );
     }
   }
 }
