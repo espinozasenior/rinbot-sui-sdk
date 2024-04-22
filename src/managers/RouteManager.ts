@@ -5,7 +5,7 @@ import { NoRoutesError } from "../errors/NoRoutesError";
 import { CetusSingleton } from "../providers/cetus/cetus";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
 import { isSuiCoinType } from "../providers/utils/isSuiCoinType";
-import { CoinManagerSingleton } from "./CoinManager";
+import { CoinManagerSingleton } from "./coin/CoinManager";
 import { BestRouteData, IRouteManager, Provider, Providers, ProvidersToRouteDataMap } from "./types";
 import { getFiltredProviders, getRouterMaps, tokenFromIsTokenTo } from "./utils";
 import { TryCatchWrapperResult } from "../providers/types";

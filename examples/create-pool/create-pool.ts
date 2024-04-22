@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 import BigNumber from "bignumber.js";
 import { createClient } from "redis";
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { Providers } from "../../src/managers/types";
 import { AftermathSingleton } from "../../src/providers/aftermath/aftermath";
 import { getLpCoinDecimals } from "../../src/providers/aftermath/create-pool-utils";

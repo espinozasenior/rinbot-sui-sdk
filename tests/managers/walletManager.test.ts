@@ -2,7 +2,7 @@ import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { cacheOptions, provider, suiProviderUrl, publicKey } from "../constants";
 import { isValidTokenAddress } from "../../src";
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { WalletManagerSingleton } from "../../src/managers/WalletManager";
 import { CoinAssetData, Providers } from "../../src/managers/types";
 import { AftermathSingleton } from "../../src/providers/aftermath/aftermath";

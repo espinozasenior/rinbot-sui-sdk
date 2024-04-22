@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinManagerSingleton } from "../../managers/coin/CoinManager";
 import { CommonCoinData } from "../../managers/types";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../common";
 import { CoinsCache, CommonPoolData, PathsCache } from "../types";

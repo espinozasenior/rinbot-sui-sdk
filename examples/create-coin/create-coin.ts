@@ -1,5 +1,5 @@
 import { keypair, provider, user } from "../common";
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { CreateCoinTransactionParams } from "../../src";
 
 // yarn ts-node examples/create-coin/create-coin.ts

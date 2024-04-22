@@ -3,7 +3,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
 import { Contract, Network, TurbosSdk } from "turbos-clmm-sdk";
 import { EventEmitter } from "../../emitters/EventEmitter";
-import { CoinManagerSingleton } from "../../managers/CoinManager";
+import { CoinManagerSingleton } from "../../managers/coin/CoinManager";
 import { swapDoctored } from "../../managers/dca/adapterUtils/turbosUtils";
 import { buildDcaTxBlock } from "../../managers/dca/adapters/turbosAdapter";
 import { CommonCoinData, UpdatedCoinsCache } from "../../managers/types";

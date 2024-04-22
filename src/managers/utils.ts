@@ -13,7 +13,7 @@ import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../providers/common";
 import { CommonPoolData } from "../providers/types";
 import { hasPath } from "../providers/utils/hasPath";
 import { tryCatchWrapper } from "../providers/utils/tryCatchWrapper";
-import { CoinManagerSingleton } from "./CoinManager";
+import { CoinManagerSingleton } from "./coin/CoinManager";
 import { WalletManagerSingleton } from "./WalletManager";
 
 export const getFiltredProviders = ({

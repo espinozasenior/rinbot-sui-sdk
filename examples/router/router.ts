@@ -1,4 +1,4 @@
-import { CoinManagerSingleton } from "../../src/managers/CoinManager";
+import { CoinManagerSingleton } from "../../src/managers/coin/CoinManager";
 import { RouteManager } from "../../src/managers/RouteManager";
 import { SHORT_SUI_COIN_TYPE } from "../../src/providers/common";
 import { USDC_COIN_TYPE } from "../coin-types";

@@ -1,5 +1,5 @@
 // Managers
-export * from "./managers/CoinManager";
+export * from "./managers/coin/CoinManager";
 export * from "./managers/RouteManager";
 export * from "./managers/WalletManager";
 export * from "./managers/types";
