@@ -1,10 +1,18 @@
 import { CoinMetadata, SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { normalizeSuiAddress } from "@mysten/sui.js/utils";
+import { isValidSuiAddress, normalizeSuiAddress } from "@mysten/sui.js/utils";
 import { LONG_SUI_COIN_TYPE, SHORT_SUI_COIN_TYPE } from "../../providers/common";
 import { CommonCoinData, CreateCoinTransactionParams, ICoinManager, Providers, UpdatedCoinsCache } from "../types";
 import initMoveByteCodeTemplate from "./create-coin/utils/move-bytecode-template";
 import { getBytecode } from "./create-coin/utils/template";
+import {
+  validateCoinDecimals,
+  validateCoinDescription,
+  validateCoinImage,
+  validateCoinName,
+  validateCoinSymbol,
+  validateTotalSupply,
+} from "./create-coin/utils/validation";
 
 /**
  * @class CoinManagerSingleton
@@ -219,22 +227,15 @@ export class CoinManagerSingleton implements ICoinManager {
    * @param {string} params.signerAddress - The address of the signer.
    * @param {TransactionBlock} [params.transaction] - The optional transaction block.
    * @return {Promise<TransactionBlock>} - A promise resolving to the created transaction block.
-   * @throws {Error} If the request to create the coin fails.
+   * @throws {Error} If the request to create the coin or params validation fails.
    */
-  public static async getCreateCoinTransaction({
-    name,
-    symbol,
-    decimals,
-    fixedSupply,
-    mintAmount,
-    url,
-    description,
-    signerAddress,
-    transaction,
-  }: CreateCoinTransactionParams): Promise<TransactionBlock> {
-    const tx = transaction ?? new TransactionBlock();
-
+  public static async getCreateCoinTransaction(params: CreateCoinTransactionParams): Promise<TransactionBlock> {
     try {
+      CoinManagerSingleton.validateCreateCoinParams(params);
+
+      const { name, symbol, decimals, fixedSupply, mintAmount, url, description, signerAddress, transaction } = params;
+      const tx = transaction ?? new TransactionBlock();
+
       await initMoveByteCodeTemplate(CoinManagerSingleton.COIN_CREATION_BYTECODE_TEMPLATE_URL);
 
       const [upgradeCap] = tx.publish({
@@ -261,6 +262,50 @@ export class CoinManagerSingleton implements ICoinManager {
     } catch (error) {
       console.error("[CoinManager.getCreateCoinTransaction] error: ", error);
       throw error;
+    }
+  }
+
+  /**
+   * Validates parameters for creating the coin.
+   *
+   * @param {CreateCoinTransactionParams} params - Parameters for creating the coin.
+   * @throws {Error} If the validation fails.
+   */
+  public static validateCreateCoinParams({
+    name,
+    symbol,
+    decimals,
+    mintAmount,
+    url,
+    description,
+    signerAddress,
+  }: CreateCoinTransactionParams): void {
+    if (!validateCoinName(name)) {
+      throw new Error(`[validateCreateCoinParams] Coin name ${name} is invalid`);
+    }
+
+    if (!validateCoinSymbol(symbol)) {
+      throw new Error(`[validateCreateCoinParams] Coin symbol ${symbol} is invalid`);
+    }
+
+    if (!validateCoinDecimals(decimals)) {
+      throw new Error(`[validateCreateCoinParams] Coin decimals ${decimals} are invalid`);
+    }
+
+    if (!validateTotalSupply(mintAmount, decimals)) {
+      throw new Error(`[validateCreateCoinParams] Total supply ${mintAmount} is invalid`);
+    }
+
+    if (!validateCoinDescription(description)) {
+      throw new Error(`[validateCreateCoinParams] Coin description ${description} is invalid`);
+    }
+
+    if (!validateCoinImage(url)) {
+      throw new Error(`[validateCreateCoinParams] Coin image ${url} is invalid`);
+    }
+
+    if (!isValidSuiAddress(signerAddress)) {
+      throw new Error(`[validateCreateCoinParams] Signer address ${signerAddress} is invalid`);
     }
   }
 }
