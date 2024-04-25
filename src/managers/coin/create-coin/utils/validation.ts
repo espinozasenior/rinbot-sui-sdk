@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { BASE_64_IMAGE_REGEXP, CREATE_COIN_VALIDATION_REGEXP, URL_REGEXP } from "../../../../common/reg-exp";
 
 /**
  * Validates the coin name to be a non-empty string.
@@ -7,8 +8,9 @@ import BigNumber from "bignumber.js";
  * @return {boolean} - Returns true if the coin name is valid, otherwise false.
  */
 export function validateCoinName(coinName: string): boolean {
-  const regex = /^[a-zA-Z0-9\s]+$/;
-  return typeof coinName === "string" && coinName.trim() !== "" && regex.test(coinName);
+  return (
+    typeof coinName === "string" && coinName.trim() !== "" && CREATE_COIN_VALIDATION_REGEXP.COIN_NAME.test(coinName)
+  );
 }
 
 /**
@@ -18,8 +20,8 @@ export function validateCoinName(coinName: string): boolean {
  * @return {boolean} - Returns true if the coin symbol is valid, otherwise false.
  */
 export function validateCoinSymbol(coinSymbol: string): boolean {
-  const regex = /^[a-zA-Z_]+$/;
-  const isCoinSymbolIsValid = typeof coinSymbol === "string" && regex.test(coinSymbol);
+  const isCoinSymbolIsValid =
+    typeof coinSymbol === "string" && CREATE_COIN_VALIDATION_REGEXP.COIN_SYMBOL.test(coinSymbol);
 
   return isCoinSymbolIsValid;
 }
@@ -76,7 +78,7 @@ export function calculateMaxTotalSupply(decimals: string): BigNumber {
  * does not exceed or equal maxTotalSupply, otherwise false.
  */
 export function validateTotalSupply(totalSupply: string, decimals: string): boolean {
-  if (typeof totalSupply !== "string" || !/^\d+$/.test(totalSupply)) {
+  if (typeof totalSupply !== "string" || !CREATE_COIN_VALIDATION_REGEXP.TOTAL_SUPPLY.test(totalSupply)) {
     return false; // Return false if totalSupply is not a string containing only numbers
   }
 
@@ -100,8 +102,5 @@ export function validateTotalSupply(totalSupply: string, decimals: string): bool
  * - Verifying if the `coinImage` parameter matches either a base64-encoded string or a valid URL format.
  */
 export function validateCoinImage(coinImage: string): boolean {
-  const base64ImageRegex = /^data:image\/(png|jpeg|jpg|gif);base64,([A-Za-z0-9+/]+={0,2})$/;
-  const urlRegex = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i;
-
-  return coinImage === "" || base64ImageRegex.test(coinImage) || urlRegex.test(coinImage);
+  return coinImage === "" || BASE_64_IMAGE_REGEXP.test(coinImage) || URL_REGEXP.test(coinImage);
 }
