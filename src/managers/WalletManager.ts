@@ -8,6 +8,7 @@ import {
 } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { TransactionBlock as UpdatedTransactionBlock } from "@mysten/sui.js-0.51.2/transactions";
 import { SUI_DECIMALS } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
@@ -16,6 +17,7 @@ import { CoinAssetData, IWalletManager } from "./types";
 import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
 import { bech32 } from "bech32";
 import { determineFormat } from "./WalletManager.utils";
+import { TransactionResult } from "../transactions/types";
 
 /**
  * @class WalletManagerSingleton
@@ -361,5 +363,45 @@ export class WalletManagerSingleton implements IWalletManager {
     allObjects.push(...coinObjects);
 
     return allObjects;
+  }
+
+  /**
+   * Note: this method is using an `UpdatedTransactionBlock`, that is a `TransactionBlock` from
+   * the @mysten/sui.js v0.51.2 package.
+   *
+   * @description Merges all the passed `coinObjects` into one object.
+   * @return {object} A transaction block, that contains the coins merge; a destination coin object id, into which all
+   * the other coin objects are merged; a transaction result, that is the result of the coins merge.
+   */
+  public static mergeAllCoinObjects({
+    coinObjects,
+    txb,
+  }: {
+    coinObjects: CoinStruct[];
+    txb?: UpdatedTransactionBlock;
+  }): {
+    tx: UpdatedTransactionBlock;
+    destinationObjectId: string;
+    txRes?: TransactionResult;
+  } {
+    if (coinObjects.length === 0) {
+      throw new Error("[mergeAllCoinObjects] Passed `coinObjects` are empty.");
+    }
+
+    const tx = txb ?? new UpdatedTransactionBlock();
+
+    const objectIds = coinObjects.map((obj) => obj.coinObjectId);
+    const [destinationObjectId, ...sourceObjectIds] = objectIds;
+
+    if (sourceObjectIds.length === 0) {
+      return { tx, destinationObjectId };
+    }
+
+    const txRes = tx.mergeCoins(
+      tx.object(destinationObjectId),
+      sourceObjectIds.map((objId) => tx.object(objId)),
+    );
+
+    return { tx, txRes, destinationObjectId };
   }
 }
