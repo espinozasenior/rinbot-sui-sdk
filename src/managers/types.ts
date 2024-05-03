@@ -2,6 +2,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { AftermathSingleton } from "../providers/aftermath/aftermath";
 import { CetusSingleton } from "../providers/cetus/cetus";
 import { FlowxSingleton } from "../providers/flowx/flowx";
+import { InterestProtocolSingleton } from "../providers/interest/interest";
 import { TurbosSingleton } from "../providers/turbos/turbos";
 import { TryCatchWrapperResult } from "../providers/types";
 
@@ -19,7 +20,12 @@ export type CoinAssetData = Omit<CommonCoinData, "decimals"> & {
 
 export type UpdatedCoinsCache = { provider: string; data: CommonCoinData[] };
 
-export type Provider = TurbosSingleton | CetusSingleton | AftermathSingleton | FlowxSingleton;
+export type Provider =
+  | TurbosSingleton
+  | CetusSingleton
+  | AftermathSingleton
+  | FlowxSingleton
+  | InterestProtocolSingleton;
 
 export type Providers = Provider[];
 
