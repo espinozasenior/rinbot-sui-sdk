@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 import { CLAMM, InterestPool } from "@interest-protocol/clamm-sdk";
 import { SuiClient } from "@mysten/sui.js-0.51.2/client";
 import { CoinMetadata } from "@mysten/sui.js/client";
@@ -18,11 +17,24 @@ import { isApiResponseValid } from "./type-guards";
 import { InterestOptions, InterestRouteData } from "./types";
 import { getPathMapAndCoinTypesSet } from "./utils";
 
+/**
+ * @class InterestProtocolSingleton
+ * @extends EventEmitter
+ * @implements {IPoolProvider<InterestProtocolSingleton>}
+ * @description Singleton class for Interest Protocol.
+ *
+ * Note: If using `lazyLoading: true` with any storage configuration in a serverless/cloud functions environment,
+ * be aware that each invocation of your cloud function will start cache population from scratch.
+ * This may lead to unexpected behavior when using different SDK methods. To avoid this and minimize the time
+ * for cache population, consider using `lazyLoading: false` along with passing a persistent
+ * storage adapter (external, e.g., Redis or any kind of DB) to the ProviderSingleton.
+ */
 export class InterestProtocolSingleton extends EventEmitter implements IPoolProvider<InterestProtocolSingleton> {
   private static _instance: InterestProtocolSingleton | undefined;
   private static INTEREST_PROTOCOL_PACKAGE_ADDRESS =
     "0xf47f67d87aad51b6bd476bf41bf578fd04ba444f6eab8e80950186f166ea1dba";
   private static INTEREST_PROTOCOL_SUI_TEARS = "0xf7334947a5037552a94cee15fc471dbda71bf24d46c97ee24e1fdac38e26644c";
+
   private provider: SuiClient;
   private cacheOptions: CacheOptions;
   private intervalId: NodeJS.Timeout | undefined;
@@ -35,6 +47,10 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
   public coinsCache: CoinsCache = new Map();
   public poolsCache: InterestPool[] = [];
 
+  /**
+   * @constructor
+   * @param {Omit<InterestOptions, "lazyLoading">} options - Options for InterestProtocolSingleton.
+   */
   private constructor(options: Omit<InterestOptions, "lazyLoading">) {
     super();
 
@@ -52,6 +68,14 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     this.storage = options.cacheOptions.storage ?? InMemoryStorageSingleton.getInstance();
   }
 
+  /**
+   * @static
+   * @method getInstance
+   * @async
+   * @param {InterestOptions} [options] - Options for InterestProtocolSingleton instance.
+   * @return {Promise<InterestProtocolSingleton>}
+   * @throws Error if options are not provided.
+   */
   public static async getInstance(options?: InterestOptions): Promise<InterestProtocolSingleton> {
     if (!InterestProtocolSingleton._instance) {
       if (options === undefined) {
@@ -176,6 +200,9 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
    */
   private async updatePoolsCache(): Promise<void> {
     // TODO: Replace this method usage with the new Interest SDK method
+    /**
+     * Mock method for getting all the Interest Protocol pools.
+     */
     async function getAllPools() {
       return [];
     }
@@ -267,6 +294,16 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     return this.pathsCache;
   }
 
+  /**
+   * @public
+   * @method getRouteData
+   * @description Gets route data.
+   * @param {Object} params - Parameters for route data.
+   * @param {string} params.coinTypeFrom - Coin type from.
+   * @param {string} params.coinTypeTo - Coin type to.
+   * @param {string} params.inputAmount - Input amount.
+   * @return {Promise<{ outputAmount: bigint, route: InterestRouteData }>} Route data.
+   */
   public async getRouteData({
     coinTypeFrom,
     coinTypeTo,
@@ -302,6 +339,14 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     };
   }
 
+  /**
+   * @public
+   * @method getSwapTransaction
+   * @description Retrieves the swap transaction for the given route and public key.
+   * @param {InterestRouteData} route - The complete trade route.
+   * @param {string} publicKey - The public key.
+   * @return {Promise<TransactionBlock>} A Promise that resolves to the swap transaction.
+   */
   public async getSwapTransaction({
     route,
     publicKey,
