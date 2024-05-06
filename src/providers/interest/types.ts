@@ -1,11 +1,11 @@
-import { InterestPool } from "@interest-protocol/clamm-sdk";
+import { GetRouteQuotesReturn, SwapRouteArgs } from "@interest-protocol/clamm-sdk";
 import { ProviderOptions } from "../types";
 
 export type InterestRouteData = {
-  pool: InterestPool;
-  minAmount: bigint;
+  bestRoute: SwapRouteArgs["route"];
+  poolsMap: GetRouteQuotesReturn["poolsMap"];
   inputCoinType: string;
-  outputCoinType: string;
+  minAmount: bigint;
 };
 
 export type InterestOptions = ProviderOptions & { suiProviderUrl: string };
