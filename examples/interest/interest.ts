@@ -1,4 +1,3 @@
-import { LONG_SUI_COIN_TYPE } from "../../src";
 import { InterestProtocolSingleton } from "../../src/providers/interest/interest";
 import { cacheOptions, initAndGetRedisStorage, provider, suiProviderUrl, user } from "../common";
 
@@ -47,9 +46,9 @@ export const interest = async ({
 };
 
 interest({
-  tokenFrom: LONG_SUI_COIN_TYPE,
-  tokenTo: "0xdb838a0becb92dcf9fd66127136f517f8f6d7a9f973b2344d1ebbd7d2cf2c0fa::meme_02_05_2024::MEME_02_05_2024",
-  amount: "0.01",
+  tokenFrom: "0xae870af23dda8285a5f11e8136190568796bb76a6e7f3b4061f7ded0c1ebe889::usdt::USDT",
+  tokenTo: "0x62a807f396a729dfb9dd931bc6a49d840ede3ce058fe11e38d1f097d8466ee60::bonden::BONDEN",
+  amount: "10",
   signerAddress: user,
   slippagePercentage: 10,
 });
