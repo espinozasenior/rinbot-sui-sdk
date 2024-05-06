@@ -1,5 +1,6 @@
-import { InterestPool } from "@interest-protocol/clamm-sdk";
+import { GetRouteQuotesReturn, InterestPool } from "@interest-protocol/clamm-sdk";
 import { CommonPoolData } from "../types";
+import { ROUTES_QUOTES_AMOUNT_OBJECT_INDEX } from "./config";
 
 export const getPathMapAndCoinTypesSet = (
   pools: InterestPool[],
@@ -29,4 +30,15 @@ export const getPathMapAndCoinTypesSet = (
   });
 
   return { pathMap, coinTypesSet };
+};
+
+export const getBestInterestRoute = (routes: GetRouteQuotesReturn["routes"]) => {
+  const bestRoute = routes.reduce((bestRoute, currentRoute) => {
+    const bestAmount = bestRoute[ROUTES_QUOTES_AMOUNT_OBJECT_INDEX].amount;
+    const currentAmount = currentRoute[ROUTES_QUOTES_AMOUNT_OBJECT_INDEX].amount;
+
+    return bestAmount > currentAmount ? bestRoute : currentRoute;
+  });
+
+  return bestRoute;
 };
