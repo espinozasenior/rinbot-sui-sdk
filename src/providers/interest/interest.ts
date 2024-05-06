@@ -1,4 +1,4 @@
-import { CLAMM, InterestPool } from "@interest-protocol/clamm-sdk";
+import { CLAMM, InterestPool, SwapRouteArgs } from "@interest-protocol/clamm-sdk";
 import { SuiClient } from "@mysten/sui.js-0.51.2/client";
 import { CoinMetadata } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
@@ -15,7 +15,7 @@ import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } f
 import { getUserCoinObjects } from "../utils/getUserCoinObjects";
 import { isApiResponseValid } from "./type-guards";
 import { InterestOptions, InterestRouteData } from "./types";
-import { getPathMapAndCoinTypesSet } from "./utils";
+import { getBestInterestRoute, getPathMapAndCoinTypesSet } from "./utils";
 
 /**
  * @class InterestProtocolSingleton
@@ -32,7 +32,7 @@ import { getPathMapAndCoinTypesSet } from "./utils";
 export class InterestProtocolSingleton extends EventEmitter implements IPoolProvider<InterestProtocolSingleton> {
   private static _instance: InterestProtocolSingleton | undefined;
   private static INTEREST_PROTOCOL_PACKAGE_ADDRESS =
-    "0xf47f67d87aad51b6bd476bf41bf578fd04ba444f6eab8e80950186f166ea1dba";
+    "0x429dbf2fc849c0b4146db09af38c104ae7a3ed746baf835fa57fee27fa5ff382";
   private static INTEREST_PROTOCOL_SUI_TEARS = "0xf7334947a5037552a94cee15fc471dbda71bf24d46c97ee24e1fdac38e26644c";
 
   private provider: SuiClient;
@@ -42,7 +42,7 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
 
   public interestSdk: CLAMM;
   public providerName = "Interest";
-  public isSmartRoutingAvailable = false;
+  public isSmartRoutingAvailable = true;
   public pathsCache: PathsCache = new Map();
   public coinsCache: CoinsCache = new Map();
   public poolsCache: InterestPool[] = [];
@@ -199,15 +199,7 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
    * @return {Promise<void>}
    */
   private async updatePoolsCache(): Promise<void> {
-    // TODO: Replace this method usage with the new Interest SDK method
-    /**
-     * Mock method for getting all the Interest Protocol pools.
-     */
-    async function getAllPools() {
-      return [];
-    }
-
-    const pools: InterestPool[] = await getAllPools();
+    const { pools }: { pools: readonly InterestPool[] } = await this.interestSdk.getPools();
     const isValidPoolsResponse = isApiResponseValid(pools);
 
     if (!isValidPoolsResponse) {
@@ -324,18 +316,19 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     const inputCoinDecimals = inputCoinData.decimals;
     const formattedInputAmount = new BigNumber(inputAmount).multipliedBy(10 ** inputCoinDecimals).toString();
 
-    const pool = this.getPool(coinTypeFrom, coinTypeTo);
-
-    const { amount } = await this.interestSdk.quoteSwap({
-      pool,
-      coinInType: coinTypeFrom,
-      coinOutType: coinTypeTo,
+    const { routes, poolsMap } = await this.interestSdk.getRoutesQuotes({
+      coinIn: coinTypeFrom,
+      coinOut: coinTypeTo,
       amount: BigInt(formattedInputAmount),
     });
 
+    const [coinPath, poolObjectIdPath, amountObject] = getBestInterestRoute(routes);
+    const bestRoute: SwapRouteArgs["route"] = [coinPath, poolObjectIdPath];
+    const { amount } = amountObject;
+
     return {
       outputAmount: amount,
-      route: { pool, minAmount: amount, inputCoinType: coinTypeFrom, outputCoinType: coinTypeTo },
+      route: { bestRoute, poolsMap, inputCoinType: coinTypeFrom, minAmount: amount },
     };
   }
 
@@ -355,19 +348,18 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     publicKey: string;
     slippagePercentage: number;
   }): Promise<TransactionBlock> {
-    const { inputCoinType, outputCoinType, minAmount, pool } = route;
+    const { bestRoute, poolsMap, inputCoinType, minAmount } = route;
 
     const inputCoinObjects = await getUserCoinObjects({ coinType: inputCoinType, provider: this.provider, publicKey });
     const { destinationObjectId, tx } = WalletManagerSingleton.mergeAllCoinObjects({
       coinObjects: inputCoinObjects,
     });
 
-    const { coinOut, txb } = await this.interestSdk.swap({
+    const { coinOut, txb } = this.interestSdk.swapRoute({
       txb: tx,
-      coinIn: tx.object(destinationObjectId),
-      coinInType: inputCoinType,
-      coinOutType: outputCoinType,
-      pool,
+      coinIn: destinationObjectId,
+      route: bestRoute,
+      poolsMap,
       minAmount,
     });
 
