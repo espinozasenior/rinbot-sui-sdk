@@ -18,11 +18,9 @@ export function isInterestPool(pool: unknown): pool is InterestPool {
     typeof pool !== "object" ||
     pool === null ||
     !("poolObjectId" in pool && typeof pool.poolObjectId === "string") ||
-    !("stateId" in pool && typeof pool.stateId === "string") ||
     !("lpCoinType" in pool && typeof pool.lpCoinType === "string") ||
     !("isStable" in pool && typeof pool.isStable === "boolean") ||
     !("coinTypes" in pool && Array.isArray(pool.coinTypes)) ||
-    !("poolAdminAddress" in pool && typeof pool.poolAdminAddress === "string") ||
     !("state" in pool && typeof pool.state === "object")
   ) {
     return false;
