@@ -6,6 +6,7 @@ export type InterestRouteData = {
   poolsMap: GetRouteQuotesReturn["poolsMap"];
   inputCoinType: string;
   minAmount: bigint;
+  formattedInputAmount: string;
 };
 
 export type InterestOptions = ProviderOptions & { suiProviderUrl: string };
