@@ -1,5 +1,6 @@
-import { CLAMM, InterestPool, SwapRouteArgs } from "@interest-protocol/clamm-sdk";
+import { CLAMM, InterestPool, MoveObjectArgument, SwapRouteArgs } from "@interest-protocol/clamm-sdk";
 import { SuiClient } from "@mysten/sui.js-0.51.2/client";
+import { TransactionBlock as UpdatedTransactionBlock } from "@mysten/sui.js-0.51.2/transactions";
 import { CoinMetadata } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import BigNumber from "bignumber.js";
@@ -10,9 +11,10 @@ import { InMemoryStorageSingleton } from "../../storages/InMemoryStorage";
 import { Storage } from "../../storages/types";
 import { getCoinsAndPathsCaches } from "../../storages/utils/getCoinsAndPathsCaches";
 import { storeCaches } from "../../storages/utils/storeCaches";
-import { exitHandlerWrapper } from "../common";
+import { LONG_SUI_COIN_TYPE, exitHandlerWrapper } from "../common";
 import { CacheOptions, CoinsCache, CommonPoolData, IPoolProvider, PathsCache } from "../types";
 import { getUserCoinObjects } from "../utils/getUserCoinObjects";
+import { isSuiCoinType } from "../utils/isSuiCoinType";
 import { isApiResponseValid } from "./type-guards";
 import { InterestOptions, InterestRouteData } from "./types";
 import { getBestInterestRoute, getPathMapAndCoinTypesSet } from "./utils";
@@ -307,6 +309,13 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     slippagePercentage: number;
     publicKey: string;
   }): Promise<{ outputAmount: bigint; route: InterestRouteData }> {
+    // Interest Protocol Routing crashes, when using SHORT_SUI_COIN_TYPE
+    if (isSuiCoinType(coinTypeFrom)) {
+      coinTypeFrom = LONG_SUI_COIN_TYPE;
+    } else if (isSuiCoinType(coinTypeTo)) {
+      coinTypeTo = LONG_SUI_COIN_TYPE;
+    }
+
     const inputCoinData = await this.provider.getCoinMetadata({ coinType: coinTypeFrom });
 
     if (inputCoinData === null) {
@@ -328,7 +337,7 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
 
     return {
       outputAmount: amount,
-      route: { bestRoute, poolsMap, inputCoinType: coinTypeFrom, minAmount: amount },
+      route: { bestRoute, poolsMap, inputCoinType: coinTypeFrom, minAmount: amount, formattedInputAmount },
     };
   }
 
@@ -348,12 +357,22 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     publicKey: string;
     slippagePercentage: number;
   }): Promise<TransactionBlock> {
-    const { bestRoute, poolsMap, inputCoinType, minAmount } = route;
+    const tx = new UpdatedTransactionBlock();
+    const { bestRoute, poolsMap, inputCoinType, minAmount, formattedInputAmount } = route;
 
     const inputCoinObjects = await getUserCoinObjects({ coinType: inputCoinType, provider: this.provider, publicKey });
-    const { destinationObjectId, tx } = WalletManagerSingleton.mergeAllCoinObjects({
-      coinObjects: inputCoinObjects,
-    });
+    let destinationObjectId: MoveObjectArgument;
+
+    if (isSuiCoinType(inputCoinType)) {
+      const [coin] = tx.splitCoins(tx.gas, [tx.pure(formattedInputAmount)]);
+      destinationObjectId = coin;
+    } else {
+      const { destinationObjectId: mergeDestination } = WalletManagerSingleton.mergeAllCoinObjects({
+        coinObjects: inputCoinObjects,
+      });
+
+      destinationObjectId = mergeDestination;
+    }
 
     const { coinOut, txb } = this.interestSdk.swapRoute({
       txb: tx,
