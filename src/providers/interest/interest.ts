@@ -201,15 +201,19 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
    * @return {Promise<void>}
    */
   private async updatePoolsCache(): Promise<void> {
-    const { pools }: { pools: readonly InterestPool[] } = await this.interestSdk.getPools();
-    const isValidPoolsResponse = isApiResponseValid(pools);
+    try {
+      const { pools }: { pools: readonly InterestPool[] } = await this.interestSdk.getPools();
+      const isValidPoolsResponse = isApiResponseValid(pools);
 
-    if (!isValidPoolsResponse) {
-      console.error("[Interest] Pools response:", pools);
-      throw new Error("Pools response from API is not valid");
+      if (!isValidPoolsResponse) {
+        console.error("[Interest] Pools response:", pools);
+        throw new Error("Pools response from API is not valid");
+      }
+
+      this.poolsCache = pools;
+    } catch (error) {
+      console.error("[Interest.updatePoolsCache]:", error);
     }
-
-    this.poolsCache = pools;
   }
 
   /**
