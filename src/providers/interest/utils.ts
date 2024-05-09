@@ -32,7 +32,7 @@ export const getPathMapAndCoinTypesSet = (
   return { pathMap, coinTypesSet };
 };
 
-export const getBestInterestRoute = (routes: GetRouteQuotesReturn["routes"]) => {
+export const getBestInterestRoute = (routes: GetRouteQuotesReturn["routes"]): GetRouteQuotesReturn["routes"][0] => {
   const bestRoute = routes.reduce((bestRoute, currentRoute) => {
     const bestAmount = bestRoute[ROUTES_QUOTES_AMOUNT_OBJECT_INDEX].amount;
     const currentAmount = currentRoute[ROUTES_QUOTES_AMOUNT_OBJECT_INDEX].amount;
