@@ -338,9 +338,7 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
 
     const [coinPath, poolObjectIdPath, amountObject] = getBestInterestRoute(routes);
     const bestRoute: SwapRouteArgs["route"] = [coinPath, poolObjectIdPath];
-    const { amount } = amountObject;
-
-    const amountWithSlippage = getAmountWithSlippage(amount.toString(), slippagePercentage);
+    const amountWithSlippage = getAmountWithSlippage(amountObject.amount.toString(), slippagePercentage);
 
     return {
       outputAmount: BigInt(amountWithSlippage),
@@ -376,10 +374,13 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     const inputCoinObjects = await getUserCoinObjects({ coinType: inputCoinType, provider: this.provider, publicKey });
     let destinationObjectId: MoveObjectArgument;
 
+    // If SUI is an input coin, just split a needed for a swap input amount from gas object.
     if (isSuiCoinType(inputCoinType)) {
       const [coin] = tx.splitCoins(tx.gas, [tx.pure(formattedInputAmount)]);
       destinationObjectId = coin;
     } else {
+      // If the input coin is not SUI, merge all its objects into one and split the needed for the swap input amount
+      // from the merge-result object.
       const { destinationObjectId: mergeDestination } = WalletManagerSingleton.mergeAllCoinObjects({
         coinObjects: inputCoinObjects,
         txb: tx,
