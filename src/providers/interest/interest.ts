@@ -17,7 +17,7 @@ import { getUserCoinObjects } from "../utils/getUserCoinObjects";
 import { isSuiCoinType } from "../utils/isSuiCoinType";
 import { isApiResponseValid } from "./type-guards";
 import { InterestOptions, InterestRouteData } from "./types";
-import { getBestInterestRoute, getPathMapAndCoinTypesSet } from "./utils";
+import { getAmountWithSlippage, getBestInterestRoute, getPathMapAndCoinTypesSet } from "./utils";
 
 /**
  * @class InterestProtocolSingleton
@@ -33,9 +33,9 @@ import { getBestInterestRoute, getPathMapAndCoinTypesSet } from "./utils";
  */
 export class InterestProtocolSingleton extends EventEmitter implements IPoolProvider<InterestProtocolSingleton> {
   private static _instance: InterestProtocolSingleton | undefined;
-  private static INTEREST_PROTOCOL_PACKAGE_ADDRESS =
+  public static INTEREST_PROTOCOL_PACKAGE_ADDRESS =
     "0x429dbf2fc849c0b4146db09af38c104ae7a3ed746baf835fa57fee27fa5ff382";
-  private static INTEREST_PROTOCOL_SUI_TEARS = "0xf7334947a5037552a94cee15fc471dbda71bf24d46c97ee24e1fdac38e26644c";
+  public static INTEREST_PROTOCOL_SUI_TEARS = "0xf7334947a5037552a94cee15fc471dbda71bf24d46c97ee24e1fdac38e26644c";
 
   private provider: SuiClient;
   private cacheOptions: CacheOptions;
@@ -306,6 +306,7 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     coinTypeFrom,
     coinTypeTo,
     inputAmount,
+    slippagePercentage,
   }: {
     coinTypeFrom: string;
     coinTypeTo: string;
@@ -339,9 +340,17 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     const bestRoute: SwapRouteArgs["route"] = [coinPath, poolObjectIdPath];
     const { amount } = amountObject;
 
+    const amountWithSlippage = getAmountWithSlippage(amount.toString(), slippagePercentage);
+
     return {
-      outputAmount: amount,
-      route: { bestRoute, poolsMap, inputCoinType: coinTypeFrom, minAmount: amount, formattedInputAmount },
+      outputAmount: BigInt(amountWithSlippage),
+      route: {
+        bestRoute,
+        poolsMap,
+        inputCoinType: coinTypeFrom,
+        minAmount: BigInt(amountWithSlippage),
+        formattedInputAmount,
+      },
     };
   }
 
@@ -373,9 +382,11 @@ export class InterestProtocolSingleton extends EventEmitter implements IPoolProv
     } else {
       const { destinationObjectId: mergeDestination } = WalletManagerSingleton.mergeAllCoinObjects({
         coinObjects: inputCoinObjects,
+        txb: tx,
       });
 
-      destinationObjectId = mergeDestination;
+      const [coin] = tx.splitCoins(tx.object(mergeDestination), [tx.pure(formattedInputAmount)]);
+      destinationObjectId = coin;
     }
 
     const { coinOut, txb } = this.interestSdk.swapRoute({
