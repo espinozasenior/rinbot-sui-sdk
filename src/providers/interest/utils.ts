@@ -1,4 +1,5 @@
 import { GetRouteQuotesReturn, InterestPool } from "@interest-protocol/clamm-sdk";
+import BigNumber from "bignumber.js";
 import { CommonPoolData } from "../types";
 import { ROUTES_QUOTES_AMOUNT_OBJECT_INDEX } from "./config";
 
@@ -41,4 +42,10 @@ export const getBestInterestRoute = (routes: GetRouteQuotesReturn["routes"]): Ge
   });
 
   return bestRoute;
+};
+
+export const getAmountWithSlippage = (amount: string, slippagePercentage: number): string => {
+  const slippageAmount = new BigNumber(amount).multipliedBy(slippagePercentage).div(100);
+
+  return new BigNumber(amount).minus(slippageAmount).toFixed(0);
 };
