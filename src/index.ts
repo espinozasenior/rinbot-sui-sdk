@@ -39,6 +39,13 @@ export * from "./providers/turbos/turbos";
 export * from "./providers/turbos/types";
 export * from "./providers/turbos/utils";
 
+// Interest Protocol
+export * from "./providers/interest/interest";
+export * from "./providers/interest/types";
+export * from "./providers/interest/utils";
+export * from "./providers/interest/type-guards";
+export * from "./providers/interest/config";
+
 // Storages
 export * from "./storages/RedisStorage";
 export * from "./storages/InMemoryStorage";

@@ -1,10 +1,10 @@
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { CoinManagerSingleton, WalletManagerSingleton } from "../../src";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
 import { DCATimescale } from "../../src/managers/dca/types";
+import { getUserCoinObjects } from "../../src/providers/utils/getUserCoinObjects";
 import { RINCEL_COIN_TYPE, USDC_COIN_TYPE } from "../coin-types";
-import { initAndGetProviders, initAndGetRedisStorage, keypair, user } from "../common";
+import { keypair, user } from "../common";
 
 // yarn ts-node examples/dca/create-dca.ts
 export const createDCA = async () => {
@@ -23,14 +23,10 @@ export const createDCA = async () => {
   // TODO: Need to update inner function where this value is used
   const baseCoinAmountToDepositIntoDCA = "150000";
 
-  const storage = await initAndGetRedisStorage();
-  const providers = await initAndGetProviders(storage);
-  const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
-  const walletManager: WalletManagerSingleton = WalletManagerSingleton.getInstance(provider, coinManager);
-
-  const allCoinObjectsList = await walletManager.getAllCoinObjects({
+  const allCoinObjectsList = await getUserCoinObjects({
     publicKey: keypair.toSuiAddress(),
     coinType: baseCoinType,
+    provider,
   });
 
   const totalOrders = 10;

@@ -8,6 +8,7 @@ import {
 } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { TransactionBlock as UpdatedTransactionBlock } from "@mysten/sui.js-0.51.2/transactions";
 import { SUI_DECIMALS } from "@mysten/sui.js/utils";
 import BigNumber from "bignumber.js";
 import { SUI_DENOMINATOR, SWAP_GAS_BUDGET } from "../providers/common";
@@ -16,6 +17,7 @@ import { CoinAssetData, IWalletManager } from "./types";
 import { getCoinsAssetsFromCoinObjects, normalizeMnemonic } from "./utils";
 import { bech32 } from "bech32";
 import { determineFormat } from "./WalletManager.utils";
+import { TransactionResult } from "../transactions/types";
 
 /**
  * @class WalletManagerSingleton
@@ -317,49 +319,42 @@ export class WalletManagerSingleton implements IWalletManager {
   }
 
   /**
-   * @public
-   * @method getAllCoinObjects
-   * @param {Object} params - Parameters object.
-   * @param {string} params.publicKey - The public key of the wallet.
-   * @param {string} params.coinType - The coin type of specified coin.
-   * @description Retrieves all coin objects associated with a wallet and specified coinType.
-   * @return {Promise<CoinStruct[]>} A promise that resolves to an array of coin objects data.
+   * Note: this method is using an `UpdatedTransactionBlock`, that is a `TransactionBlock` from
+   * the @mysten/sui.js v0.51.2 package.
+   *
+   * @description Merges all the passed `coinObjects` into one object.
+   * @return {object} A transaction block, that contains the coins merge; a destination coin object id, into which all
+   * the other coin objects are merged; a transaction result, that is the result of the coins merge.
    */
-  public async getAllCoinObjects({
-    publicKey,
-    coinType,
+  public static mergeAllCoinObjects({
+    coinObjects,
+    txb,
   }: {
-    publicKey: string;
-    coinType: string;
-  }): Promise<CoinStruct[]> {
-    const pageCapacity = 50;
-    const allObjects: CoinStruct[] = [];
-    let nextCursor: string | null | undefined = null;
-    let assets: PaginatedCoins = await this.provider.getCoins({
-      owner: publicKey,
-      coinType,
-      limit: pageCapacity,
-      cursor: nextCursor,
-    });
-
-    // fetching and combining part
-    while (assets.hasNextPage) {
-      const coinObjects: CoinStruct[] = assets.data;
-      allObjects.push(...coinObjects);
-
-      nextCursor = assets.nextCursor;
-      assets = await this.provider.getCoins({
-        owner: publicKey,
-        coinType,
-        limit: pageCapacity,
-        cursor: nextCursor,
-      });
+    coinObjects: CoinStruct[];
+    txb?: UpdatedTransactionBlock;
+  }): {
+    tx: UpdatedTransactionBlock;
+    destinationObjectId: string;
+    txRes?: TransactionResult;
+  } {
+    if (coinObjects.length === 0) {
+      throw new Error("[mergeAllCoinObjects] Passed `coinObjects` are empty.");
     }
 
-    // In case user has less tokens than `pageCapacity` (1 page only), we should put them into `allObjects`
-    const coinObjects: CoinStruct[] = assets.data;
-    allObjects.push(...coinObjects);
+    const tx = txb ?? new UpdatedTransactionBlock();
 
-    return allObjects;
+    const objectIds = coinObjects.map((obj) => obj.coinObjectId);
+    const [destinationObjectId, ...sourceObjectIds] = objectIds;
+
+    if (sourceObjectIds.length === 0) {
+      return { tx, destinationObjectId };
+    }
+
+    const txRes = tx.mergeCoins(
+      tx.object(destinationObjectId),
+      sourceObjectIds.map((objId) => tx.object(objId)),
+    );
+
+    return { tx, txRes, destinationObjectId };
   }
 }

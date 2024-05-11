@@ -11,6 +11,7 @@ import { CetusSingleton } from "../src/providers/cetus/cetus";
 import { clmmMainnet } from "../src/providers/cetus/config";
 import { SWAP_GAS_BUDGET } from "../src/providers/common";
 import { FlowxSingleton } from "../src/providers/flowx/flowx";
+import { InterestProtocolSingleton } from "../src/providers/interest/interest";
 import { TurbosSingleton } from "../src/providers/turbos/turbos";
 import { CacheOptions } from "../src/providers/types";
 import { RedisStorageSingleton } from "../src/storages/RedisStorage";
@@ -91,8 +92,13 @@ export const initAndGetProviders = async (storage?: Storage): Promise<Providers>
     cacheOptions: { storage, ...cacheOptions },
     lazyLoading: false,
   });
+  const interest: InterestProtocolSingleton = await InterestProtocolSingleton.getInstance({
+    suiProviderUrl,
+    cacheOptions: { storage, ...cacheOptions },
+    lazyLoading: false,
+  });
 
-  const providers: Providers = [turbos, cetus, aftermath, flowx];
+  const providers: Providers = [turbos, cetus, aftermath, flowx, interest];
 
   return providers;
 };
