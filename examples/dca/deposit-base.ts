@@ -1,16 +1,8 @@
 import { SuiClient } from "@mysten/sui.js/client";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import {
-  AftermathSingleton,
-  CetusSingleton,
-  CoinManagerSingleton,
-  Providers,
-  TurbosSingleton,
-  WalletManagerSingleton,
-  clmmMainnet,
-} from "../../src";
 import { DCAManagerSingleton } from "../../src/managers/dca/DCAManager";
-import { cacheOptions, keypair, user } from "../common";
+import { getUserCoinObjects } from "../../src/providers/utils/getUserCoinObjects";
+import { keypair, user } from "../common";
 
 // yarn ts-node examples/dca/deposit-base.ts
 export const depositBase = async () => {
@@ -37,25 +29,10 @@ export const depositBase = async () => {
   const baseCoinAmountToDepositIntoDCA = "250000";
   const addOrdersCount = 1;
 
-  const turbos: TurbosSingleton = await TurbosSingleton.getInstance({
-    suiProviderUrl,
-    cacheOptions,
-    lazyLoading: false,
-  });
-  const cetus: CetusSingleton = await CetusSingleton.getInstance({
-    sdkOptions: clmmMainnet,
-    cacheOptions,
-    suiProviderUrl,
-    lazyLoading: false,
-  });
-  const aftermath: AftermathSingleton = await AftermathSingleton.getInstance({ cacheOptions, lazyLoading: false });
-  const providers: Providers = [turbos, cetus, aftermath];
-  const coinManager: CoinManagerSingleton = CoinManagerSingleton.getInstance(providers, suiProviderUrl);
-  const walletManager: WalletManagerSingleton = WalletManagerSingleton.getInstance(provider, coinManager);
-
-  const allCoinObjectsList = await walletManager.getAllCoinObjects({
+  const allCoinObjectsList = await getUserCoinObjects({
     publicKey: keypair.toSuiAddress(),
     coinType: baseCoinType,
+    provider,
   });
 
   const { tx, txRes } = await DCAManagerSingleton.createDCADepositBaseTransaction({
