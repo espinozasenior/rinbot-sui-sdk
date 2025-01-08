@@ -5,10 +5,10 @@
   "files": [
     "dist"
   ],
-  "node": "v20",
+  "node": "v23",
   "engines": {
     "npm": "please-use-yarn",
-    "node": "20"
+    "node": "23"
   },
   "main": "dist/index.js",
   "repository": {
