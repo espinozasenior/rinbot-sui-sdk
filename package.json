@@ -1,6 +1,6 @@
 {
   "name": "@espinozasenior/rinbot-sui-sdk",
-  "version": "2.8.7",
+  "version": "2.8.8",
   "description": "Sui Trading Bot SDK (typescript)",
   "files": [
     "dist"
@@ -8,7 +8,7 @@
   "node": "v23",
   "engines": {
     "npm": "please-use-yarn",
-    "node": "23"
+    "node": "v23"
   },
   "main": "dist/index.js",
   "repository": {
