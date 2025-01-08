@@ -655,10 +655,10 @@ export class AftermathSingleton extends EventEmitter implements IPoolProvider<Af
     const poolsSdk = sdk.Pools();
 
     const lpCoins: CoinAssetData[] = allAssets.filter((asset) => asset.type.includes(lpCoinTypePart));
-    const poolObjectIdsRaw = await Promise.all(
-      lpCoins.map((lpCoin) => poolsSdk.getPoolObjectIdForLpCoinType({ lpCoinType: lpCoin.type })),
-    );
-    const poolObjectIds: string[] = poolObjectIdsRaw.filter((el): el is string => !!el);
+    const poolObjectIdsRaw = (await Promise.all(
+      lpCoins.map((lpCoin) => poolsSdk.getPoolObjectIdForLpCoinType({ lpCoinType: lpCoin.type }))
+    )).flat();
+    const poolObjectIds: string[] = poolObjectIdsRaw.filter((el): el is string => el !== undefined);
     const pools: Pool[] = await poolsSdk.getPools({ objectIds: poolObjectIds });
     await Promise.all(pools.map((pool) => pool.getStats()));
 
