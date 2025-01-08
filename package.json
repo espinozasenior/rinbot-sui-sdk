@@ -19,7 +19,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "author": "espinozasenior <espinozasenior@gmail.com>",
-  "license": "private",
+  "license": "MIT",
   "private": false,
   "engineStrict": true,
   "scripts": {
