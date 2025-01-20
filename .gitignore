@@ -400,7 +400,7 @@ FodyWeavers.xsd
 # Custom
 node_modules/
 .DS_Store
-dist/
+#dist/
 yarn-error.log# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
